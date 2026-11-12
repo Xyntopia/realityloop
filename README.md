@@ -42,9 +42,10 @@ The Tennant T7AMR-inspired vehicle is **not** a manufacturer model or validated 
 
 Five synthetic 3D LiDAR point clouds feed a PCL.js WASM ICP scan-registration/2D occupancy demonstrator. The example also renders a front RGB camera and produces IMU/encoder samples; rear RGB and depth streams currently contain metadata rather than image pixels. This is **not** full SLAM with loop closure. Sensor positions and noise are not Tennant-calibrated.
 
-**PBR visualization:** The supermarket browser viewer now renders a supermarket interior inspired by actual grocery aisle photography: tiled polished floor, reflective steel shelf fixtures, dense instanced product packaging, hanging linear LEDs, category boards, acoustic-tile ceiling and cutaway walls. The 480 illustrative products and architectural meshes are *render-only*, never additional collision or LiDAR surfaces. A one-time low-resolution reflection panorama avoids per-frame render probes. Graphics: **Auto / High PBR / Balanced / Performance**; Auto selects the lower-cost path on software WebGL and downshifts on sustained low FPS. The footer shows FPS, draw calls and product count. Headless software rendering was measured near 4 FPS at 800×520 in Chromium; this is **not** representative of real GPU performance, which remains to be measured. The reconstruction is inspired by supermarket photos, not a photogrammetric or dimensionally accurate reconstruction.
 
-![RealityLoop PBR supermarket prototype](docs/realityloop-pbr-supermarket-preview.jpg)
+High PBR retains the rich textures; automatic **Performance** mode uses one flat-colored stock draw call, lower render resolution, and disables costly reflections/shadows. Software Chromium measured ~1 FPS in High and ~2 FPS in Performance for the photo-view screenshot tests—**not acceptable real-time performance and not indicative of an actual GPU**. Real GPU profiling remains required. This is a photo-referenced procedural approximation, *not* an almost-photorealistic reconstructed store: genuine scanned products, calibrated lighting and GI would be separate, costly assets.
+
+![Photo-referenced supermarket viewer](docs/realityloop-pbr-supermarket-preview.jpg)
 
 ## Offline H.264 video export (no browser)
 

@@ -39,13 +39,14 @@ const rendererInfo=gl.getExtension('WEBGL_debug_renderer_info')
 const rendererName=String(gl.getParameter(
   rendererInfo?rendererInfo.UNMASKED_RENDERER_WEBGL:gl.RENDERER))
 const softwareRenderer=/swiftshader|llvmpipe|softpipe|software|lavapipe/i.test(rendererName)
+document.body.classList.toggle('software-renderer',softwareRenderer)
 let graphicsQuality:VisualQuality='high'
 const applyQuality=(quality:VisualQuality)=>{
   if(quality===graphicsQuality && renderer.getPixelRatio()===
-      Math.min(devicePixelRatio,quality==='high'?1.5:quality==='balanced'?1:.65))return
+      Math.min(devicePixelRatio,quality==='high'?1.5:quality==='balanced'?1:.48))return
   graphicsQuality=quality
   renderer.setPixelRatio(Math.min(devicePixelRatio,
-    quality==='high'?1.5:quality==='balanced'?1:.65))
+    quality==='high'?1.5:quality==='balanced'?1:.48))
   renderer.shadowMap.enabled=quality!=='performance'
   renderer.shadowMap.needsUpdate=true
   interior.setVisualQuality(quality)
@@ -222,15 +223,37 @@ graphicsSelect.addEventListener('change',()=>{
     applyQuality(selected)
   lowFpsWindows=0
 })
-let topView=false
-elem('camera').addEventListener('click',()=>{
-  topView=!topView
-  if(topView){camera.position.set(4.4,17,0.1);controls.target.set(4,0,0)}
-  else{camera.position.set(12,10,14);controls.target.set(4,0,0)}
-  interior.setCeilingVisible(!topView)
-  controls.update()
-  elem('camera').textContent=topView?'Perspective':'Top view'
+elem('presentation').addEventListener('click',()=>{
+  const hidden=document.body.classList.toggle('showcase')
+  elem('presentation').textContent=hidden?'Show panels':'Hide panels'
 })
+type CameraMode='orbit'|'top'|'reference'
+let cameraMode:CameraMode='orbit'
+const setCameraMode=(mode:CameraMode)=>{
+  cameraMode=mode
+  if(mode==='top'){
+    camera.position.set(4.4,17,0.1)
+    controls.target.set(4,0,0)
+    camera.fov=43
+  }else if(mode==='reference'){
+    // 1.68 m eye-height, aisle center-line looking into the shelving rows.
+    camera.position.set(-2.35,1.68,-.1)
+    controls.target.set(6.9,1.55,-.1)
+    camera.fov=65
+  }else{
+    camera.position.set(12,10,14)
+    controls.target.set(4,0,0)
+    camera.fov=43
+  }
+  camera.updateProjectionMatrix()
+  interior.setCeilingVisible(mode!=='top')
+  controls.enabled=mode!=='reference'
+  controls.update()
+  elem('camera').textContent=mode==='top'?'Perspective':'Top view'
+  elem('reference-camera').textContent=mode==='reference'?'Exit photo view':'Photo view'
+}
+elem('camera').addEventListener('click',()=>setCameraMode(cameraMode==='top'?'orbit':'top'))
+elem('reference-camera').addEventListener('click',()=>setCameraMode(cameraMode==='reference'?'orbit':'reference'))
 addEventListener('resize',()=>{
   camera.aspect=innerWidth/innerHeight
   camera.updateProjectionMatrix()

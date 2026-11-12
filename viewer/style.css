@@ -2,3 +2,15 @@
 .lab-link{pointer-events:auto;text-decoration:none;font-size:11px;font-weight:700;color:#66ead8;border:1px solid #3a7d7a;background:#0f3034c0;border-radius:7px;padding:10px 14px;white-space:nowrap}.lab-link:hover{background:#184448}@media(max-width:850px){.lab-link{font-size:10px;padding:7px 8px}}
 .slam-panel{border-top:1px solid #31464b;margin-top:18px;padding-top:12px}.slam-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}.slam-head strong{font-size:11px}.slam-head button{font-size:10px;padding:5px 7px}.slam-panel canvas{display:block;width:100%;height:auto;aspect-ratio:1;border:1px solid #2e4b54;border-radius:7px;image-rendering:pixelated}.slam-stats{display:flex;align-items:center;justify-content:space-between;color:#91b9be;font-size:10px;margin:9px 0 0}.telemetry{width:295px}.telemetry .disclaimer{margin-top:14px;padding-top:9px}.telemetry .stat-grid{gap:14px 8px}@media(max-height:800px){.telemetry{top:77px}.slam-panel canvas{max-height:170px;object-fit:fill}.telemetry .disclaimer{display:none}}
 .telemetry{max-height:calc(100vh - 145px);overflow-y:auto;scrollbar-width:thin}.telemetry .slam-panel canvas{width:100%}.telemetry #front-camera{height:auto;aspect-ratio:16/9;object-fit:contain;image-rendering:auto}.sensor-rate{font-size:10px;color:#8cb8b8}.slam-stats{gap:9px}
+/* Keep photo/reference camera accessible on short screens. */
+.controls{max-height:calc(100vh - 148px);overflow-y:auto;scrollbar-width:thin}
+.camera-controls{display:flex;flex-wrap:wrap;gap:6px}
+.camera-controls button.mini{padding:7px 8px}
+.reference-photo{font-size:10px;margin:12px 0;color:#a5c3bf}
+.reference-photo a{color:#68e0ce;text-underline-offset:3px}
+@media(max-height:700px){.controls{top:70px;max-height:calc(100vh - 118px)}}
+.software-renderer .panel{backdrop-filter:none}
+.header-actions{display:flex;align-items:center;gap:9px;pointer-events:auto}
+.showcase .panel{opacity:0;pointer-events:none}
+.showcase .footer-bar{opacity:.35}
+@media(max-width:850px){.header-actions{gap:5px}}

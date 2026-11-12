@@ -1,5 +1,9 @@
 import * as THREE from 'three'
 import { supermarketObstacles } from '../src/geometry.ts'
+import {createSupermarketStock} from './supermarket-products.ts'
+import terrazzoDiffuse from '../assets/materials/terrazzo_tiles_diff_1k.jpg?url'
+import terrazzoRough from '../assets/materials/terrazzo_tiles_rough_1k.jpg?url'
+import terrazzoNormal from '../assets/materials/terrazzo_tiles_nor_gl_1k.jpg?url'
 
 /**
  * Visual-only supermarket interior. Store geometry/physics/sensor meshes remain
@@ -9,130 +13,33 @@ import { supermarketObstacles } from '../src/geometry.ts'
  * Bright packaged goods, suspended linear luminaires, acoustic tile ceiling,
  * brushed aluminum shelves and a lightly reflective terrazzo floor.
  */
-type ProductStyle = Readonly<{label:string;secondary:string;color:number;accent:number;kind:'box'|'can'|'bottle'}>
-const products:readonly ProductStyle[]=[
-  {label:'HARVEST',secondary:'CRUNCH',color:0xeaba49,accent:0x6a9c54,kind:'box'},
-  {label:'FRESH',secondary:'PANTRY',color:0xd95b45,accent:0xf5cf62,kind:'box'},
-  {label:'COCOA',secondary:'BLEND',color:0x76564f,accent:0xe0b67b,kind:'box'},
-  {label:'CITRUS',secondary:'JUICE',color:0xf0a13a,accent:0xf8dd91,kind:'box'},
-  {label:'ORGANIC',secondary:'GRAINS',color:0x659379,accent:0xe4eac8,kind:'box'},
-  {label:'VITA',secondary:'DRINK',color:0x68aab5,accent:0xe6f0e5,kind:'bottle'},
-  {label:'SOUP',secondary:'CLASSIC',color:0xc95851,accent:0xf3ddbf,kind:'can'},
-  {label:'SPARK',secondary:'TONIC',color:0x356d9f,accent:0xe4d1a2,kind:'can'},
-]
 const baseMaterial=(color:number,roughness=.58,metalness=.04)=>
   new THREE.MeshStandardMaterial({color,roughness,metalness})
 const shopWhite=baseMaterial(0xdce6df,.44,.2)
-const steel=baseMaterial(0x5e7681,.28,.7)
+const steel=baseMaterial(0x6c7f87,.27,.77)
 const trim=baseMaterial(0xbecac8,.35,.37)
 const billboard=baseMaterial(0x3c6967,.4,.15)
 
-const cartonTexture=(style:ProductStyle):THREE.CanvasTexture=>{
-  const canvas=document.createElement('canvas')
-  canvas.width=256;canvas.height=256
-  const ctx=canvas.getContext('2d')
-  if(!ctx)throw Error('Cannot draw supermarket product graphics')
-  const color='#'+style.color.toString(16).padStart(6,'0')
-  const accent='#'+style.accent.toString(16).padStart(6,'0')
-  ctx.fillStyle=color;ctx.fillRect(0,0,256,256)
-  ctx.fillStyle=accent;ctx.fillRect(0,36,256,150)
-  ctx.fillStyle='rgba(255,255,255,.24)'
-  ctx.fillRect(9,41,238,5);ctx.fillRect(9,172,238,6)
-  ctx.fillStyle='rgba(255,255,255,.94)'
-  ctx.beginPath();ctx.arc(128,102,37,0,Math.PI*2);ctx.fill()
-  ctx.fillStyle=color;ctx.beginPath();ctx.arc(128,102,22,0,Math.PI*2);ctx.fill()
-  ctx.fillStyle='#fff'
-  ctx.textAlign='center';ctx.textBaseline='middle'
-  ctx.font='800 30px system-ui,sans-serif';ctx.fillText(style.label,128,20,240)
-  ctx.font='bold 22px system-ui,sans-serif';ctx.fillText(style.secondary,128,219,240)
-  ctx.fillStyle='#fff';ctx.fillRect(13,240,230,8)
-  const texture=new THREE.CanvasTexture(canvas)
-  texture.colorSpace=THREE.SRGBColorSpace
-  texture.anisotropy=2
-  return texture
-}
-
-/** One instanced geometry and one draw call per merchandise SKU. */
-const makeStock=(scene:THREE.Group):number=>{
-  const distributions:THREE.Matrix4[][]=products.map(()=>[])
-  const dummy=new THREE.Object3D()
-  for(const obstacle of supermarketObstacles){
-    if(obstacle.kind!=='shelf')continue
-    const colorOffset=Math.round(obstacle.x*13+Math.abs(obstacle.z)*5)
-    for(let tier=0;tier<5;tier++){
-      const y=.31+tier*.39
-      for(const side of [-1,1]){
-        for(let column=0;column<12;column++){
-          const variant=(column+3*tier+colorOffset+(side===1?2:0))%products.length
-          const style=products[variant]!
-          dummy.position.set(
-            obstacle.x-obstacle.halfX+.155+column*.205,
-            y+(.13+(column%3)*.012),
-            obstacle.z+side*(obstacle.halfZ-.18),
-          )
-          const variation=.91+((column+tier)%4)*.047
-          dummy.scale.set(variation,style.kind==='bottle'?.9:1,variation)
-          dummy.rotation.set(0,side===1?Math.PI:0,0)
-          dummy.updateMatrix()
-          distributions[variant]!.push(dummy.matrix.clone())
-        }
-      }
-    }
+/** CC0 photo-scanned material by Amal Kumar, Poly Haven: terrazzo_tiles.
+ * All three 1K maps are vendored; no runtime texture CDN/network dependency. */
+const makeFloorMaps=(renderer:THREE.WebGLRenderer)=>{
+  const loader=new THREE.TextureLoader()
+  const paths=[terrazzoDiffuse,terrazzoRough,terrazzoNormal] as const
+  const maps=paths.map((path,index)=>{
+    const texture=loader.load(path)
+    texture.wrapS=THREE.RepeatWrapping
+    texture.wrapT=THREE.RepeatWrapping
+    texture.repeat.set(10,7.5)
+    texture.anisotropy=Math.min(4,renderer.capabilities.getMaxAnisotropy())
+    if(index===0)texture.colorSpace=THREE.SRGBColorSpace
+    return texture
+  })
+  return {
+    diffuse:maps[0]!,
+    roughness:maps[1]!,
+    normal:maps[2]!,
+    dispose:()=>maps.forEach(map=>map.dispose()),
   }
-  for(const [index,matrices] of distributions.entries()){
-    const product=products[index]!
-    if(!matrices?.length)continue
-    const geometry=product.kind==='can'
-      ?new THREE.CylinderGeometry(.075,.075,.27,10,1)
-      :product.kind==='bottle'
-        ?new THREE.CylinderGeometry(.048,.071,.29,8,1)
-        :new THREE.BoxGeometry(.17,.29,.235)
-    const material=new THREE.MeshStandardMaterial({
-      map:cartonTexture(product),roughness:product.kind==='box'?.69:.31,
-      metalness:product.kind==='can'?.36:.06,
-    })
-    const mesh=new THREE.InstancedMesh(geometry,material,matrices.length)
-    mesh.name='Instanced merchandise — '+product.label
-    mesh.frustumCulled=false
-    for(let i=0;i<matrices.length;i++)mesh.setMatrixAt(i,matrices[i]!)
-    mesh.instanceMatrix.needsUpdate=true
-    // No product shadows: detailed stock is decorative and heavily instanced.
-    mesh.castShadow=false
-    mesh.receiveShadow=false
-    scene.add(mesh)
-  }
-  return distributions.reduce((count,list)=>count+list.length,0)
-}
-const tileTexture=():THREE.CanvasTexture=>{
-  const canvas=document.createElement('canvas')
-  canvas.width=256;canvas.height=256
-  const ctx=canvas.getContext('2d')
-  if(!ctx)throw Error('Canvas 2D texture unavailable')
-  ctx.fillStyle='#bdc8c3';ctx.fillRect(0,0,256,256)
-  // Baked terrazzo flecks and grout: one small repeating PBR texture.
-  let seed=4711
-  const random=()=>{
-    seed=(Math.imul(seed,1664525)+1013904223)>>>0
-    return seed/4294967296
-  }
-  for(let i=0;i<1500;i++){
-    const shade=170+Math.floor(random()*55)
-    ctx.fillStyle=`rgba(${shade},${shade+Math.min(8,255-shade)},${shade},.10)`
-    ctx.fillRect(random()*256,random()*256,1+random()*2,1+random()*2)
-  }
-  ctx.strokeStyle='rgba(99,121,123,.28)'
-  ctx.lineWidth=2
-  for(let p=0;p<=256;p+=64){
-    ctx.beginPath();ctx.moveTo(p,0);ctx.lineTo(p,256);ctx.stroke()
-    ctx.beginPath();ctx.moveTo(0,p);ctx.lineTo(256,p);ctx.stroke()
-  }
-  const texture=new THREE.CanvasTexture(canvas)
-  texture.colorSpace=THREE.SRGBColorSpace
-  texture.wrapS=THREE.RepeatWrapping
-  texture.wrapT=THREE.RepeatWrapping
-  texture.repeat.set(12,8)
-  texture.anisotropy=4
-  return texture
 }
 const signTexture=(text:string):THREE.CanvasTexture=>{
   const canvas=document.createElement('canvas')
@@ -226,12 +133,18 @@ export const createSupermarketInterior=(
   const room=new THREE.Group()
   interior.add(room)
   const {addBox,flushStaticBoxes}=createStaticBoxBatcher()
+  const floorMaps=makeFloorMaps(renderer)
   const unit=new THREE.BoxGeometry(1,1,1)
   const floor=new THREE.Mesh(
     new THREE.PlaneGeometry(20,15),
     new THREE.MeshPhysicalMaterial({
-      map:tileTexture(),roughness:.24,metalness:.10,
-      clearcoat:.76,clearcoatRoughness:.14,envMapIntensity:1.15,
+      map:floorMaps.diffuse,
+      roughnessMap:floorMaps.roughness,
+      normalMap:floorMaps.normal,
+      normalScale:new THREE.Vector2(.38,.38),
+      color:0xe2ece7,
+      roughness:.56,metalness:.015,
+      clearcoat:.35,clearcoatRoughness:.21,envMapIntensity:.95,
     }),
   )
   floor.name='PBR polished terrazzo tile floor'
@@ -251,8 +164,8 @@ export const createSupermarketInterior=(
     [.09,4.7,15,14.2,2.35,0],
   ]
   walls.forEach(([w,h,d,x,y,z],index)=>{
-    // The camera-side wall is deliberately a cutaway in perspective views.
-    if(index===1||index===3)return
+    // Keep only the near-side wall out of view for orbiting above the room.
+    if(index===1)return
     addBox(room,unit,w,h,d,x,y,z,wall)
     addBox(room,unit,w,.24,d,x,.12,z,lowerWall)
   })
@@ -346,7 +259,8 @@ export const createSupermarketInterior=(
       }
     }
   }
-  const decorativeProductCount=makeStock(rack)
+  const stock=createSupermarketStock(rack)
+  const decorativeProductCount=stock.products
 
   // Overhead category boards and a store graphic are intentionally
   // lightweight textured planes, not signage assets fetched at runtime.
@@ -364,6 +278,17 @@ export const createSupermarketInterior=(
     panel.rotation.y=z>0?0:Math.PI
     rack.add(panel)
   }
+  const farWallSign=new THREE.Mesh(
+    new THREE.PlaneGeometry(3.8,1),
+    new THREE.MeshBasicMaterial({
+      map:signTexture('FRESH MARKET'),
+      side:THREE.DoubleSide,
+    }),
+  )
+  farWallSign.position.set(14.1,3.65,0)
+  farWallSign.rotation.y=-Math.PI/2
+  farWallSign.name='Far-aisle wall sign (render-only)'
+  rack.add(farWallSign)
   flushStaticBoxes(unit)
   const environment=createStudioReflection()
   scene.environment=environment
@@ -373,15 +298,18 @@ export const createSupermarketInterior=(
   const setVisualQuality=(quality:'high'|'balanced'|'performance')=>{
     // Lower GPU fragment work; preserve geometry and all simulation results.
     const low=quality==='performance'
+    stock.setQuality(quality)
     scene.environment=low?null:environment
     softLight.visible=!low
     softWarm.visible=!low
     // One shadow-casting key, no dynamic reflection captures.
     key.castShadow=!low
     const material=floor.material as THREE.MeshPhysicalMaterial
-    material.clearcoat=low?0:.76
-    material.roughness=low?.47:.24
-    material.metalness=low?.025:.10
+    material.clearcoat=low ? 0 : .35
+    material.roughness=low ? .88 : .56
+    material.metalness=low ? 0 : .015
+    material.normalMap=low ? null : floorMaps.normal
+    material.roughnessMap=low ? null : floorMaps.roughness
     material.needsUpdate=true
   }
   return {
@@ -389,6 +317,8 @@ export const createSupermarketInterior=(
     setVisualQuality,
     setCeilingVisible:visible=>{ceiling.visible=visible},
     dispose:()=>{
+      stock.dispose()
+      floorMaps.dispose()
       scene.remove(interior)
       interior.traverse(object=>{
         if(object instanceof THREE.Mesh){
