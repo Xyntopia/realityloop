@@ -14,7 +14,8 @@
     "types": [
       "node",
       "vite/client"
-    ]
+    ],
+    "paths": { "pcl.js": ["./node_modules/pcl.js/dist/pcl.d.ts"] }
   },
   "include": [
     "src/**/*.ts",

@@ -29,8 +29,17 @@
     <div><span>Drive wheel slip</span><strong id="slip-l">—</strong></div>
     <div><span id="secondary-label">Contact mode</span><strong id="slip-r">—</strong></div>
   </div>
-  <div class="slam-panel"><div class="slam-head"><strong>5-LiDAR SLAM prototype</strong><button class="mini" id="lidar-toggle">Hide rays</button></div><canvas id="slam-map" width="240" height="240" aria-label="Occupancy grid reconstructed from LiDAR scans"></canvas><div class="slam-stats"><span id="slam-cells">Mapping…</span><span id="slam-hits">—</span></div></div>
-  <p class="disclaimer">Modelica physics currently uses a simplified circular robot–rectangle contact; other shelves are visual only. LiDAR and odometry are simulated, and sensor locations are illustrative. No BrainOS or physical SLAM validation.</p>
+  <div class="slam-panel"><div class="slam-head"><strong>Five 3D LiDARs + PCL ICP</strong><button class="mini" id="lidar-toggle">Hide points</button></div>
+    <div class="slam-stats"><span id="slam-method">Loading PCL ICP…</span></div>
+    <canvas id="slam-map" width="240" height="240" aria-label="Scan-matched occupancy map"></canvas>
+    <div class="slam-stats"><span id="slam-cells">Mapping…</span><span id="slam-hits">—</span></div>
+    <div class="slam-stats"><span id="icp-matches">—</span></div>
+    <div class="slam-head"><strong>Front RGB camera</strong><span class="sensor-rate">10 Hz simulated view</span></div>
+    <canvas id="front-camera" width="240" height="135" aria-label="RGB camera mounted on robot"></canvas>
+    <div class="slam-stats"><span>IMU yaw rate</span><span id="imu-rate">—</span></div>
+    <div class="slam-stats"><span>Wheel encoder</span><span id="wheel-ticks">—</span></div>
+  </div>
+  <p class="disclaimer">All five shelf/obstacle colliders now exist in Modelica. Simulated camera, LiDAR and IMU are illustrative; PCL ICP is a scan registration front end, not full loop-closure SLAM. MuJoCo is an independently tested collision backend, not yet linked through Rumoca external C.</p>
 </aside>
 <footer class="footer-bar"><span><span class="live-dot"></span> <span id="engine-label">RUMOCA MODELICA · COMPILER-DRIVEN REPLAY</span></span><span id="frame">FRAME —</span></footer>
 <script type="module" src="/viewer/main.ts"></script>

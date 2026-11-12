@@ -132,9 +132,9 @@ package RealityLoopContacts
   end WheelBench;
 
   model SupermarketRobot
-    // A small, fully Modelica-driven PLANAR contact/traction test scene.
-    // Rounded chassis contact against one fixed shelf blockage.
-    // All physical state evolves in Rumoca. No Rapier callbacks or timesteps.
+    // Five static supermarket obstacles (four shelves + aisle blocker).
+    // Rumoca integrates physics; geometry is a replaceable analytic query model.
+    // Modelica coordinates: x = aisle travel, z = across aisle.
     parameter Real detourRoute = 1 "1 = detour waypoints, 0 = blocked direct route";
     parameter Real bodyMass = 479 "Reference mass [kg]";
     parameter Real yawInertia = 190 "Estimated yaw inertia [kg.m2]";
@@ -145,13 +145,17 @@ package RealityLoopContacts
     parameter Real muStatic = 0.72;
     parameter Real muKinetic = 0.75*muStatic;
     parameter Real motorLimit = 135 "Wheel motor torque cap [N.m]";
-    parameter Real maximumSpeed = 1.0 "Requested maximum speed [m/s]";
-    parameter Real steeringGain = 1.0 "Heading to steering gain";
-    parameter Real yawFeedback = 1.25 "Yaw-rate stabilizing feedback";
+    parameter Real maximumSpeed = 0.85 "Requested maximum speed [m/s]";
+    parameter Real steeringGain = 2.0 "Heading to steering gain";
+    parameter Real yawFeedback = 2.0 "Yaw-rate stabilizing feedback";
     parameter Real waypointRadius = 0.64 "Waypoint capture radius [m]";
-    parameter Real obstacleCenterX = 4.35;
-    parameter Real obstacleHalfX = 0.45;
-    parameter Real obstacleHalfZ = 1.27;
+    parameter Real detourZ=1.95 "Centerline between shelves and blocker";
+    // Keep these parameters aligned with supermarketObstacles in src/cleaning.ts.
+    parameter Integer nObstacles=5;
+    parameter Real obstacleX[5]={4.35,2.1,5.2,2.1,5.2};
+    parameter Real obstacleZ[5]={0,-3.2,-3.2,3.2,3.2};
+    parameter Real obstacleHalfX[5]={0.45,1.25,1.25,1.25,1.25};
+    parameter Real obstacleHalfZ[5]={1.27,0.46,0.46,0.46,0.46};
     parameter Real contactRadius = 0.44 "Conservative circular robot contact approximation";
     parameter Real collisionStiffness = 14000 "Normal penetration stiffness [N/m]";
     parameter Real collisionDamping = 2100 "Normal approach damping [N.s/m]";
@@ -178,15 +182,18 @@ package RealityLoopContacts
     Real frontNormal;
     Real bodyDrag;
     Real yawDrag;
-    Real outX;
-    Real outZ;
-    Real outerDistance;
-    Real normalX;
-    Real normalZ;
-    Real collisionDepth;
-    Real approachSpeed;
-    Real collisionForce;
-    Real collisionLongitudinal;
+    Real outX[nObstacles];
+    Real outZ[nObstacles];
+    Real outerDistance[nObstacles];
+    Real normalX[nObstacles];
+    Real normalZ[nObstacles];
+    Real contactDepth[nObstacles];
+    Real approachSpeed[nObstacles];
+    Real contactForce[nObstacles];
+    Real contactLongitudinal[nObstacles];
+    Real collisionDepth "Maximum contact penetration";
+    Real collisionForce "Total contact normal force";
+    Real collisionLongitudinal "Total contact longitudinal force";
     Real contactLoad;
     LongitudinalStickSlip contact(muStatic = muStatic, muKinetic = muKinetic);
   equation
@@ -194,8 +201,8 @@ package RealityLoopContacts
       else if waypoint == 1 then 2.3
       else if waypoint == 2 then 5.9 else 7.5;
     targetZ = if detourRoute < 0.5 then 0
-      else if waypoint == 1 then 2.1
-      else if waypoint == 2 then 2.1 else 0;
+      else if waypoint == 1 then detourZ
+      else if waypoint == 2 then detourZ else 0;
     distanceToWaypoint = sqrt((targetX - x)^2 + (targetZ - z)^2);
     headingError = atan2(sin(atan2(-(targetZ - z), targetX - x) - yaw),
       cos(atan2(-(targetZ - z), targetX - x) - yaw));
@@ -207,22 +214,29 @@ package RealityLoopContacts
     appliedTorque = max(-motorLimit,
       min(motorLimit, 140*(speedTarget/wheelRadius - wheelOmega)));
 
-    // Main aisle blockage: nearest-point sphere/expanded-rectangle contact.
-    outX = max(abs(x-obstacleCenterX)-obstacleHalfX, 0);
-    outZ = max(abs(z)-obstacleHalfZ, 0);
-    outerDistance = sqrt(outX^2+outZ^2);
-    normalX = if outerDistance > 1e-9 then
-      (if x > obstacleCenterX then outX else -outX)/outerDistance
-      else if x < obstacleCenterX then -1 else 1;
-    normalZ = if outerDistance > 1e-9 then
-      (if z > 0 then outZ else -outZ)/outerDistance else 0;
-    collisionDepth = max(0, contactRadius - outerDistance);
-    approachSpeed = v*(cos(yaw)*normalX - sin(yaw)*normalZ);
-    collisionForce = if collisionDepth > 0 then
-      collisionStiffness*collisionDepth +
-        collisionDamping*max(0, -approachSpeed) else 0;
-    collisionLongitudinal = collisionForce*
-      (cos(yaw)*normalX - sin(yaw)*normalZ);
+    // Circle-versus-AABB contact for each fixed shelf/obstruction.
+    // This is a solver-owned contact-force law, not a second integrator.
+    for i in 1:nObstacles loop
+      outX[i] = max(abs(x-obstacleX[i])-obstacleHalfX[i], 0);
+      outZ[i] = max(abs(z-obstacleZ[i])-obstacleHalfZ[i], 0);
+      outerDistance[i] = sqrt(outX[i]^2+outZ[i]^2);
+      normalX[i] = if outerDistance[i]>1e-9 then
+        (if x>obstacleX[i] then outX[i] else -outX[i])/outerDistance[i]
+        else if x<obstacleX[i] then -1 else 1;
+      normalZ[i] = if outerDistance[i]>1e-9 then
+        (if z>obstacleZ[i] then outZ[i] else -outZ[i])/outerDistance[i]
+        else 0;
+      contactDepth[i] = max(0, contactRadius-outerDistance[i]);
+      approachSpeed[i] = v*(cos(yaw)*normalX[i]-sin(yaw)*normalZ[i]);
+      contactForce[i] = if contactDepth[i]>0 then
+        collisionStiffness*contactDepth[i]+
+        collisionDamping*max(0,-approachSpeed[i]) else 0;
+      contactLongitudinal[i] = contactForce[i]*
+        (cos(yaw)*normalX[i]-sin(yaw)*normalZ[i]);
+    end for;
+    collisionDepth = max(contactDepth);
+    collisionForce = sum(contactForce);
+    collisionLongitudinal = sum(contactLongitudinal);
     contactLoad = collisionForce;
 
     frontNormal = bodyMass*9.81*frontLoadFraction;
@@ -266,4 +280,10 @@ package RealityLoopContacts
   model SupermarketBlocked
     extends SupermarketRobot(detourRoute=0);
   end SupermarketBlocked;
+
+  model SupermarketShelfProbe
+    // Regression fixture deliberately approaches the southern shelf.
+    extends SupermarketRobot(detourRoute=0, x(start=2.1), z(start=2.20),
+      yaw(start=-1.57079632679), v(start=0.35));
+  end SupermarketShelfProbe;
 end RealityLoopContacts;

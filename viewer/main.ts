@@ -169,10 +169,11 @@ const displaySample=(i:number)=>{
   for(let k=lastPaintedSample+1;k<=i;k++){
     const point=result.observations[k]
     for(let j=-2;j<=2;j++)addCoverage(point.x+0.13*j*Math.sin(point.yaw),point.z+0.13*j*Math.cos(point.yaw))
-    slamView.step({x:point.x,z:point.z,yaw:point.yaw}, k===i)
+    slamView.step({x:point.x,z:point.z,yaw:point.yaw}, k===i, point.speed, point.timeSeconds)
   }
   lastPaintedSample=i
 }
+let lastCameraRender=-Infinity
 const render=(now:number)=>{
   const delta=Math.min((now-lastFrameTime)/1000,0.5);lastFrameTime=now
   if(result&&playing){
@@ -195,6 +196,7 @@ const render=(now:number)=>{
   }
   controls.update()
   renderer.render(scene,camera)
+  if(now-lastCameraRender>150){slamView.renderCamera(robot,scene);lastCameraRender=now}
   requestAnimationFrame(render)
 }
 elem('play').addEventListener('click',()=>{
@@ -219,5 +221,6 @@ addEventListener('resize',()=>{
   camera.updateProjectionMatrix()
   renderer.setSize(innerWidth,innerHeight)
 })
+void slamView.enablePclIcp()
 void run('detour')
 requestAnimationFrame(render)

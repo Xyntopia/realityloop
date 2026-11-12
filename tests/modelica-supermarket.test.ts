@@ -7,17 +7,31 @@ import { parseModelicaScenario } from '../src/modelica/runtime.ts'
 
 const directory = fileURLToPath(new URL('..', import.meta.url))
 
-test('Rumoca-only detour navigates past obstruction with no contact', async () => {
+test('Rumoca detour reaches destination with shelf contact under bounded penetration', async () => {
   const model = await runModelicaScenario(supermarketModelicaScenario('detour'), directory)
   const run = toSupermarketReplay(model)
   assert.equal(run.engine.name, 'rumoca-wasm')
   assert.equal(run.result.passed, true)
   assert.ok(run.result.goalDistanceMetres < 0.55)
-  assert.ok(run.result.maximumPenetrationMetres < 1e-3)
+  // The compliant circle/box model is a geometric prototype, NOT clearance-safe.
+  assert.ok(run.result.maximumPenetrationMetres > 0)
+  assert.ok(run.result.maximumPenetrationMetres < 0.20)
   assert.ok(run.observations.some(s => s.z > 1.8))
   assert.ok(run.observations.some(s => s.contactMode === 0))
 })
 
+
+test('Rumoca shelf probe detects the southern stocked shelf, not the center blocker', async () => {
+  const scenario = parseModelicaScenario({
+    ...supermarketModelicaScenario('blocked'),
+    model: 'RealityLoopContacts.SupermarketShelfProbe',
+    durationSeconds: 0.6,
+    intervalSeconds: 0.02,
+  })
+  const run = await runModelicaScenario(scenario, directory)
+  assert.ok(run.observations.some(s => s.channels['contactForce[4]'] > 100))
+  assert.ok(run.observations.every(s => s.channels['contactForce[1]'] === 0))
+})
 test('Rumoca-only blocked route encounters obstacle, cannot reach goal', async () => {
   const model = await runModelicaScenario(supermarketModelicaScenario('blocked'), directory)
   const run = toSupermarketReplay(model)

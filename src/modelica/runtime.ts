@@ -9,6 +9,7 @@ export const modelicaScenarioSchema = z.object({
     'RealityLoopContacts.WheelBench',
     'RealityLoopContacts.SupermarketRobot',
     'RealityLoopContacts.SupermarketBlocked',
+    'RealityLoopContacts.SupermarketShelfProbe',
     'TennantFrontSteerSlip',
     'DifferentialDriveSlip',
   ]),
@@ -42,6 +43,7 @@ const makeOverrides = (scenario: ModelicaScenario): Record<string, number> => {
   switch (scenario.model) {
     case 'RealityLoopContacts.SupermarketRobot':
     case 'RealityLoopContacts.SupermarketBlocked':
+    case 'RealityLoopContacts.SupermarketShelfProbe':
       return { muStatic: scenario.frictionCoefficient, motorLimit: scenario.motorTorqueNewtonMetres }
     case 'RealityLoopContacts.TennantStickSlip':
       return { muStatic: scenario.frictionCoefficient, motorTorque: scenario.motorTorqueNewtonMetres }

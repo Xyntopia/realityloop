@@ -67,7 +67,11 @@ export const toSupermarketReplay = (model: ModelicaResult): SupermarketReplay =>
   let maxSlip = 0
   let maxPenetration = 0
   let maxContactForce = 0
-  const observations = model.observations.map(({ timeSeconds, channels }, i): SupermarketReplaySample => {
+  // Stop playback on first arrival, not after the solver continues past the goal.
+  const arrival = model.observations.findIndex(o =>
+    Math.hypot(7.5 - o.channels.x, o.channels.z) < 0.55)
+  const relevant = arrival >= 0 ? model.observations.slice(0, arrival + 1) : model.observations
+  const observations = relevant.map(({ timeSeconds, channels }, i): SupermarketReplaySample => {
     const { x, z, yaw, v, steer, slipSpeed, contactMode, contactLoad,
       collisionDepth, collisionForce } = channels
     if (![x, z, yaw, v, steer, slipSpeed, contactMode, contactLoad,
