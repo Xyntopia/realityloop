@@ -5,10 +5,14 @@ import {
   createModelicaRunner, modelicaSourceFile,
   type ModelicaResult, type ModelicaScenario,
 } from './runtime.ts'
+import { withModelicaScene } from './scene.ts'
+export { withModelicaScene } from './scene.ts'
+import type { Obstacle } from '../geometry.ts'
 
 export const runModelicaScenario = async (
   scenario: ModelicaScenario,
   projectDirectory: string = process.cwd(),
+  obstacles?: readonly Obstacle[],
 ): Promise<ModelicaResult> => {
   const packageDirectory = dirname(fileURLToPath(import.meta.resolve('@taskyon/rumoca')))
   const [wasmBytes, source] = await Promise.all([
@@ -16,5 +20,8 @@ export const runModelicaScenario = async (
     readFile(resolve(projectDirectory, 'modelica', modelicaSourceFile(scenario.model)), 'utf8'),
   ])
   const runner = await createModelicaRunner(wasmBytes)
-  return runner.simulate(source, scenario)
+  const sceneSource = scenario.model.startsWith('RealityLoopContacts.Supermarket')
+    ? withModelicaScene(source, obstacles)
+    : source
+  return runner.simulate(sceneSource, scenario)
 }

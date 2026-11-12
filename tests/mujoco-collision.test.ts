@@ -1,7 +1,7 @@
 import { strict as assert } from 'node:assert'
 import { test } from 'node:test'
 import { createMujocoCollisionScene } from '../src/mujoco-collision.ts'
-import { supermarketObstacles } from '../src/cleaning.ts'
+import { supermarketObstacles } from '../src/geometry.ts'
 
 test('official MuJoCo WASM detects each shelf without stepping physics', async () => {
   const scene = await createMujocoCollisionScene()

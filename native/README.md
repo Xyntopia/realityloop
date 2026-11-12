@@ -7,5 +7,11 @@ The companion Modelica package is `../modelica/RealityLoopMuJoCo.mo`, using stan
 For native integration, compile with the matching MuJoCo 4 headers/library and export `realityloop_mujoco` using the platform's normal build/link mechanisms. For browser execution, compile the shim, MuJoCo and Rumoca's execution target into a **compatible linked WASM unit**, or implement a proper imported-function runtime with deterministic, synchronous and memory-safe ABI semantics. The JS-facing official MuJoCo `.wasm` is **not** a drop-in library link input for another independently compiled WASM binary.
 
 **Not yet tested:** C native/WASM compilation, matching MuJoCo library linkage, Rumoca `ExternalObject` support, solver trial-state calls, event crossings and array marshalling. The independently tested working backend uses `../src/mujoco-collision.ts` and official `@mujoco/mujoco@4.0.1` WASM.
+### Rumoca implementation boundary (verified in source)
+
+`frontend/packages/rumoca/crates/rumoca-eval-dae/src/numeric.rs` currently returns `NumericEvaluationErrorKind::ExternalFunction` with an explicit *runtime cannot execute* message for non-native external function calls. Rumoca already retains Modelica external declarations in its IR; that is separate from executable ABI support. The next implementation work belongs in Rumoca's generic external-call lowering, target-dependent binding and `ExternalObject` lifecycle, not in a special RealityLoop compiler branch.
+
+Acceptance requires a native **and** browser WASM call using the same `external "C"` Modelica function, verified array marshalling, correct handle construction/destruction, deterministic repeated evaluations at arbitrary solver trial states, and contact queries that never step MuJoCo dynamics. Only then switch the active Modelica collision package from analytic geometry to this backend.
+
 
 Do not silently substitute the JS collision code inside Modelica: that would violate the intended source-of-physics architecture and complicate repeated solver evaluations. Keep the analytic Modelica shelf contact until a proper external-C integration is proven.

@@ -1,6 +1,6 @@
 import RAPIER from '@dimforge/rapier3d-compat'
 import { z } from 'zod'
-import { supermarketObstacles } from './cleaning.ts'
+import { supermarketObstacles } from './geometry.ts'
 
 /** Tennant T7AMR *concept* dimensions; tires, drivetrain geometry and control gains are estimates. */
 export const t7amr = {

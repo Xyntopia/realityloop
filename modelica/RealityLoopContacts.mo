@@ -2,6 +2,23 @@
 // Static contact is enforced by an acceleration-level force balance;
 // sliding uses signed kinetic friction. No Rapier or external library.
 package RealityLoopContacts
+  function SmoothCorridorZ
+    // C1-continuous sampled route. The controller tracks, not teleports.
+    input Real x;
+    input Real amplitude;
+    input Real riseEnd;
+    input Real fallStart;
+    input Real fallEnd;
+    output Real z;
+  protected
+    Real rise;
+    Real fall;
+  algorithm
+    rise := max(0, min(1, x/riseEnd));
+    fall := max(0, min(1, (x-fallStart)/(fallEnd-fallStart)));
+    z := amplitude*(rise*rise*(3-2*rise)-fall*fall*(3-2*fall));
+  end SmoothCorridorZ;
+
   model LongitudinalStickSlip
     parameter Real muStatic = 0.8 "Maximum static friction coefficient";
     parameter Real muKinetic = 0.6 "Sliding friction coefficient";
@@ -145,17 +162,29 @@ package RealityLoopContacts
     parameter Real muStatic = 0.72;
     parameter Real muKinetic = 0.75*muStatic;
     parameter Real motorLimit = 135 "Wheel motor torque cap [N.m]";
-    parameter Real maximumSpeed = 0.85 "Requested maximum speed [m/s]";
+    parameter Real maximumSpeed = 0.65 "Safety-aware corridor speed cap [m/s]";
     parameter Real steeringGain = 2.0 "Heading to steering gain";
     parameter Real yawFeedback = 2.0 "Yaw-rate stabilizing feedback";
     parameter Real waypointRadius = 0.64 "Waypoint capture radius [m]";
     parameter Real detourZ=1.95 "Centerline between shelves and blocker";
-    // Keep these parameters aligned with supermarketObstacles in src/cleaning.ts.
+    parameter Real approachX=1.65 "First waypoint X coordinate";
+    parameter Real corridorEntryX=3.0 "Second waypoint X coordinate";
+    parameter Real corridorExitX=6.5 "Third waypoint X coordinate";
+    parameter Real approachZ=1.95 "First waypoint lateral coordinate";
+    parameter Real useSmoothReference=1 "0=waypoints, 1=smooth path tracker";
+    parameter Real riseEnd=3.8 "X where robot reaches corridor [m]";
+    parameter Real fallStart=5.6 "Begin corridor exit [m]";
+    parameter Real fallEnd=8.2 "End corridor exit [m]";
+    parameter Real previewDistance=2.4 "Path preview in X [m]";
+    parameter Real laneLookahead=1.5 "Legacy waypoint predicted lane tracking [s]";
+    parameter Real laneFeedback=1.0 "Legacy cross-track correction [rad/m]";
+    // @realityloop-scene-begin
     parameter Integer nObstacles=5;
-    parameter Real obstacleX[5]={4.35,2.1,5.2,2.1,5.2};
-    parameter Real obstacleZ[5]={0,-3.2,-3.2,3.2,3.2};
-    parameter Real obstacleHalfX[5]={0.45,1.25,1.25,1.25,1.25};
-    parameter Real obstacleHalfZ[5]={1.27,0.46,0.46,0.46,0.46};
+    parameter Real obstacleX[nObstacles]={4.35,2.1,5.2,2.1,5.2};
+    parameter Real obstacleZ[nObstacles]={0,-3.2,-3.2,3.2,3.2};
+    parameter Real obstacleHalfX[nObstacles]={0.45,1.25,1.25,1.25,1.25};
+    parameter Real obstacleHalfZ[nObstacles]={1.27,0.46,0.46,0.46,0.46};
+    // @realityloop-scene-end
     parameter Real contactRadius = 0.44 "Conservative circular robot contact approximation";
     parameter Real collisionStiffness = 14000 "Normal penetration stiffness [N/m]";
     parameter Real collisionDamping = 2100 "Normal approach damping [N.s/m]";
@@ -171,7 +200,10 @@ package RealityLoopContacts
     Real targetZ;
     Real distanceToWaypoint;
     Real headingError;
+    Real pathPreviewZ;
     Real targetSteer;
+    Real futureZ;
+    Real laneSteer;
     Real steerRate;
     Real speedTarget;
     Real appliedTorque;
@@ -198,15 +230,29 @@ package RealityLoopContacts
     LongitudinalStickSlip contact(muStatic = muStatic, muKinetic = muKinetic);
   equation
     targetX = if detourRoute < 0.5 then 7.5
-      else if waypoint == 1 then 2.3
-      else if waypoint == 2 then 5.9 else 7.5;
+      else if useSmoothReference > 0.5 then 7.5
+      else if waypoint == 1 then approachX
+      else if waypoint == 2 then corridorEntryX
+      else if waypoint == 3 then corridorExitX else 7.5;
     targetZ = if detourRoute < 0.5 then 0
-      else if waypoint == 1 then detourZ
-      else if waypoint == 2 then detourZ else 0;
+      else if useSmoothReference > 0.5 then 0
+      else if waypoint == 1 then approachZ
+      else if waypoint == 2 then detourZ
+      else if waypoint == 3 then detourZ else 0;
     distanceToWaypoint = sqrt((targetX - x)^2 + (targetZ - z)^2);
-    headingError = atan2(sin(atan2(-(targetZ - z), targetX - x) - yaw),
-      cos(atan2(-(targetZ - z), targetX - x) - yaw));
-    targetSteer = max(-0.78, min(0.78, steeringGain*headingError - yawFeedback*yawRate));
+    pathPreviewZ = SmoothCorridorZ(x + previewDistance,
+      detourZ, riseEnd, fallStart, fallEnd);
+    headingError = if detourRoute > 0.5 and useSmoothReference > 0.5
+      then atan2(sin(atan2(-(pathPreviewZ-z),previewDistance)-yaw),
+                 cos(atan2(-(pathPreviewZ-z),previewDistance)-yaw))
+      else atan2(sin(atan2(-(targetZ-z),targetX-x)-yaw),
+                 cos(atan2(-(targetZ-z),targetX-x)-yaw));
+    futureZ = z - laneLookahead*v*sin(yaw);
+    laneSteer = if useSmoothReference < 0.5 and detourRoute > 0.5
+      and waypoint >= 2 and waypoint < 4
+      then laneFeedback*(futureZ-detourZ) else 0;
+    targetSteer = max(-0.78,min(0.78,
+      steeringGain*headingError-yawFeedback*yawRate+laneSteer));
     steerRate = (targetSteer - steer)/0.17;
     der(steer) = steerRate;
     speedTarget = maximumSpeed*min(1, distanceToWaypoint/0.9)*
@@ -271,6 +317,9 @@ package RealityLoopContacts
     elsewhen detourRoute > 0.5 and pre(waypoint) == 2 and
       distanceToWaypoint < waypointRadius then
       waypoint = 3;
+    elsewhen detourRoute > 0.5 and pre(waypoint) == 3 and
+      distanceToWaypoint < waypointRadius then
+      waypoint = 4;
     end when;
 
     annotation(experiment(StartTime=0, StopTime=20, Interval=0.05,

@@ -1,6 +1,7 @@
 import modelicaSource from '../modelica/RealityLoopContacts.mo?raw'
 import rumocaWasmUrl from '../node_modules/@taskyon/rumoca/rumoca_bind_wasm_bg.wasm?url'
 import { supermarketModelicaScenario, toSupermarketReplay, type SupermarketRoute } from '../src/modelica/supermarket.ts'
+import { withModelicaScene } from '../src/modelica/scene.ts'
 
 type Runner = Awaited<ReturnType<typeof import('../src/modelica/runtime.ts').createModelicaRunner>>
 let runnerPromise: Promise<Runner> | undefined
@@ -18,5 +19,6 @@ const getRunner = (): Promise<Runner> => {
 
 export const runModelicaSupermarket = async (route: SupermarketRoute) => {
   const runner = await getRunner()
-  return toSupermarketReplay(runner.simulate(modelicaSource, supermarketModelicaScenario(route)))
+  return toSupermarketReplay(runner.simulate(
+    withModelicaScene(modelicaSource), supermarketModelicaScenario(route)))
 }

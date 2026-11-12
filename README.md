@@ -11,11 +11,11 @@ npm run check && npm test
 npm run build && npm run build:web
 ```
 
-The supermarket viewer defaults to a compiled Rumoca/Modelica plant. It also offers a legacy Rapier physics comparison. The Modelica plant integrates chassis motion, front-wheel steering and static/kinetic slip, with **all five shelf/aisle rectangles as physical contact obstacles**. Collision is an analytic circular-footprint/box penalty model, not general 3D manifold contact. The current fixed detour can still scrape shelves (up to approximately 0.16 m of compliant overlap in the current test)—**it does not yet meet collision-clearance safety criteria**.
+The supermarket viewer defaults to a compiled Rumoca/Modelica plant and offers legacy Rapier as an opt-in comparison. Modelica integrates planar chassis motion, steering and longitudinal stick/slip, with all five shelf/aisle rectangles participating in contact. The smooth corridor controller reaches the goal in **14.8 s simulated time** with **~0.18 m projected swept clearance** using the Tennant reference rectangle (1.651 × 0.889 m). Replay acceptance requires a goal arrival, negligible analytic penetration and **at least 0.10 m swept-footprint clearance**. This remains a planar geometry/vehicle approximation, not a real-world safety certification.
 
 The sensor visualization now includes **five multi-elevation 3D LiDAR point clouds**, 2D occupancy mapping with **PCL.js WASM ICP** scan registration, a rendered front RGB camera, synthetic IMU readings and wheel-encoder samples. Rear RGB and front depth streams have timestamped frame/calibration *metadata*, but **no real depth image or rear RGB pixels yet**. The localization system is a 2D scan-registration/odometry front end with occupancy mapping, not a full 3D SLAM/loop-closure engine. Sensor placements are illustrative rather than Tennant-sourced.
 
-![RealityLoop 3D LiDAR and PCL ICP preview](docs/realityloop-3d-lidar-pcl-preview.png)
+![RealityLoop safe corridor with LiDAR, ICP localization and clearance telemetry](docs/realityloop-safe-corridor-preview.png)
 
 ### Independent MuJoCo collision-only WASM reference
 
@@ -37,11 +37,11 @@ npm run sim -- scenarios/modelica-wheel-breakaway.json runs/contact
 npm run sim -- scenarios/tennant-detour.json runs/rapier-detour
 ```
 
-Results are machine-readable, include model and runtime identity and are checked with actual compiler-produced observations. The browser also has a separate Modelica wheel-slip comparison at `/drive-lab.html`.
+The JSON run results include a checked minimum swept clearance, nearest obstacle, sample count, simulated arrival time and explicit failure reason. The clearance checker uses conservative separating-axis tests of an oriented rectangular body and densifies solver poses. Browser visualization runs without integration-side collision code. The independent wheel-slip comparison is at `/drive-lab.html`.
 
 ## Known limitations and priorities
 
-1. **Priority 1:** route clearance, physical collision normals and penetration reduction; the current planar model is an approximation.
+1. **Next fidelity step:** improve physical contact normals/constraints, turn-swept envelope and calibrated vehicle geometry; the planar clearance result does not replace 3D collision or real-robot tests.
 2. **Priority 2:** general-purpose Rumoca external-C ABI + native/WASM symbol resolution, then make MuJoCo/Rapier contact queries replaceable Modelica packages without double integration.
 3. **Priority 3:** robust 3D SLAM/pose graph and loop closure, realistic RGB/depth camera outputs, calibrated sensor timing/noise/bias, and IMU-wheel-LiDAR fusion.
 4. **Later:** accurate Tennant drivetrain/tire calibration, responsive sensor-based navigation, additional safety checks and BrainOS/ROS adapters.

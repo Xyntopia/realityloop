@@ -9,3 +9,8 @@ export {
   parseTennantScenario, tennantScenarioSchema, runTennantScenario, t7amr,
   type TennantScenario, type TennantResult, type TennantSample,
 } from './tennant.ts'
+export { referenceFootprint } from './geometry.ts'
+export {
+  signedFootprintClearance, clearanceAtPose, checkSweptClearance,
+  type ClearanceReport, type ClearanceReading,
+} from './clearance.ts'

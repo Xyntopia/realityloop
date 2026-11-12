@@ -1,4 +1,4 @@
-import { supermarketObstacles, type Obstacle } from './cleaning.ts'
+import { supermarketObstacles, type Obstacle } from './geometry.ts'
 import { lidars, sensorOrigin, type Pose2D } from './slam.ts'
 
 /**

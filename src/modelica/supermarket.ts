@@ -1,5 +1,7 @@
 import type { ModelicaResult, ModelicaScenario } from './runtime.ts'
 import { parseModelicaScenario } from './runtime.ts'
+import { checkSweptClearance } from '../clearance.ts'
+import { supermarketObstacles, type Obstacle } from '../geometry.ts'
 
 export type SupermarketRoute = 'blocked' | 'detour'
 
@@ -37,6 +39,12 @@ export type SupermarketReplay = {
   engine: { name: 'rumoca-wasm'; version: string; commit: string; model: string }
   result: {
     passed: boolean
+    failureReason: 'goalNotReached' | 'unsafeClearance' | null
+    minimumSweptClearanceMetres: number
+    requiredClearanceMetres: number
+    nearestObstacleId: string | null
+    clearanceSamplesChecked: number
+    arrivalTimeSeconds: number | null
     goalReached: boolean
     goalDistanceMetres: number
     cleanedAreaSqMetres: number
@@ -53,7 +61,10 @@ export type SupermarketReplay = {
  * Never integrates, re-solves or overrides the Modelica state.
  * Floor coverage is a post-processed, sampled footprint proxy.
  */
-export const toSupermarketReplay = (model: ModelicaResult): SupermarketReplay => {
+export const toSupermarketReplay = (
+  model: ModelicaResult,
+  obstacles: readonly Obstacle[] = supermarketObstacles,
+): SupermarketReplay => {
   if (!['RealityLoopContacts.SupermarketRobot', 'RealityLoopContacts.SupermarketBlocked'].includes(
     model.scenario.model,
   )) throw Error('Not a RealityLoop Modelica supermarket scenario')
@@ -108,12 +119,16 @@ export const toSupermarketReplay = (model: ModelicaResult): SupermarketReplay =>
   })
   const last = observations.at(-1)
   if (!last) throw Error('No Modelica supermarket observations')
+  const swept = checkSweptClearance(observations, obstacles)
+  const requiredClearanceMetres = 0.10
+  const clearanceSafe = swept.clearanceMetres >= requiredClearanceMetres && maxPenetration <= 1e-6
+  const passed = goalReached && clearanceSafe
   return {
     scenario: {
       name: model.scenario.name,
       route,
       timestepSeconds: model.scenario.intervalSeconds,
-      steps: model.observations.length,
+      steps: observations.length,
     },
     engine: {
       name: 'rumoca-wasm',
@@ -122,8 +137,14 @@ export const toSupermarketReplay = (model: ModelicaResult): SupermarketReplay =>
       model: model.scenario.model,
     },
     result: {
-      passed: goalReached,
+      passed,
       goalReached,
+      failureReason: !goalReached ? 'goalNotReached' : !clearanceSafe ? 'unsafeClearance' : null,
+      minimumSweptClearanceMetres: swept.clearanceMetres,
+      requiredClearanceMetres,
+      nearestObstacleId: swept.obstacleId,
+      clearanceSamplesChecked: swept.samplesChecked,
+      arrivalTimeSeconds: goalReached ? last.timeSeconds : null,
       goalDistanceMetres: Math.hypot(7.5 - last.x, last.z),
       cleanedAreaSqMetres: last.cleanedAreaSqMetres,
       maximumAbsSlipMetresPerSecond: maxSlip,

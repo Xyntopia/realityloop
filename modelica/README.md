@@ -5,7 +5,7 @@
 - `LongitudinalStickSlip`: 1D static/kinetic Coulomb contact, modes 0 (stick), +1/-1 (forward/reverse slip), breakaway and resticking
 - `WheelBench`: simple torque-pulse wheel reaction test
 - `TennantStickSlip`: front-steered open-loop drive plant
-- `SupermarketRobot`: Rumoca-authoritative planar drive, waypoint controller, **five** fixed supermarket rectangular collision fixtures, circular contact footprint and compliant penalty contact force
+- `SupermarketRobot`: Rumoca-authoritative planar drive, smooth corridor lookahead controller (legacy waypoints optional), five fixed supermarket box fixtures, circular contact-force proxy and Coulomb traction
 - `SupermarketBlocked`: same dynamics with direct blocked route
 - `SupermarketShelfProbe`: regression fixture deliberately approaching the south shelf
 
@@ -17,4 +17,4 @@ npm run sim -- scenarios/modelica-supermarket-blocked.json runs/blocked # expect
 npm test
 ```
 
-The current route intersects the newly physical shelves (compliant penetration ~0.16 m); future collision-avoidance must keep an explicit clearance margin. A positive contact force is **not** proof of a safe trajectory. Current friction and steering parameters are illustrative, not calibrated to Tennant data. Full 3D rigid-body contact, lateral tire friction and multi-body normal loads remain future work.
+The current default detour reaches the goal in ~14.8 s, without analytic contact-force activation, and clears all five obstacles by at least ~0.18 m under a conservative oriented rectangle (reference dimensions 1.651 × 0.889 m), including interpolated samples. A **0.10 m minimum projected clearance** and zero analytic penetration are machine-enforced gates. `src/geometry.ts` supplies the scene, and `src/modelica/scene.ts` generates Modelica parameters from it for Node and browser runs; the `.mo` file retains a directly runnable default layout. Vehicle dynamics, lateral contact, obstacle shapes and contact constraints are still simplified, uncalibrated research fixtures, NOT a real-world safety guarantee.

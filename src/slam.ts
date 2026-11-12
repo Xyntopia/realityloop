@@ -1,4 +1,4 @@
-import { supermarketObstacles, type Obstacle } from './cleaning.ts'
+import { supermarketObstacles, type Obstacle } from './geometry.ts'
 
 export type Pose2D = { x: number; z: number; yaw: number }
 export type LidarSpec = {

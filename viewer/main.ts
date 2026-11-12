@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
-import { supermarketObstacles } from '../src/cleaning.ts'
+import { supermarketObstacles } from '../src/geometry.ts'
 import type { TennantResult, TennantScenario } from '../src/tennant.ts'
 import type { SupermarketReplay } from '../src/modelica/supermarket.ts'
 import { createTennantT7AMR } from './tennant.ts'
@@ -160,6 +160,8 @@ const displaySample=(i:number)=>{
   elem('velocity').textContent=format(sample.speed)+' m/s'
   elem('coverage').textContent=format(sample.cleanedAreaSqMetres)+' m²'
   elem('slip-l').textContent=format(sample.driveWheelSlip)+' m/s'
+  elem('clearance').textContent='minimumSweptClearanceMetres' in result.result
+    ? format(result.result.minimumSweptClearanceMetres)+' m' : '—'
   const contactMode='contactMode' in sample ? sample.contactMode : undefined
   elem('slip-r').textContent=contactMode===undefined
     ? format(sample.lateralSlip)+' m/s'
@@ -191,7 +193,9 @@ const render=(now:number)=>{
     if(index!==sampleIndex){sampleIndex=index;displaySample(index)}
     if(index===result.observations.length-1){
       playing=false;elem('play').textContent='Play'
-      setStatus(result.result.passed?'COMPLETE · GOAL REACHED':'FAILED · ROUTE BLOCKED')
+      setStatus(result.result.passed?'COMPLETE · GOAL REACHED':
+        'failureReason' in result.result && result.result.failureReason==='unsafeClearance'
+          ? 'FAILED · UNSAFE CLEARANCE' : 'FAILED · ROUTE BLOCKED')
     }
   }
   controls.update()

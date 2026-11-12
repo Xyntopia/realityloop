@@ -1,5 +1,5 @@
 import loadMuJoCo from '@mujoco/mujoco'
-import { supermarketObstacles, type Obstacle } from './cleaning.ts'
+import { supermarketObstacles, type Obstacle } from './geometry.ts'
 import type { Pose2D } from './slam.ts'
 
 export type CollisionContact = {
