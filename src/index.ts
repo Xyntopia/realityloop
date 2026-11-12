@@ -17,3 +17,5 @@ export {
 export { realityLoopExamples, getRealityLoopExample, type RealityLoopExample } from './examples.ts'
 export { runDagExperiment, createExecutionLock, type DagExperimentResult } from './dag.ts'
 export { verifyDagReplay } from './dag-verify.ts'
+export { exportDagVideo, resolveRecordedRun, type VideoManifest, type VideoExportResult } from './video-export.ts'
+export { prepareVideoTrack, renderVideoFrame, type VideoSettings, type VideoTrack } from './video-render.ts'

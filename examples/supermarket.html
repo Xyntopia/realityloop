@@ -11,6 +11,7 @@
   <label for="route">Route strategy</label><select id="route"><option value="detour">Detour · reach destination</option><option value="blocked">Blocked · regression</option></select>
   <div class="button-row"><button id="play">Pause</button><button id="replay" class="secondary">Replay</button></div>
   <div class="control-row"><label for="speed">Playback speed</label><select id="speed"><option value="1">1×</option><option value="2">2×</option><option value="4" selected>4×</option><option value="8">8×</option></select></div>
+  <div class="control-row"><label for="visual-quality">Graphics</label><select id="visual-quality"><option value="auto" selected>Auto</option><option value="high">High PBR</option><option value="balanced">Balanced</option><option value="performance">Performance</option></select></div>
   <div class="control-row"><span>Camera</span><button id="camera" class="mini">Top view</button></div>
   <div class="legend"><div><span class="swatch trail"></span>Cleaning footprint proxy</div><div><span class="swatch path"></span>Recorded robot path</div><div><span class="swatch blocked"></span>Blocking fixture</div></div>
 </aside>
@@ -33,6 +34,6 @@
   </div>
   <p class="disclaimer">Research example, not a validated Tennant digital twin. LiDAR and IMU are synthetic; PCL ICP is scan registration, not full SLAM. The default supermarket Modelica model uses analytic contact geometry, not MuJoCo.</p>
 </aside>
-<footer class="footer-bar"><span><span class="live-dot"></span> <span id="engine-label">RUMOCA MODELICA · COMPILER-DRIVEN REPLAY</span></span><span id="frame">FRAME —</span></footer>
+<footer class="footer-bar"><span><span class="live-dot"></span> <span id="engine-label">RUMOCA MODELICA · COMPILER-DRIVEN REPLAY</span></span><span id="render-stats">PBR · INITIALIZING</span><span id="frame">FRAME —</span></footer>
 <script type="module" src="/viewer/main.ts"></script>
 </body></html>

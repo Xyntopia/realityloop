@@ -18,7 +18,7 @@ export const realityLoopExamples: readonly RealityLoopExample[] = [
     category: 'simulation',
     description: 'A Tennant-inspired cleaning robot navigates a supermarket with Modelica contacts, LiDAR, localization and clearance checks.',
     viewerPath: '/examples/supermarket.html',
-    previewImage: '/docs/realityloop-safe-corridor-preview.png',
+    previewImage: '/docs/realityloop-pbr-supermarket-preview.jpg',
     headlessScenarios: [
       'scenarios/modelica-supermarket-detour.json',
       'scenarios/modelica-supermarket-blocked.json',

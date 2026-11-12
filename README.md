@@ -14,7 +14,7 @@ npm run sim -- verify "$INVOCATION_ID" runs/.dag  # separate uncached replay pro
 npm run check && npm test && npm run build && npm run build:web
 ```
 
-The root page lists independent examples: supermarket cleaning and wheel traction. The supermarket is available at `/examples/supermarket.html` and the traction comparison at `/drive-lab.html`; neither is the definition of RealityLoop.
+The root page lists independent examples: supermarket cleaning and wheel traction. Start the Vite test server with `npm run dev -- --port 5174` (local only) and open `http://localhost:5174/`. The supermarket is at `/examples/supermarket.html` and the traction lab at `/drive-lab.html`; neither is the definition of RealityLoop. Use `npm run dev -- --host 0.0.0.0 --port 5174` only on a trusted network.
 
 ## Design Graph is mandatory; P2P is optional
 
@@ -42,7 +42,24 @@ The Tennant T7AMR-inspired vehicle is **not** a manufacturer model or validated 
 
 Five synthetic 3D LiDAR point clouds feed a PCL.js WASM ICP scan-registration/2D occupancy demonstrator. The example also renders a front RGB camera and produces IMU/encoder samples; rear RGB and depth streams currently contain metadata rather than image pixels. This is **not** full SLAM with loop closure. Sensor positions and noise are not Tennant-calibrated.
 
-![RealityLoop supermarket example](docs/realityloop-safe-corridor-preview.png)
+**PBR visualization:** The supermarket browser viewer now renders a supermarket interior inspired by actual grocery aisle photography: tiled polished floor, reflective steel shelf fixtures, dense instanced product packaging, hanging linear LEDs, category boards, acoustic-tile ceiling and cutaway walls. The 480 illustrative products and architectural meshes are *render-only*, never additional collision or LiDAR surfaces. A one-time low-resolution reflection panorama avoids per-frame render probes. Graphics: **Auto / High PBR / Balanced / Performance**; Auto selects the lower-cost path on software WebGL and downshifts on sustained low FPS. The footer shows FPS, draw calls and product count. Headless software rendering was measured near 4 FPS at 800×520 in Chromium; this is **not** representative of real GPU performance, which remains to be measured. The reconstruction is inspired by supermarket photos, not a photogrammetric or dimensionally accurate reconstruction.
+
+![RealityLoop PBR supermarket prototype](docs/realityloop-pbr-supermarket-preview.jpg)
+
+## Offline H.264 video export (no browser)
+
+`RealityLoop.OfflineVideo` is a **derived Taskyon DAG node**. It consumes an existing recorded `RealityLoop.Simulation` artifact, renders RGB frames in Node.js and streams them directly into FFmpeg. It never reruns Modelica and does not require Chromium, WebGL, Taskyon services or P2P. The output is a **diagnostic 2D top-down trajectory video** for spatial runs or a numeric time-series video for non-spatial experiments; it does *not* yet render the Three.js PBR scene. Video bytes are stored content-addressed under `runs/.dag/media/`, with a canonical video invocation/run and a manifest artifact documenting the codec, encoder version, source invocation, source trajectory hash and renderer hash.
+
+```sh
+npm run sim -- scenarios/modelica-supermarket-detour.json runs/detour
+INVOCATION_ID=$(node -p "require('./runs/detour/run-integrity.json').dag.invocationId")
+# FFmpeg must be available on PATH (or pass --ffmpeg /path/to/ffmpeg):
+npm run video -- "$INVOCATION_ID" runs/detour.mp4 --fps 15 --size 960x540
+# On NixOS if ffmpeg is not installed:
+nix shell nixpkgs#ffmpeg -c npm run video -- "$INVOCATION_ID" runs/detour.mp4
+```
+
+An optional end-to-end test exercises actual H.264 encoding with `REALITYLOOP_TEST_FFMPEG=/path/to/ffmpeg npm test`. Source video/artifact integrity is checked independently of the physics simulation.
 
 ## MuJoCo / Modelica status
 
@@ -52,6 +69,6 @@ Official `@mujoco/mujoco@4.0.1` WASM separately supports `mj_kinematics` + `mj_c
 
 ## Next steps
 
-Package `@taskyon/comp-dag` as a stable, independently versioned consumer library instead of the pinned bundle; persist browser run records; make all generated scenes, assets, controllers and sensor calibrations explicit source-locked graph inputs; implement an optional **P2P transport/import adapter** to an authorized Taskyon Space without requiring P2P during simulation; and add offline video rendering as a derived graph node (not by rerunning physics). Physical fidelity, complete 3D collision and proper SLAM/pose graph remain separate tasks.
+Package `@taskyon/comp-dag` as a stable, independently versioned consumer library instead of the pinned bundle; persist browser run records; make generated scenes, assets, controllers and sensor calibrations explicit source-locked graph inputs; optionally publish artifacts into a user-authorized Taskyon Space; and add an optional GPU/PBR-capable offline frame renderer while keeping the current browser-free diagnostic renderer. Physical fidelity, complete 3D collision, robust GPU performance and proper SLAM/pose graph remain separate tasks.
 
 RealityLoop is an independent Git submodule. No changes are pushed automatically. The parent workspace holds the requirements in `../SYSTEM_DEFINITION.csv` and `../proposals/realityloop-simulator-v071.md`.

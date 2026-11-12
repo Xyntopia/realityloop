@@ -23,8 +23,49 @@ const main = async () => {
     process.stdout.write(JSON.stringify(verified, null, 2) + '\n')
     return
   }
+  if (input === 'video') {
+    const [id, output, ...flags] = process.argv.slice(3)
+    if (!id || !/^sha256:[A-Za-z0-9_-]{43}$/.test(id) || !output) {
+      throw Error('Usage: realityloop video <invocation-id> <output.mp4> [--fps 15] [--size 960x540] [--store runs/.dag] [--ffmpeg /path/to/ffmpeg]')
+    }
+    const argumentsByName = new Map<string,string>()
+    for (let i=0;i<flags.length;i+=2) {
+      const key=flags[i], value=flags[i+1]
+      if (!key || !['--fps','--size','--store','--ffmpeg'].includes(key) || !value) {
+        throw Error('Invalid video argument '+String(key))
+      }
+      if (argumentsByName.has(key)) throw Error('Duplicate video argument '+key)
+      argumentsByName.set(key,value)
+    }
+    const size=argumentsByName.get('--size')??'960x540'
+    if (!/^[0-9]+x[0-9]+$/.test(size)) throw Error('Invalid video size, expected WIDTHxHEIGHT')
+    const [width,height]=size.split('x').map(Number)
+    const fps=Number(argumentsByName.get('--fps')??'15')
+    const {exportDagVideo}=await import('./video-export.ts')
+    const {manifest,manifestArtifactId,videoInvocationId,invocationRunId,outputPath}=await exportDagVideo(
+      id as `sha256:${string}`,{
+        outputPath:output,
+        settings:{fps,width:width!,height:height!},
+        ...(argumentsByName.has('--ffmpeg')?{ffmpeg:argumentsByName.get('--ffmpeg')}:{}),
+        ...(argumentsByName.has('--store')?{storageDirectory:argumentsByName.get('--store')}:{}),
+      },
+    )
+    process.stdout.write(JSON.stringify({
+      output:outputPath,
+      videoSha256:manifest.mediaSha256,
+      manifestArtifactId,
+      videoInvocationId,
+      videoRunId:invocationRunId,
+      sourceInvocationId:manifest.sourceInvocationId,
+      frames:manifest.frameCount,
+      resolution:manifest.width+'x'+manifest.height,
+      fps:manifest.fps,
+      durationSeconds:manifest.durationSeconds,
+    },null,2)+'\n')
+    return
+  }
   if (!input) {
-    throw new Error('Usage: realityloop <scenario.json> [output-directory] | realityloop examples | realityloop verify <invocation-id> [store-directory]')
+    throw new Error('Usage: realityloop <scenario.json> [output-directory] | realityloop examples | realityloop verify <invocation-id> [store-directory] | realityloop video <invocation-id> <output.mp4>')
   }
   const bytes = await readFile(resolve(input))
   const raw: unknown = JSON.parse(bytes.toString('utf8'))

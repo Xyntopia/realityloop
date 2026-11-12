@@ -16,6 +16,8 @@ Node uses `createNode`, `call(params).run({…},{execution:{mode:'local'},storag
 
 The headless v2 execution lock fingerprints the entire `src/` implementation tree, dependency lockfile, Modelica source, Rumoca WASM and canonical DAG bundle, plus Node runtime identity. Repeated invocations reuse stored artifacts; corrupt artifacts fail checksum checks; changed inputs or source produce new invocation IDs. `realityloop verify <invocation-id> [store-dir]` re-executes the recorded invocation through the **same Taskyon DAG in a fresh, uncached store** and verifies trajectory, metrics and observations hashes. This distinguishes true replay verification from simply loading a cache hit. Single-writer local storage only; a concurrency-safe backend remains future work.
 
+**Derived video artifacts:** `RealityLoop.RecordedSimulation → RealityLoop.OfflineVideo` reads the immutable simulation artifact from the same local Taskyon store, produces a browser-free FFmpeg H.264 file, and publishes a SHA-256-named media blob, a video manifest artifact and a canonical video invocation/run/project revision. The media manifest stores the source invocation/run/artifact and renderer/encoder identity. Video generation does not step physics. Browser PBR video export remains future work; the current video is a reproducible diagnostic trajectory/series view.
+
 ## Optional Taskyon UI and P2P — **not yet implemented**
 
 P2P is a **transport/synchronization choice**, not a simulation or graph dependency. Later an explicitly authorized user can expose these Taskyon-format artifacts, run and project records over P2P or another permitted transport and render them in Taskyon. There is no active Taskyon UI integration or automatic Space import today.
