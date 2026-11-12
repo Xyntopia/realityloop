@@ -1,8 +1,8 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { supermarketObstacles } from '../src/cleaning.ts'
-import { parseTennantScenario, runTennantScenario } from '../src/tennant.ts'
 import type { TennantResult, TennantScenario } from '../src/tennant.ts'
+import type { SupermarketReplay } from '../src/modelica/supermarket.ts'
 import { createTennantT7AMR } from './tennant.ts'
 import { SlamView } from './slam-view.ts'
 import './style.css'
@@ -112,7 +112,7 @@ const base:Omit<TennantScenario,'route'|'name'>={
   vehicle:'tennant-t7amr',
   timestepSeconds:1/120,steps:7200,frictionCoefficient:0.72,seed:42,
 }
-let result:TennantResult|null=null
+let result: TennantResult | SupermarketReplay | null = null
 let sampleIndex=0
 let lastPaintedSample=-1
 let playing=true
@@ -130,11 +130,21 @@ const resetVisual=()=>{
 const run=async(route:'blocked'|'detour')=>{
   const current=++generation
   playing=false;elem('play').textContent='Play'
-  setStatus('Computing deterministic physics…')
+  const engine=(elem('engine') as HTMLSelectElement).value
+  result=null
+  resetVisual()
+  setStatus(engine==='modelica'?'Compiling & integrating Modelica physics…':'Computing legacy Rapier physics…')
   try{
-    const next=await runTennantScenario(parseTennantScenario({...base,route,name:'tennant-t7amr-'+route}))
+    const next=engine==='modelica'
+      ? await import('./modelica-supermarket.ts').then(m=>m.runModelicaSupermarket(route))
+      : await import('../src/tennant.ts').then(m=>m.runTennantScenario(
+          m.parseTennantScenario({...base,route,name:'tennant-t7amr-'+route})))
     if(current!==generation)return
     result=next;resetVisual();playing=true;elem('play').textContent='Pause'
+    elem('engine-label').textContent=engine==='modelica'
+      ? 'RUMOCA MODELICA · COMPILER-DRIVEN REPLAY'
+      : 'RAPIER WASM · LEGACY COMPARISON REPLAY'
+    elem('secondary-label').textContent=engine==='modelica'?'Contact mode':'Lateral slip'
     setStatus('SIMULATING · '+(route==='detour'?'DETOUR':'BLOCKED ROUTE'))
   }catch(e){setStatus('Error: '+String(e))}
 }
@@ -150,7 +160,10 @@ const displaySample=(i:number)=>{
   elem('velocity').textContent=format(sample.speed)+' m/s'
   elem('coverage').textContent=format(sample.cleanedAreaSqMetres)+' m²'
   elem('slip-l').textContent=format(sample.driveWheelSlip)+' m/s'
-  elem('slip-r').textContent=format(sample.lateralSlip)+' m/s'
+  const contactMode='contactMode' in sample ? sample.contactMode : undefined
+  elem('slip-r').textContent=contactMode===undefined
+    ? format(sample.lateralSlip)+' m/s'
+    : contactMode===0?'STICK':contactMode>0?'SLIDE +':'SLIDE −'
   elem('frame').textContent='SAMPLE '+(i+1)+' / '+result.observations.length
   trailGeometry.setFromPoints(result.observations.slice(0,i+1).map(p=>new THREE.Vector3(p.x,0.04,p.z)))
   for(let k=lastPaintedSample+1;k<=i;k++){
@@ -164,7 +177,16 @@ const render=(now:number)=>{
   const delta=Math.min((now-lastFrameTime)/1000,0.5);lastFrameTime=now
   if(result&&playing){
     elapsedPlayback+=delta*Number((elem('speed') as HTMLSelectElement).value)
-    const index=Math.min(result.observations.length-1,Math.floor(elapsedPlayback/(result.scenario.timestepSeconds*10)))
+    // Binary search by the actual solver time. Rumoca adds event-state samples,
+    // so a fixed-index/step extrapolation silently loses temporal accuracy.
+    const samples=result.observations
+    let lo=0,hi=samples.length-1
+    while(lo<hi){
+      const mid=Math.ceil((lo+hi)/2)
+      if(samples[mid].timeSeconds<=elapsedPlayback)lo=mid
+      else hi=mid-1
+    }
+    const index=lo
     if(index!==sampleIndex){sampleIndex=index;displaySample(index)}
     if(index===result.observations.length-1){
       playing=false;elem('play').textContent='Play'
@@ -181,6 +203,7 @@ elem('play').addEventListener('click',()=>{
   playing=!playing;elem('play').textContent=playing?'Pause':'Play'
 })
 elem('replay').addEventListener('click',()=>{if(!result)return;resetVisual();displaySample(0);playing=true;elem('play').textContent='Pause';setStatus('REPLAYING · RECORDED TRACE')})
+elem('engine').addEventListener('change',()=>void run((elem('route') as HTMLSelectElement).value as 'blocked'|'detour'))
 elem('route').addEventListener('change',()=>void run((elem('route') as HTMLSelectElement).value as 'blocked'|'detour'))
 elem('lidar-toggle').addEventListener('click',()=>{const visible=slamView.toggleRays();elem('lidar-toggle').textContent=visible?'Hide rays':'Show rays'})
 let topView=false

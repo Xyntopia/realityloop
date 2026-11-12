@@ -7,6 +7,8 @@ export const modelicaScenarioSchema = z.object({
   model: z.enum([
     'RealityLoopContacts.TennantStickSlip',
     'RealityLoopContacts.WheelBench',
+    'RealityLoopContacts.SupermarketRobot',
+    'RealityLoopContacts.SupermarketBlocked',
     'TennantFrontSteerSlip',
     'DifferentialDriveSlip',
   ]),
@@ -16,6 +18,8 @@ export const modelicaScenarioSchema = z.object({
   motorTorqueNewtonMetres: z.number().finite().min(-600).max(600),
 }).strict().refine(s => s.durationSeconds / s.intervalSeconds <= 2000, {
   message: 'Modelica experiment exceeds the 2000-interval observation limit',
+}).refine(s => !['RealityLoopContacts.SupermarketRobot', 'RealityLoopContacts.SupermarketBlocked'].includes(s.model) || s.motorTorqueNewtonMetres > 0, {
+  message: 'Supermarket motorLimit must be positive',
 })
 export type ModelicaScenario = z.infer<typeof modelicaScenarioSchema>
 export const parseModelicaScenario = (value: unknown): ModelicaScenario =>
@@ -36,6 +40,9 @@ export const modelicaSourceFile = (model: ModelicaScenario['model']): string =>
 
 const makeOverrides = (scenario: ModelicaScenario): Record<string, number> => {
   switch (scenario.model) {
+    case 'RealityLoopContacts.SupermarketRobot':
+    case 'RealityLoopContacts.SupermarketBlocked':
+      return { muStatic: scenario.frictionCoefficient, motorLimit: scenario.motorTorqueNewtonMetres }
     case 'RealityLoopContacts.TennantStickSlip':
       return { muStatic: scenario.frictionCoefficient, motorTorque: scenario.motorTorqueNewtonMetres }
     case 'RealityLoopContacts.WheelBench':

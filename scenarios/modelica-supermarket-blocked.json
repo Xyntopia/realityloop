@@ -1,0 +1,9 @@
+{
+  "name": "realityloop-supermarket-modelica-blocked",
+  "kind": "modelica",
+  "model": "RealityLoopContacts.SupermarketBlocked",
+  "durationSeconds": 20,
+  "intervalSeconds": 0.05,
+  "frictionCoefficient": 0.72,
+  "motorTorqueNewtonMetres": 135
+}

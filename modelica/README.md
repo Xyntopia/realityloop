@@ -1,24 +1,25 @@
-# RealityLoop physical contact models
+# RealityLoop Modelica physics
 
-## Reusable static/kinetic wheel contact
+The pinned Rumoca WASM runtime directly compiles and executes `RealityLoopContacts.mo` containing:
 
-`RealityLoopContacts.mo` contains:
-- `LongitudinalStickSlip`: Modelica component accepting contact slip velocity, a *required no-slip reaction force* derived from coupled mass/inertia, and a normal load. Outputs signed contact traction and a discrete state: **0 sticking, +1 forward sliding, -1 backward sliding**.
-- `WheelBench`: minimal wheel/body benchmark, including torque pulse and breakaway/re-sticking events.
-- `TennantStickSlip`: front-steered planar drive with steering lag, wheel inertia, chassis/yaw states and the same contact component; its parameters are estimates, not Tennant specifications.
+- `LongitudinalStickSlip`: reusable 1D hybrid static/kinetic Coulomb contact; `mode = 0` stick, `+1` forward slide, `-1` reverse slide. Breakaway occurs above `μ_static N`; the sliding branch uses `μ_kinetic N`; return to stick occurs when relative velocity crosses a small threshold.
+- `WheelBench`: derived contact-force/torque test with a motor pulse and measured re-stick behavior.
+- `TennantStickSlip`: open-loop front-steered drive plant with nominal mass/inertia, not a manufacturer-calibrated model.
+- `SupermarketRobot`: **default browser simulator**, with front-wheel drive, waypoint steering, chassis planar dynamics and a single round-body versus rectangular-obstacle penalty contact.
+- `SupermarketBlocked`: the same compiled model, structurally configured to target a blocked direct route.
 
-For a wheel radius `r`, wheel inertia `J`, body mass `m`, applied torque `τ`, and other external body force `F_ext`, the benchmark derives the no-slip reaction from `d(rω-v)/dt = 0`:
+For the wheel bench, the no-slip traction reaction satisfying `d(rω-v)/dt = 0` is:
 
 `F_required = (r τ / J - F_ext/m) / (r²/J + 1/m)`
 
-When `|F_required| <= μ_static N`, the traction force is `F_required`, giving zero slip acceleration; otherwise it uses the signed kinetic limit `μ_kinetic N`. Recovery to sticking occurs as relative speed returns to zero within `1e-6 m/s`. This is a hybrid acceleration-level contact law, not a complete contact/constraint solver.
+The supermarket model extends this force balance to include yaw and front-wheel steering. The blocker uses a force opposing penetration and approach velocity. No Rapier dynamics are called in those models. The fixed target/waypoint controller and one-obstacle contact approximation are deliberately narrow; they are not full multibody physics.
 
 ```sh
-npm run sim -- scenarios/modelica-wheel-breakaway.json runs/contact
-npm run sim -- scenarios/modelica-tennant-stick-slip.json runs/tennant-grip
+npm run sim -- scenarios/modelica-supermarket-detour.json runs/detour
+npm run sim -- scenarios/modelica-supermarket-blocked.json runs/blocked # expected exit 1
 npm test
 ```
 
-Two older comparison models remain: `TennantFrontSteerSlip.mo` and `DifferentialDriveSlip.mo` use smooth regularized Coulomb traction and permit low-speed creep.
+The scenario adapter in `src/modelica/supermarket.ts` transforms the compiler-produced states into replay observations and mission success criteria; it **does not integrate physics**. Previous smooth `TennantFrontSteerSlip.mo` and `DifferentialDriveSlip.mo` models remain explicit comparators.
 
-**Limitations:** 1D longitudinal contact only; no lateral/combined slip, load transfer, suspension, other-wheel friction constraints, slopes, tire relaxation or physically calibrated Tennant parameters. The separately rendered supermarket remains Rapier-driven. Future Modelica-native contact geometry uses a replaceable backend called through standard Modelica `external "C"`, not ad hoc JavaScript integration.
+**Limitations:** only the central aisle blocker has collision forces, using a circular body proxy; shelf products have no physics collision, obstacles are fixed, the floor is flat, lateral tire slip and combined friction are missing, and parameters are estimates. Discrete friction models require solver event handling and repeated-evaluation tests. Real T7AMR and BrainOS fidelity has not been validated. Future replaceable collision backends should use standard Modelica `external "C"`, not a second JavaScript physics loop.

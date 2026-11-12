@@ -15,7 +15,14 @@ const main = async () => {
     ? await (async () => {
         const { parseModelicaScenario } = await import('./modelica/runtime.ts')
         const { runModelicaScenario } = await import('./modelica/node.ts')
-        return runModelicaScenario(parseModelicaScenario(raw))
+        const scenario = parseModelicaScenario(raw)
+        const model = await runModelicaScenario(scenario)
+        if (scenario.model === 'RealityLoopContacts.SupermarketRobot' ||
+            scenario.model === 'RealityLoopContacts.SupermarketBlocked') {
+          const { toSupermarketReplay } = await import('./modelica/supermarket.ts')
+          return toSupermarketReplay(model)
+        }
+        return model
       })()
     : 'vehicle' in object
       ? await runTennantScenario(parseTennantScenario(raw))
