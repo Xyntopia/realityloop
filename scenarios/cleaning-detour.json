@@ -1,0 +1,8 @@
+{
+  "name": "supermarket-cleaning-detour",
+  "route": "detour",
+  "timestepSeconds": 0.008333333333333333,
+  "steps": 3600,
+  "frictionCoefficient": 0.72,
+  "seed": 42
+}

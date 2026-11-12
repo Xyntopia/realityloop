@@ -1,0 +1,14 @@
+# RealityLoop agent instructions
+
+This is a standalone, customer-owned robotics simulation and evaluation repository, intended to be a Git submodule of Taskyon. No Taskyon account, cloud, Space or closed provider is needed for local simulation or CI.
+
+- Preserve clean boundaries: customer-owned models, sensors, controllers, scenarios and assertions; optional Taskyon Design Graph adapter and P2P publication at the edge.
+- Use TypeScript/JavaScript for customer-authored CI, tools, schemas and Three.js UI. The Modelica wheel plants **already execute** through independently installed `@taskyon/rumoca` WASM; the browser Drive Lab at `/drive-lab.html` compiles them separately from the Rapier supermarket. Keep this boundary explicit until authoritative Modelica dynamics and collision are implemented. No global JS physics coupling layer; GPU opt-in; reuse canonical Taskyon DAG/StorageClient when available.
+- For future collision engines use Modelica `external "C"` with replaceable Modelica packages; Rumoca only needs generic standards-compliant external-function and native/WASM library support. Do not put Rapier-specific branches into Rumoca or add a parallel JS physics orchestration layer.
+- Require machine-readable results, bounded execution, explicit seeds/time steps, deterministic ordering, captured nondeterministic inputs and exact toolchain digests before claiming reproducible replay.
+- Tennant T7AMR references provide approximate dimensions/mass only. Modelica `RealityLoopContacts` supplies discrete longitudinal Coulomb sticking, forward/reverse sliding and return to sticking (tested under Rumoca); the standalone supermarket still uses Rapier. Never claim manufacturer-approved drivetrain dynamics or real BrainOS/SLAM fidelity.
+- The planned image-to-scene workflow must retain the source reference image(s), camera calibration/pose, scene revision, selected renderer, render output and quantitative comparison. Keep collision geometry explicit; splats are appearance, not physical truth.
+- Avoid arbitrary code execution or broad filesystem/P2P capabilities from scenario data, untrusted model artifacts or simulated agents. Worker publication uses a narrow folder/namespace grant; no Space root keys.
+- Add meaningful tests for changed behavior and update parent `SYSTEM_DEFINITION.csv` in the same change. Check `npm run check && npm test && npm run build && npm run build:web`; use headless Chromium where rendering or WASM/browser loading changes. Never claim real vehicle fidelity or 0.7.1 acceptance without evidence.
+- Keep the public simulation API small and usable from Node/CI; graphics must be optional. External robot middleware uses explicit adapters and never requires changes to a customer's OS.
+- Do not commit generated runs, private robot models, customer data, secrets, or large photos.

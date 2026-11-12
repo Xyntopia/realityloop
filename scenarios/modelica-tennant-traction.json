@@ -1,0 +1,9 @@
+{
+  "name": "modelica-tennant-wheel-slip",
+  "kind": "modelica",
+  "model": "TennantFrontSteerSlip",
+  "durationSeconds": 3,
+  "intervalSeconds": 0.02,
+  "frictionCoefficient": 0.72,
+  "motorTorqueNewtonMetres": 300
+}

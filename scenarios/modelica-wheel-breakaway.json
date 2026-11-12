@@ -1,0 +1,9 @@
+{
+  "name": "modelica-wheel-stick-slip-breakaway",
+  "kind": "modelica",
+  "model": "RealityLoopContacts.WheelBench",
+  "durationSeconds": 4,
+  "intervalSeconds": 0.02,
+  "frictionCoefficient": 0.72,
+  "motorTorqueNewtonMetres": 120
+}

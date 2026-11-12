@@ -1,0 +1,9 @@
+{
+  "name": "tennant-t7amr-detour",
+  "vehicle": "tennant-t7amr",
+  "route": "detour",
+  "timestepSeconds": 0.008333333333333333,
+  "steps": 7200,
+  "frictionCoefficient": 0.72,
+  "seed": 42
+}

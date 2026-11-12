@@ -1,0 +1,9 @@
+{
+  "name": "supermarket-blocked-aisle",
+  "timestepSeconds": 0.008333333333333333,
+  "steps": 300,
+  "seed": 42,
+  "impulseNewtonSeconds": 2,
+  "shelfXMetres": 2.5,
+  "minimumProgressMetres": 3
+}

@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>RealityLoop — Modelica Wheel Slip Lab</title></head>
+<body class="drive-lab">
+<header class="lab-header"><div class="lab-logo">R</div><div><strong>RealityLoop</strong><small>MODELICA / REAL PHYSICS COMPILER</small></div><a href="/" class="scene-link">3D Supermarket</a></header>
+<main class="lab-layout">
+<aside class="lab-sidebar">
+  <div class="lab-overline">EXPERIMENT 01 / TRACTION</div>
+  <h1>Wheel-slip laboratory</h1>
+  <p>Compare wheel traction under different floor conditions with the actual Modelica equations compiled and simulated by Rumoca WASM.</p>
+  <label for="model">Modelica plant</label><select id="model"><option value="RealityLoopContacts.TennantStickSlip">Tennant static / kinetic grip</option><option value="RealityLoopContacts.WheelBench">Single-wheel stick/slip bench</option><option value="TennantFrontSteerSlip">Legacy smooth tire concept</option><option value="DifferentialDriveSlip">Generic differential-drive</option></select>
+  <label for="torque">Drive motor torque <output id="torque-value">300 N·m</output></label><input type="range" id="torque" min="0" max="500" step="10" value="300"/>
+  <label for="dry">High-grip friction μ <output id="dry-value">0.72</output></label><input type="range" id="dry" min="0.2" max="1.2" step="0.02" value="0.72"/>
+  <label for="wet">Low-grip friction μ <output id="wet-value">0.12</output></label><input type="range" id="wet" min="0.05" max="0.7" step="0.01" value="0.12"/>
+  <button id="calculate" class="run-button">Run Modelica simulation</button>
+  <div id="status" class="lab-status">Initializing simulation…</div>
+  <div class="lab-facts"><strong>Computational boundary</strong><p>The graphs use Rumoca-generated numerical trajectories. They are <em>not</em> measurements or the Rapier supermarket run. No collision detection or BrainOS controller is active in this lab.</p></div>
+</aside>
+<section class="lab-results">
+  <div class="lab-heading"><div><div class="lab-overline">NUMERICAL OUTPUT</div><h2>Traction under changing floor grip</h2></div><span class="lab-version" id="engine">Rumoca WASM · loading</span></div>
+  <div class="lab-legend"><span><i class="color-dry"></i>High-grip floor</span><span><i class="color-wet"></i>Low-grip floor</span></div>
+  <div class="metrics"><div><small>High-grip final velocity</small><strong id="dry-speed">—</strong></div><div><small>Low-grip final velocity</small><strong id="wet-speed">—</strong></div><div><small>Speed advantage</small><strong id="speed-delta">—</strong></div><div><small>Compiled model</small><strong id="model-name">—</strong></div></div>
+  <div class="chart-grid">
+    <section class="chart-card"><div class="chart-title"><strong>Chassis speed</strong><span>m/s · time</span></div><canvas id="speed-chart" aria-label="Speed by simulated time"></canvas></section>
+    <section class="chart-card"><div class="chart-title"><strong>Longitudinal wheel slip</strong><span>m/s · time</span></div><canvas id="slip-chart" aria-label="Wheel slip by simulated time"></canvas></section>
+    <section class="chart-card chart-wide"><div class="chart-title"><strong>Robot trajectory</strong><span>x–z · metres</span></div><canvas id="path-chart" aria-label="Planar trajectory"></canvas></section>
+  </div>
+  <footer class="lab-footer">SOURCE OF TRUTH · <code>modelica/TennantFrontSteerSlip.mo</code> and <code>modelica/DifferentialDriveSlip.mo</code> · fixed published model parameters + explicit scenario overrides</footer>
+</section>
+</main><script type="module" src="/viewer/drive-lab.ts"></script>
+</body></html>

@@ -1,0 +1,9 @@
+{
+  "name": "modelica-tennant-static-kinetic-contact",
+  "kind": "modelica",
+  "model": "RealityLoopContacts.TennantStickSlip",
+  "durationSeconds": 3,
+  "intervalSeconds": 0.02,
+  "frictionCoefficient": 0.72,
+  "motorTorqueNewtonMetres": 300
+}

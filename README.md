@@ -1,93 +1,41 @@
-# realityloop
+# RealityLoop
 
+Standalone, ownable robotics simulation and repeatable AI-agent verification. **Current version:** v0.7.1 prototype, not Tennant/BrainOS certified software.
 
+## Run both browser demonstrations
 
-## Getting started
-
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
-
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
-
-## Add your files
-
-* [Create](https://docs.gitlab.com/user/project/repository/web_editor/#create-a-file) or [upload](https://docs.gitlab.com/user/project/repository/web_editor/#upload-a-file) files
-* [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
-
-```
-cd existing_repo
-git remote add origin https://gitlab.com/xyntopia/realityloop.git
-git branch -M main
-git push -uf origin main
+```sh
+npm ci
+npm run dev                   # http://127.0.0.1:5173
+npm run build:web             # both pages + optional Rumoca WASM asset in dist-web
 ```
 
-## Integrate with your tools
+- **Supermarket** (`/`): editable Tennant T7AMR-inspired ride-on scrubber and fixtures, realistic *approximate* physical envelope, replayable blocked/detour navigation, cleaning-footprint coverage and live diagnostics. **Rapier WASM** still integrates the rigid body and collisions; the drivetrain parameters are uncalibrated.
+- **Five simulated LiDARs**: one forward scanner and **two compact sensors on each side** as requested. World-level ray intersection, occupancy-grid map, synthetic wheel odometry, elementary scan matching and interactive scan-ray/occupancy-map visualization. Device positions/FOV are **illustrative**, not extracted from Tennant CAD or BrainOS. SLAM is an experimental 2D prototype, not a verified real-world navigation stack.
+- **Modelica Wheel-Slip Lab** (`/drive-lab.html`): **Rumoca WASM** directly compiles the Modelica equations, including the reusable `RealityLoopContacts.LongitudinalStickSlip` component: ideal sticking reaction under static friction, signed kinetic sliding after breakaway, and re-sticking when slip returns to zero. The component is used in a front-steered Tennant concept and a wheel bench; the older smooth-`tanh` Modelica plants remain comparison cases.
 
-* [Set up project integrations](https://gitlab.com/xyntopia/realityloop/-/settings/integrations)
+![RealityLoop supermarket with simulated LiDAR and occupancy map](docs/realityloop-supermarket-slam-preview.png)
 
-## Collaborate with your team
+![Modelica traction lab](docs/modelica-drive-lab-preview.png)
 
-* [Invite team members and collaborators](https://docs.gitlab.com/user/project/members/)
-* [Create a new merge request](https://docs.gitlab.com/user/project/merge_requests/creating_merge_requests/)
-* [Automatically close issues from merge requests](https://docs.gitlab.com/user/project/issues/managing_issues/#closing-issues-automatically)
-* [Enable merge request approvals](https://docs.gitlab.com/user/project/merge_requests/approvals/)
-* [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
+## Headless verification
 
-## Test and Deploy
+```sh
+npm run check
+npm test
+npm run build
+npm run sim -- scenarios/tennant-detour.json runs/tennant
+npm run sim -- scenarios/modelica-tennant-stick-slip.json runs/traction
+npm run sim -- scenarios/modelica-wheel-breakaway.json runs/contact
+npm run sim -- scenarios/tennant-blocked.json runs/blocked # intentionally exits 1
+```
 
-Use the built-in continuous integration in GitLab.
+Scenarios are bounded and schema-validated. Every run emits machine-readable `result.json` with engine identity and observations. The pinned `@taskyon/rumoca@0.10.3-taskyon.1` compiles both browser and Node Modelica fixtures without a Python runtime. The optional compiler WASM is ~35 MB; the supermarket page does not require it.
 
-* [Get started with GitLab CI/CD](https://docs.gitlab.com/ci/quick_start/)
-* [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/user/application_security/sast/)
-* [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/topics/autodevops/requirements/)
-* [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/user/clusters/agent/)
-* [Set up protected environments](https://docs.gitlab.com/ci/environments/protected_environments/)
+## Model and safety boundaries
 
-***
+**Two independent simulators are currently in use.** The supermarket uses Rapier dynamics/collisions, with synthetic LiDAR and mapping; the physics lab runs compiled Modelica wheel plants through Rumoca **without collision geometry**. These are *not* one combined physical simulation. Longer term, Modelica/Rumoca should own body, wheel and contact dynamics, invoking a replaceable collision backend through standard Modelica `external "C"`; candidates include Rapier collision-only and Rumoca's developing native collision engine.
 
-# Editing this README
+The static/kinetic contact component is an idealized 1D planar Coulomb law with a discrete friction mode. It does not simulate combined lateral slip, tire relaxation, deformation, floor film, suspension, calibration or contact impulse manifolds. The stick transition uses a small velocity tolerance (1e-6 m/s). This is a numerical/behavioral prototype, **not a measurement of Tennant tire characteristics**. Published approximate T7AMR external dimensions are 1.651 m length, 0.889 m width, 1.499 m height and 479 kg mass; full physical validation and real sensor extrinsics remain pending. [Tennant specifications](https://www.tennantco.com/en_us/1/machines/scrubbers/product.t7amr.robotic-floor-scrubber.2000056.html).
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
-
-## Suggestions for a good README
-
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
-
-## Name
-Choose a self-explaining name for your project.
-
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
-
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
-
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
-
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
-
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
-
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
-
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
-
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
-
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
-
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
-
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
-
-## License
-For open source projects, say how it is licensed.
-
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+The repository is intended to be used as a Git submodule of the parent Taskyon workspace at `realityloop/`, with its own independent versioning and CI. It runs without Taskyon login, Space or cloud. See the parent `SYSTEM_DEFINITION.csv` and `proposals/worldloop-simulator-v071.md` (historical proposal path).

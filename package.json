@@ -1,0 +1,51 @@
+{
+  "name": "@taskyon/realityloop",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "Standalone repeatable AI-agent robotics simulation and Modelica evaluation",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./modelica": {
+      "types": "./dist/modelica/node.d.ts",
+      "import": "./dist/modelica/node.js"
+    }
+  },
+  "bin": {
+    "realityloop": "./dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "AGENTS.md",
+    "scenarios",
+    "modelica"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts src/cli.ts src/modelica/node.ts --format esm --dts --clean --target node22",
+    "build:web": "vite build --outDir dist-web",
+    "dev": "vite --host 127.0.0.1",
+    "check": "tsc --noEmit",
+    "sim": "node --experimental-strip-types src/cli.ts",
+    "test": "node --experimental-strip-types --test tests/*.test.ts"
+  },
+  "dependencies": {
+    "@dimforge/rapier3d-compat": "0.21.0",
+    "@taskyon/rumoca": "0.10.3-taskyon.1",
+    "three": "^0.181.2",
+    "zod": "^4.1.8"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.0",
+    "@types/three": "^0.181.0",
+    "tsup": "^8.5.0",
+    "typescript": "^5.9.2",
+    "vite": "^7.3.8"
+  },
+  "engines": {
+    "node": ">=22.18"
+  }
+}
