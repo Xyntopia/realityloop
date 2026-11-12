@@ -5,8 +5,9 @@ export default defineConfig({
   build: {
     rollupOptions: {
       input: {
-        supermarket: fileURLToPath(new URL('./index.html', import.meta.url)),
-        modelica: fileURLToPath(new URL('./drive-lab.html', import.meta.url)),
+        catalog: fileURLToPath(new URL('./index.html', import.meta.url)),
+        supermarket: fileURLToPath(new URL('./examples/supermarket.html', import.meta.url)),
+        traction: fileURLToPath(new URL('./drive-lab.html', import.meta.url)),
       },
     },
   },

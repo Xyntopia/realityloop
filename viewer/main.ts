@@ -137,8 +137,15 @@ const run=async(route:'blocked'|'detour')=>{
   try{
     const next=engine==='modelica'
       ? await import('./modelica-supermarket.ts').then(m=>m.runModelicaSupermarket(route))
-      : await import('../src/tennant.ts').then(m=>m.runTennantScenario(
-          m.parseTennantScenario({...base,route,name:'tennant-t7amr-'+route})))
+      : await Promise.all([
+          import('../src/tennant.ts'),import('../src/dag-browser.ts'),
+        ]).then(async ([m,dag])=>{
+          const scenario=m.parseTennantScenario({...base,route,name:'tennant-t7amr-'+route})
+          const result=await dag.runBrowserDag(scenario,
+            {provider:'rapier',version:'0.21.0',model:'TennantDrive-v1'},
+            input=>m.runTennantScenario(m.parseTennantScenario(input)))
+          return result.result
+        })
     if(current!==generation)return
     result=next;resetVisual();playing=true;elem('play').textContent='Pause'
     elem('engine-label').textContent=engine==='modelica'

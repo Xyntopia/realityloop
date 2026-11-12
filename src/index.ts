@@ -14,3 +14,6 @@ export {
   signedFootprintClearance, clearanceAtPose, checkSweptClearance,
   type ClearanceReport, type ClearanceReading,
 } from './clearance.ts'
+export { realityLoopExamples, getRealityLoopExample, type RealityLoopExample } from './examples.ts'
+export { runDagExperiment, createExecutionLock, type DagExperimentResult } from './dag.ts'
+export { verifyDagReplay } from './dag-verify.ts'

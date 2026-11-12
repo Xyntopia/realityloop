@@ -1,0 +1,11 @@
+{
+  "schema": "realityloop.comp-dag-bundle/v1",
+  "source": "frontend/packages/comp-dag (canonical Taskyon implementation)",
+  "frontendRevision": "8f25619b9e52ef9b37c10b8417d3293791c284d4",
+  "inputCount": 173,
+  "inputSetSha256": "sha256:efc7b00aa32f74d4e076a4aeb05b9426d84f0da57089f336acd6cde4f3e93e84",
+  "entrySha256": "sha256:6831087c2e95ad594029bc9606898f34fb3af19f1321ef5e80dc281671f96828",
+  "esbuildVersion": "0.28.1",
+  "bundleSha256": "sha256:76e3ff271a8155923b66dfea7d10ac6e2a3587c2ee5d1a2c034f93622ec44160",
+  "bundleBytes": 952706
+}

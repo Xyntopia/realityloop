@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>RealityLoop example — Supermarket cleaning robot</title></head>
+<body>
+<div id="scene"></div>
+<header class="masthead"><div class="brand"><span class="mark">R</span><span><strong>RealityLoop</strong><small>SUPERMARKET CLEANING EXAMPLE</small></span></div><div class="eyebrow">TENNANT T7AMR <b>CONCEPT MODEL</b></div><a class="lab-link" href="/">All examples</a></header>
+<aside class="panel controls">
+  <div class="panel-label">EXAMPLE / SCENARIO</div><h1>Cleaning a supermarket</h1>
+  <p>Modelica-first, reproducible robot motion with illustrative Tennant geometry, laser mapping and an aisle obstruction.</p>
+  <label for="engine">Physics engine</label><select id="engine"><option value="modelica" selected>Rumoca · Modelica only</option><option value="rapier">Rapier · legacy comparison</option></select>
+  <label for="route">Route strategy</label><select id="route"><option value="detour">Detour · reach destination</option><option value="blocked">Blocked · regression</option></select>
+  <div class="button-row"><button id="play">Pause</button><button id="replay" class="secondary">Replay</button></div>
+  <div class="control-row"><label for="speed">Playback speed</label><select id="speed"><option value="1">1×</option><option value="2">2×</option><option value="4" selected>4×</option><option value="8">8×</option></select></div>
+  <div class="control-row"><span>Camera</span><button id="camera" class="mini">Top view</button></div>
+  <div class="legend"><div><span class="swatch trail"></span>Cleaning footprint proxy</div><div><span class="swatch path"></span>Recorded robot path</div><div><span class="swatch blocked"></span>Blocking fixture</div></div>
+</aside>
+<aside class="panel telemetry"><div class="panel-label">LIVE TELEMETRY</div><div class="status" id="status">Preparing scenario…</div>
+  <div class="stat-grid">
+    <div><span>Sim time</span><strong id="time">—</strong></div><div><span>Distance to goal</span><strong id="distance">—</strong></div>
+    <div><span>Speed</span><strong id="velocity">—</strong></div><div><span>Swept area</span><strong id="coverage">—</strong></div>
+    <div><span>Drive wheel slip</span><strong id="slip-l">—</strong></div><div><span id="secondary-label">Contact mode</span><strong id="slip-r">—</strong></div>
+    <div><span>Route min. clearance</span><strong id="clearance">—</strong></div>
+  </div>
+  <div class="slam-panel"><div class="slam-head"><strong>Five 3D LiDARs + PCL ICP</strong><button class="mini" id="lidar-toggle">Hide points</button></div>
+    <div class="slam-stats"><span id="slam-method">Loading PCL ICP…</span></div>
+    <canvas id="slam-map" width="240" height="240" aria-label="Scan-matched occupancy map"></canvas>
+    <div class="slam-stats"><span id="slam-cells">Mapping…</span><span id="slam-hits">—</span></div>
+    <div class="slam-stats"><span id="icp-matches">—</span></div>
+    <div class="slam-head"><strong>Front RGB camera</strong><span class="sensor-rate">10 Hz simulated view</span></div>
+    <canvas id="front-camera" width="240" height="135" aria-label="RGB camera mounted on robot"></canvas>
+    <div class="slam-stats"><span>IMU yaw rate</span><span id="imu-rate">—</span></div>
+    <div class="slam-stats"><span>Wheel encoder</span><span id="wheel-ticks">—</span></div>
+  </div>
+  <p class="disclaimer">Research example, not a validated Tennant digital twin. LiDAR and IMU are synthetic; PCL ICP is scan registration, not full SLAM. The default supermarket Modelica model uses analytic contact geometry, not MuJoCo.</p>
+</aside>
+<footer class="footer-bar"><span><span class="live-dot"></span> <span id="engine-label">RUMOCA MODELICA · COMPILER-DRIVEN REPLAY</span></span><span id="frame">FRAME —</span></footer>
+<script type="module" src="/viewer/main.ts"></script>
+</body></html>

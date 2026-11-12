@@ -19,6 +19,7 @@
   },
   "files": [
     "dist",
+    "src",
     "README.md",
     "AGENTS.md",
     "scenarios",
@@ -27,6 +28,7 @@
   "scripts": {
     "build": "tsup src/index.ts src/cli.ts src/modelica/node.ts --format esm --dts --clean --target node22",
     "build:web": "vite build --outDir dist-web",
+    "build:dag-runtime": "node tools/build-comp-dag-runtime.mjs",
     "dev": "vite --host 127.0.0.1",
     "check": "tsc --noEmit",
     "sim": "node --experimental-strip-types src/cli.ts",
@@ -45,6 +47,7 @@
   "devDependencies": {
     "@types/node": "^24.10.0",
     "@types/three": "^0.181.0",
+    "esbuild": "0.28.1",
     "tsup": "^8.5.0",
     "typescript": "^5.9.2",
     "vite": "^7.3.8"

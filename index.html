@@ -1,47 +1,31 @@
 <!doctype html>
 <html lang="en">
-<head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>RealityLoop — Modelica supermarket robot</title></head>
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>RealityLoop — Simulation and robotics experiments</title>
+<meta name="description" content="Run reproducible Modelica robotics simulations, sensor experiments and headless evaluations in RealityLoop."/>
+</head>
 <body>
-<div id="scene"></div>
-<header class="masthead"><div class="brand"><span class="mark">R</span><span><strong>RealityLoop</strong><small>ROBOTICS SIMULATION LAB</small></span></div><div class="eyebrow">SUPERMARKET / TENNANT T7AMR <b>CONCEPT MODEL</b></div><a class="lab-link" href="/drive-lab.html">Rumoca Modelica Physics Lab</a></header>
-<aside class="panel controls">
-  <div class="panel-label">SCENARIO</div><h1>Cleaning a supermarket</h1>
-  <p>Modelica-first, reproducible robot motion with illustrative Tennant geometry, laser mapping and an aisle obstruction.</p>
-  <label for="engine">Physics engine</label>
-  <select id="engine">
-    <option value="modelica" selected>Rumoca · Modelica only</option>
-    <option value="rapier">Rapier · legacy comparison</option>
-  </select>
-  <label for="route">Route strategy</label>
-  <select id="route"><option value="detour">Detour · reach destination</option><option value="blocked">Blocked · regression</option></select>
-  <div class="button-row"><button id="play">Pause</button><button id="replay" class="secondary">Replay</button></div>
-  <div class="control-row"><label for="speed">Playback speed</label><select id="speed"><option value="1">1×</option><option value="2">2×</option><option value="4" selected>4×</option><option value="8">8×</option></select></div>
-  <div class="control-row"><span>Camera</span><button id="camera" class="mini">Top view</button></div>
-  <div class="legend"><div><span class="swatch trail"></span>Cleaning footprint proxy</div><div><span class="swatch path"></span>Recorded robot path</div><div><span class="swatch blocked"></span>Blocking fixture</div></div>
-</aside>
-<aside class="panel telemetry"><div class="panel-label">LIVE TELEMETRY</div><div class="status" id="status">Preparing scenario…</div>
-  <div class="stat-grid">
-    <div><span>Sim time</span><strong id="time">—</strong></div>
-    <div><span>Distance to goal</span><strong id="distance">—</strong></div>
-    <div><span>Speed</span><strong id="velocity">—</strong></div>
-    <div><span>Swept area</span><strong id="coverage">—</strong></div>
-    <div><span>Drive wheel slip</span><strong id="slip-l">—</strong></div>
-    <div><span id="secondary-label">Contact mode</span><strong id="slip-r">—</strong></div>
-    <div><span>Route min. clearance</span><strong id="clearance">—</strong></div>
-  </div>
-  <div class="slam-panel"><div class="slam-head"><strong>Five 3D LiDARs + PCL ICP</strong><button class="mini" id="lidar-toggle">Hide points</button></div>
-    <div class="slam-stats"><span id="slam-method">Loading PCL ICP…</span></div>
-    <canvas id="slam-map" width="240" height="240" aria-label="Scan-matched occupancy map"></canvas>
-    <div class="slam-stats"><span id="slam-cells">Mapping…</span><span id="slam-hits">—</span></div>
-    <div class="slam-stats"><span id="icp-matches">—</span></div>
-    <div class="slam-head"><strong>Front RGB camera</strong><span class="sensor-rate">10 Hz simulated view</span></div>
-    <canvas id="front-camera" width="240" height="135" aria-label="RGB camera mounted on robot"></canvas>
-    <div class="slam-stats"><span>IMU yaw rate</span><span id="imu-rate">—</span></div>
-    <div class="slam-stats"><span>Wheel encoder</span><span id="wheel-ticks">—</span></div>
-  </div>
-  <p class="disclaimer">All five shelf/obstacle colliders now exist in Modelica. Simulated camera, LiDAR and IMU are illustrative; PCL ICP is a scan registration front end, not full loop-closure SLAM. MuJoCo is an independently tested collision backend, not yet linked through Rumoca external C.</p>
-</aside>
-<footer class="footer-bar"><span><span class="live-dot"></span> <span id="engine-label">RUMOCA MODELICA · COMPILER-DRIVEN REPLAY</span></span><span id="frame">FRAME —</span></footer>
-<script type="module" src="/viewer/main.ts"></script>
-</body></html>
+<header class="site-header"><div class="brand"><span class="logo">R</span><div><strong>RealityLoop</strong><small>SIMULATION / EXPERIMENT PLATFORM</small></div></div><a href="https://github.com/CogniPilot/rumoca">Rumoca / Modelica</a></header>
+<main>
+<section class="hero">
+  <div class="overline">OPEN, CUSTOMER-OWNED SIMULATION</div>
+  <h1>Model reality.<span> Test what happens.</span></h1>
+  <p>One reproducible simulation core, different models and experiments. Run locally or headlessly, inspect observations and metrics, and use Taskyon Design Graph orchestration when its optional adapter is available.</p>
+  <div class="pill-row"><span>Modelica-first dynamics</span><span>Replaceable collision backends</span><span>Headless evaluation</span><span>Sensor simulation</span></div>
+</section>
+<section class="catalog">
+ <div class="section-title"><div><span class="overline">EXAMPLE GALLERY</span><h2>Explore the experiments</h2></div><span class="count">Standalone demonstrations</span></div>
+ <div id="examples" class="example-grid" aria-label="Available RealityLoop examples"></div>
+</section>
+<section class="architecture">
+ <span class="overline">COMPUTATION &amp; PROVENANCE</span><h2>Independent execution. Optional orchestration.</h2>
+ <p>The headless experiment runner evaluates validated scenarios without a browser. It emits machine-readable observations, metrics and a SHA-256 integrity receipt. Taskyon DAG invocation, caching and StorageClient publication are a planned optional integration—not currently active.</p>
+ <code>npm run sim -- scenarios/modelica-wheel-breakaway.json runs/wheel</code>
+</section>
+</main>
+<footer>RealityLoop · Standalone simulation kernel · The examples are research prototypes, not certified digital twins.</footer>
+<script type="module" src="/viewer/catalog.ts"></script>
+</body>
+</html>

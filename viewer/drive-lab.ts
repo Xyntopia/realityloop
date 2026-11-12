@@ -3,6 +3,8 @@ import tennantModel from '../modelica/TennantFrontSteerSlip.mo?raw'
 import differentialModel from '../modelica/DifferentialDriveSlip.mo?raw'
 import stickSlipModel from '../modelica/RealityLoopContacts.mo?raw'
 import rumocaWasmUrl from '../node_modules/@taskyon/rumoca/rumoca_bind_wasm_bg.wasm?url'
+import {runBrowserDag,hashBrowserBinary} from '../src/dag-browser.ts'
+import {canonicalHash} from '../src/vendor/taskyon-comp-dag.mjs'
 import './drive-lab.css'
 
 const element = <T extends HTMLElement>(id: string): T => {
@@ -16,17 +18,19 @@ const number = (id: string): number => Number(input(id).value)
 const format = (value: number, digits = 2): string => Number.isFinite(value) ? value.toFixed(digits) : '—'
 
 type Runner = Awaited<ReturnType<typeof import('../src/modelica/runtime.ts').createModelicaRunner>>
-let runnerPromise: Promise<Runner> | undefined
-let calculationId = 0
-let visibleResults: [ModelicaResult, ModelicaResult] | undefined
+type LoadedRunner={runner:Runner;compilerHash:string}
+let runnerPromise:Promise<LoadedRunner>|undefined
+let calculationId=0
+let visibleResults:[ModelicaResult,ModelicaResult]|undefined
 
-const getRunner = (): Promise<Runner> => {
+const getRunner=():Promise<LoadedRunner>=>{
   runnerPromise ??= (async () => {
     const runtime = await import('../src/modelica/runtime.ts')
     const request = await fetch(rumocaWasmUrl)
     if (!request.ok) throw Error('Cannot load Rumoca WASM binary: HTTP ' + request.status)
     const bytes = await request.arrayBuffer()
-    return runtime.createModelicaRunner(bytes)
+    return {runner:await runtime.createModelicaRunner(bytes),
+      compilerHash:await hashBrowserBinary(bytes)}
   })().catch(err => { runnerPromise = undefined; throw err })
   return runnerPromise
 }
@@ -110,7 +114,7 @@ const run = async (): Promise<void> => {
   try {
     const model = element<HTMLSelectElement>('model').value as ModelicaScenario['model']
     const { parseModelicaScenario } = await import('../src/modelica/runtime.ts')
-    const runner = await getRunner()
+    const {runner,compilerHash}=await getRunner()
     if (id !== calculationId) return
     const base = parseModelicaScenario({
       name: 'tire-traction-comparison',
@@ -122,8 +126,14 @@ const run = async (): Promise<void> => {
       motorTorqueNewtonMetres: number('torque'),
     })
     const source = model.startsWith('RealityLoopContacts.') ? stickSlipModel : model === 'TennantFrontSteerSlip' ? tennantModel : differentialModel
-    const high = runner.simulate(source, base)
-    const low = runner.simulate(source, { ...base, frictionCoefficient: number('wet') })
+    const execute=async(scenario:ModelicaScenario)=>(await runBrowserDag(
+      scenario,
+      {modelHash:canonicalHash(source),compilerHash,
+       backend:'rumoca',labVersion:1},
+      parameters=>runner.simulate(source,parseModelicaScenario(parameters)),
+    )).result
+    const high=await execute(base)
+    const low=await execute({...base,frictionCoefficient:number('wet')})
     if (id !== calculationId) return
     visibleResults = [high, low]
     const highV = high.observations.at(-1)!.channels.v

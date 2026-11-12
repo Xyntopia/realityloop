@@ -1,56 +1,57 @@
 # RealityLoop
 
-Standalone, repeatable robot simulation and agent-evaluation prototype, using a Tennant T7AMR-inspired supermarket scrubber. **Not manufacturer CAD, BrainOS software or validated autonomous navigation.**
+**Standalone robotics simulation and experimentation platform.** All normal simulations run through the canonical Taskyon Design Graph engine. **Taskyon UI, cloud services, Space and P2P are not required** to execute, record, inspect or cache experiments. Taskyon/P2P integration is a future optional *transport and visualization* concern—not a runtime dependency.
 
 ## Run
 
 ```sh
 npm ci
-npm run dev                 # http://127.0.0.1:5173/
-npm run check && npm test
-npm run build && npm run build:web
+npm run dev                  # local browser example gallery
+npm run sim -- examples      # list examples
+npm run sim -- scenarios/modelica-supermarket-detour.json runs/detour
+npm run sim -- scenarios/modelica-wheel-breakaway.json runs/wheel
+npm run sim -- verify "$INVOCATION_ID" runs/.dag  # separate uncached replay proof
+npm run check && npm test && npm run build && npm run build:web
 ```
 
-The supermarket viewer defaults to a compiled Rumoca/Modelica plant and offers legacy Rapier as an opt-in comparison. Modelica integrates planar chassis motion, steering and longitudinal stick/slip, with all five shelf/aisle rectangles participating in contact. The smooth corridor controller reaches the goal in **14.8 s simulated time** with **~0.18 m projected swept clearance** using the Tennant reference rectangle (1.651 × 0.889 m). Replay acceptance requires a goal arrival, negligible analytic penetration and **at least 0.10 m swept-footprint clearance**. This remains a planar geometry/vehicle approximation, not a real-world safety certification.
+The root page lists independent examples: supermarket cleaning and wheel traction. The supermarket is available at `/examples/supermarket.html` and the traction comparison at `/drive-lab.html`; neither is the definition of RealityLoop.
 
-The sensor visualization now includes **five multi-elevation 3D LiDAR point clouds**, 2D occupancy mapping with **PCL.js WASM ICP** scan registration, a rendered front RGB camera, synthetic IMU readings and wheel-encoder samples. Rear RGB and front depth streams have timestamped frame/calibration *metadata*, but **no real depth image or rear RGB pixels yet**. The localization system is a 2D scan-registration/odometry front end with occupancy mapping, not a full 3D SLAM/loop-closure engine. Sensor placements are illustrative rather than Tennant-sourced.
+## Design Graph is mandatory; P2P is optional
 
-![RealityLoop safe corridor with LiDAR, ICP localization and clearance telemetry](docs/realityloop-safe-corridor-preview.png)
-
-### Independent MuJoCo collision-only WASM reference
-
-The official `@mujoco/mujoco@4.0.1` WASM module is available as an **optional collision-only reference**, separate from Rumoca. `src/mujoco-collision.ts` loads shelf/obstacle geometry, calls `mj_kinematics` then `mj_collision` for each input pose and returns penetrating contacts with outward normals. It never calls `mj_step`; it does **not** integrate a second physics state. Tests verify all five obstacles, sign conventions and repeatability.
-
-Two separate Modelica-facing interfaces exist:
-
-- **Verified developer proof:** `modelica/RealityLoopMuJoCoHost.mo` declares a `pure function` with standard `external "C" RumocaHost_externalReal3(x,z,yaw,depth)`. A locally patched Rumoca WASM runtime binds this strict 3×Real → Real operation to a synchronous, run-scoped host callback; `src/modelica/mujoco-host.ts` sends each solver query to the official MuJoCo WASM collision API. The compiled Modelica DAE receives the penetration depth and uses it to change `der(x)`. An opt-in headless test verified **85 calls**, a 0.505 m collision depth and the solver-produced trajectory. No MuJoCo dynamics stepping.
-- **Not yet implemented:** `modelica/RealityLoopMuJoCo.mo` and `native/realityloop_mujoco.{h,c}` define the desired full `ExternalObject` and C array/normal API. They have not been compiled, linked, or executed. The current strict scalar ABI is an incremental proof, **not** general native/WASM C-library linking or a replaceable full contact backend.
-
-To build/test the opt-in proof from an adjacent patched Rumoca source checkout:
+Both the headless CLI and browser examples use the **real Taskyon `@taskyon/comp-dag` node engine**. The module is bundled offline in `src/vendor/taskyon-comp-dag.mjs` from `frontend/packages/comp-dag`, with a recorded source and bundle lock at `src/vendor/taskyon-comp-dag.lock.json`. This is a temporary standalone packaging solution, not a second graph implementation. Rebuild only when intentionally updating canonical Taskyon sources:
 
 ```sh
-npm run build:rumoca-host  # needs cargo, wasm32 target and matching wasm-bindgen CLI
-npm run test:mujoco-modelica
+npm run build:dag-runtime     # requires local Taskyon source checkout; not needed to simulate
 ```
 
-The default supermarket still uses **Modelica analytic shelf contact**; it does not invoke MuJoCo. Taskyon DAG integration is likewise not yet implemented. Do not conflate the verified probe with full MuJoCo/Modelica integration.
+The graph is `RealityLoop.Scenario → RealityLoop.Simulation → { RealityLoop.Metrics, RealityLoop.Observations }`. A validated scenario is an invocation input, a simulation result is a Taskyon content-addressed artifact, and derived metrics and sensor observations are separate cached artifacts. The **v2 execution lock** fingerprints every implementation file under `src/`, the dependency lockfile, the selected Modelica source, Rumoca WASM, the canonical DAG bundle and Node runtime version/platform. The filesystem backend implements Taskyon's injected `DagStorageBackend` and `DesignGraphObjectStore` interfaces and persists **Taskyon-format** `GraphRevision`, `InvocationDefinition`, `InvocationRun` and `ProjectRevision` objects under `runs/.dag/`. Repeat runs reuse the local DAG cache; changed inputs or physics sources create distinct invocations. Local filesystem writes currently assume a **single writer**; concurrent workers require a transactional adapter.
 
-## Headless scenarios
+Each headless run writes:
 
-```sh
-npm run sim -- scenarios/modelica-supermarket-detour.json runs/modelica-detour
-npm run sim -- scenarios/modelica-supermarket-blocked.json runs/modelica-blocked # expected exit 1
-npm run sim -- scenarios/modelica-wheel-breakaway.json runs/contact
-npm run sim -- scenarios/tennant-detour.json runs/rapier-detour
-```
+- `result.json` — trajectory, metrics and acceptance results
+- `sensor-observations.json` — deterministic synthetic IMU/encoder samples, camera metadata and time-sampled 3D LiDAR point clouds where the trajectory exposes a vehicle pose; unrelated experiments explicitly report no sensors
+- `run-integrity.json` — input/model/compiler digests, Taskyon graph/invocation/run/project identities and artifact hashes
 
-The JSON run results include a checked minimum swept clearance, nearest obstacle, sample count, simulated arrival time and explicit failure reason. The clearance checker uses conservative separating-axis tests of an oriented rectangular body and densifies solver poses. Browser visualization runs without integration-side collision code. The independent wheel-slip comparison is at `/drive-lab.html`.
+**Independent replay verification:** `realityloop verify <invocation-id> [store-dir]` reads a stored Taskyon invocation and its artifacts, rejects changed source/runtime locks and corrupt artifacts, then recomputes the physics through a **fresh, uncached DAG store** and compares trajectory, metrics and sensor hashes. The invocation ID is printed by the CLI and recorded in `run-integrity.json`. A cache hit alone is not replay verification. Bit-exact replay across different platforms or solvers is not yet guaranteed.
 
-## Known limitations and priorities
+The browser uses the same canonical DAG nodes, currently with **in-memory caching**. Its lock includes embedded implementation sources, the bundled DAG identity and a digest of the actual Rumoca WASM binary. Persisting/browser-exporting complete Taskyon run records, syncing via P2P, and importing them into Taskyon UI remain outstanding. **Canonical GraphRevision records currently identify trusted bundled nodes, not portable compiled NodeRecords with full module locks**; a Taskyon UI import adapter and module-lock compatibility test are still needed. No external service or network is required for the Node CLI.
 
-1. **Next fidelity step:** improve physical contact normals/constraints, turn-swept envelope and calibrated vehicle geometry; the planar clearance result does not replace 3D collision or real-robot tests.
-2. **Priority 2:** expand the proven scalar Rumoca external-C host bridge to a generic native/WASM ABI with correct array marshalling and `ExternalObject` lifetime; then make MuJoCo collision-only queries replaceable Modelica packages without duplicate integration.
-3. **Priority 3:** robust 3D SLAM/pose graph and loop closure, realistic RGB/depth camera outputs, calibrated sensor timing/noise/bias, and IMU-wheel-LiDAR fusion.
-4. **Later:** accurate Tennant drivetrain/tire calibration, responsive sensor-based navigation, additional safety checks and BrainOS/ROS adapters.
+## Supermarket example
 
-RealityLoop is an independent local Git submodule at `realityloop/`. **No changes are pushed automatically.** Root requirements and project proposal remain in `../SYSTEM_DEFINITION.csv` and `../proposals/realityloop-simulator-v071.md`.
+The Tennant T7AMR-inspired vehicle is **not** a manufacturer model or validated BrainOS implementation. The default Rumoca/Modelica plant owns its planar front-steer/wheel-slip dynamics and analytic contacts with all four stocked shelves plus an aisle obstruction. The smooth detour reaches the goal in about 14.8 simulated seconds with roughly 0.18 m projected swept clearance. Acceptance requires a goal and ≥0.10 m swept-footprint clearance. Legacy Rapier remains opt-in for comparison; no second dynamics engine integrates the same vehicle.
+
+Five synthetic 3D LiDAR point clouds feed a PCL.js WASM ICP scan-registration/2D occupancy demonstrator. The example also renders a front RGB camera and produces IMU/encoder samples; rear RGB and depth streams currently contain metadata rather than image pixels. This is **not** full SLAM with loop closure. Sensor positions and noise are not Tennant-calibrated.
+
+![RealityLoop supermarket example](docs/realityloop-safe-corridor-preview.png)
+
+## MuJoCo / Modelica status
+
+Official `@mujoco/mujoco@4.0.1` WASM separately supports `mj_kinematics` + `mj_collision` contact queries against all five fixtures, without `mj_step`. A **verified opt-in developer probe** in `modelica/RealityLoopMuJoCoHost.mo` uses a patched Rumoca WASM runtime to call official MuJoCo from **inside a Modelica `external "C"` function**. The scalar 3×Real→Real callback returned depth to the Modelica DAE (85 calls and 0.505 m penetration in a deliberate collision test). To reproduce: `npm run build:rumoca-host && npm run test:mujoco-modelica` with the locally patched Rumoca source and appropriate Rust/wasm-bindgen toolchain.
+
+**Limitations:** the full native C shim and `ExternalObject`/contact-array interface are source-only and not compiled/linked; the supermarket still runs analytic Modelica contacts. General native/WASM C ABI support remains a separate architecture goal. The sensor viewer, shell CLI and Taskyon DAG do not substitute JS physics integration for Modelica equations.
+
+## Next steps
+
+Package `@taskyon/comp-dag` as a stable, independently versioned consumer library instead of the pinned bundle; persist browser run records; make all generated scenes, assets, controllers and sensor calibrations explicit source-locked graph inputs; implement an optional **P2P transport/import adapter** to an authorized Taskyon Space without requiring P2P during simulation; and add offline video rendering as a derived graph node (not by rerunning physics). Physical fidelity, complete 3D collision and proper SLAM/pose graph remain separate tasks.
+
+RealityLoop is an independent Git submodule. No changes are pushed automatically. The parent workspace holds the requirements in `../SYSTEM_DEFINITION.csv` and `../proposals/realityloop-simulator-v071.md`.
