@@ -9,7 +9,7 @@
 - `SupermarketBlocked`: same dynamics with direct blocked route
 - `SupermarketShelfProbe`: regression fixture deliberately approaching the south shelf
 
-`RealityLoopMuJoCo.mo` defines the **intended**, standard Modelica `external "C"` collision ABI with a persistent MuJoCo scene. **Not executable by the current Rumoca WASM build**, and the native C shim has not been compiled or validated. The official MuJoCo WASM reference works separately through `../src/mujoco-collision.ts`.
+`RealityLoopMuJoCoHost.mo` is a **tested, opt-in** Modelica `external "C"` probe: a locally patched Rumoca WASM calls the official MuJoCo WASM collision engine through a scoped synchronous 3-Real scalar host ABI, and the returned depth affects `der(x)` in the compiled Modelica DAE. It runs headlessly via `npm run test:mujoco-modelica` after `npm run build:rumoca-host` with the matching Wasm toolchain. Full `RealityLoopMuJoCo.mo` `ExternalObject` plus `native/realityloop_mujoco.{h,c}` C array/normal scene ABI remains **uncompiled and unlinked**; active supermarket still uses analytic Modelica contacts.
 
 ```sh
 npm run sim -- scenarios/modelica-supermarket-detour.json runs/detour

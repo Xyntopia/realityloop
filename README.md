@@ -21,12 +21,19 @@ The sensor visualization now includes **five multi-elevation 3D LiDAR point clou
 
 The official `@mujoco/mujoco@4.0.1` WASM module is available as an **optional collision-only reference**, separate from Rumoca. `src/mujoco-collision.ts` loads shelf/obstacle geometry, calls `mj_kinematics` then `mj_collision` for each input pose and returns penetrating contacts with outward normals. It never calls `mj_step`; it does **not** integrate a second physics state. Tests verify all five obstacles, sign conventions and repeatability.
 
-For the desired standard Modelica boundary:
+Two separate Modelica-facing interfaces exist:
 
-- `modelica/RealityLoopMuJoCo.mo`: conceptual Modelica `ExternalObject` and `external "C"` API.
-- `native/realityloop_mujoco.h`, `native/realityloop_mujoco.c`: C ABI shim implementing persistent MuJoCo scene and geometry-only contact queries.
+- **Verified developer proof:** `modelica/RealityLoopMuJoCoHost.mo` declares a `pure function` with standard `external "C" RumocaHost_externalReal3(x,z,yaw,depth)`. A locally patched Rumoca WASM runtime binds this strict 3×Real → Real operation to a synchronous, run-scoped host callback; `src/modelica/mujoco-host.ts` sends each solver query to the official MuJoCo WASM collision API. The compiled Modelica DAE receives the penetration depth and uses it to change `der(x)`. An opt-in headless test verified **85 calls**, a 0.505 m collision depth and the solver-produced trajectory. No MuJoCo dynamics stepping.
+- **Not yet implemented:** `modelica/RealityLoopMuJoCo.mo` and `native/realityloop_mujoco.{h,c}` define the desired full `ExternalObject` and C array/normal API. They have not been compiled, linked, or executed. The current strict scalar ABI is an incremental proof, **not** general native/WASM C-library linking or a replaceable full contact backend.
 
-**Important:** these C bindings are *not linked into the current Rumoca WASM simulator*. In this pinned Rumoca build even a minimal `external "C"` runtime probe fails; native/WASM external-library linking and `ExternalObject` lifecycle support must be implemented and verified before the Modelica package is executable. The C shim itself is not compiled or linked in current CI; refer to `native/README.md`. Do not advertise MuJoCo as the default physics engine.
+To build/test the opt-in proof from an adjacent patched Rumoca source checkout:
+
+```sh
+npm run build:rumoca-host  # needs cargo, wasm32 target and matching wasm-bindgen CLI
+npm run test:mujoco-modelica
+```
+
+The default supermarket still uses **Modelica analytic shelf contact**; it does not invoke MuJoCo. Taskyon DAG integration is likewise not yet implemented. Do not conflate the verified probe with full MuJoCo/Modelica integration.
 
 ## Headless scenarios
 
@@ -42,7 +49,7 @@ The JSON run results include a checked minimum swept clearance, nearest obstacle
 ## Known limitations and priorities
 
 1. **Next fidelity step:** improve physical contact normals/constraints, turn-swept envelope and calibrated vehicle geometry; the planar clearance result does not replace 3D collision or real-robot tests.
-2. **Priority 2:** general-purpose Rumoca external-C ABI + native/WASM symbol resolution, then make MuJoCo/Rapier contact queries replaceable Modelica packages without double integration.
+2. **Priority 2:** expand the proven scalar Rumoca external-C host bridge to a generic native/WASM ABI with correct array marshalling and `ExternalObject` lifetime; then make MuJoCo collision-only queries replaceable Modelica packages without duplicate integration.
 3. **Priority 3:** robust 3D SLAM/pose graph and loop closure, realistic RGB/depth camera outputs, calibrated sensor timing/noise/bias, and IMU-wheel-LiDAR fusion.
 4. **Later:** accurate Tennant drivetrain/tire calibration, responsive sensor-based navigation, additional safety checks and BrainOS/ROS adapters.
 

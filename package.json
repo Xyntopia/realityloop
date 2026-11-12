@@ -30,7 +30,9 @@
     "dev": "vite --host 127.0.0.1",
     "check": "tsc --noEmit",
     "sim": "node --experimental-strip-types src/cli.ts",
-    "test": "node --experimental-strip-types --test tests/*.test.ts"
+    "test": "node --experimental-strip-types --test tests/*.test.ts",
+    "build:rumoca-host": "sh scripts/build-rumoca-host.sh",
+    "test:mujoco-modelica": "RUMOCA_EXTERNAL_C_WASM_DIR=build/rumoca-host node --experimental-strip-types --test tests/mujoco-modelica-host.test.ts"
   },
   "dependencies": {
     "@dimforge/rapier3d-compat": "0.21.0",
