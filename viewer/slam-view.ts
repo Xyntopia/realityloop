@@ -19,6 +19,7 @@ export class SlamView {
   private lastStamp = -Infinity
   private previousTruth: {pose: Pose2D; speed: number; stampSeconds: number} | undefined
   private visible = true
+  private overlaysVisible = true
   private latest: SlamEstimate | undefined
 
   constructor(private readonly mapCanvas: HTMLCanvasElement, scene: THREE.Scene) {
@@ -83,11 +84,23 @@ export class SlamView {
     this.drawMap()
   }
 
+  private syncOverlays(): void {
+    const visible=this.visible&&this.overlaysVisible
+    for(const beam of this.beams)beam.visible=visible
+    this.points.visible=visible
+  }
+
   toggleRays(): boolean {
     this.visible = !this.visible
-    for (const beam of this.beams) beam.visible = this.visible
-    this.points.visible = this.visible
+    this.syncOverlays()
     return this.visible
+  }
+
+  /** Hides diagnostic geometry in photo view without changing scan results
+   * or overriding the operator's preferred LiDAR toggle. */
+  setOverlaysVisible(visible:boolean):void {
+    this.overlaysVisible=visible
+    this.syncOverlays()
   }
 
   step(truth: Pose2D, redraw = true, speed = 0, stampSeconds = 0): void {

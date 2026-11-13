@@ -1,6 +1,10 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { createSupermarketInterior } from './supermarket-interior.ts'
+import {
+  shouldCaptureSensorPreview,updateAutoQuality,
+  type VisualQuality,type AutoQualityState,
+} from './render-policy.ts'
 import type { TennantResult, TennantScenario } from '../src/tennant.ts'
 import type { SupermarketReplay } from '../src/modelica/supermarket.ts'
 import { createTennantT7AMR } from './tennant.ts'
@@ -32,7 +36,6 @@ controls.update()
 
 // The visual scene is intentionally not part of Modelica's obstacle/physics DAG.
 const interior = createSupermarketInterior(scene,renderer)
-type VisualQuality='high'|'balanced'|'performance'
 const graphicsSelect=elem('visual-quality') as HTMLSelectElement
 const gl=renderer.getContext()
 const rendererInfo=gl.getExtension('WEBGL_debug_renderer_info')
@@ -51,7 +54,7 @@ const applyQuality=(quality:VisualQuality)=>{
   renderer.shadowMap.needsUpdate=true
   interior.setVisualQuality(quality)
 }
-applyQuality(softwareRenderer?'performance':'high')
+applyQuality(softwareRenderer?'performance':'balanced')
 const goal = new THREE.Mesh(new THREE.RingGeometry(0.43,0.51,48),new THREE.MeshBasicMaterial({color:0x3ce0b7,side:THREE.DoubleSide}))
 goal.rotation.x=-Math.PI/2;goal.position.set(7.5,0.016,0);scene.add(goal)
 const robot=createTennantT7AMR()
@@ -157,7 +160,9 @@ const displaySample=(i:number)=>{
 }
 let lastCameraRender=-Infinity
 let fpsWindowStart=performance.now()
-let lowFpsWindows=0
+let autoQuality:AutoQualityState={
+  quality:graphicsQuality,slowWindows:0,fastWindows:0,
+}
 let fpsFrames=0
 const render=(now:number)=>{
   const delta=Math.min((now-lastFrameTime)/1000,0.5);lastFrameTime=now
@@ -187,21 +192,20 @@ const render=(now:number)=>{
   if(now-fpsWindowStart>=1000){
     const fps=Math.round(fpsFrames*1000/(now-fpsWindowStart))
     if(graphicsSelect.value==='auto' && !softwareRenderer && !document.hidden &&
-       now>5000 && fps<24 && graphicsQuality!=='performance'){
-      lowFpsWindows++
-      if(lowFpsWindows>=2){
-        applyQuality(graphicsQuality==='high'?'balanced':'performance')
-        lowFpsWindows=0
-      }
-    }else if(fps>=28)lowFpsWindows=0
+       now>5000){
+      autoQuality=updateAutoQuality(autoQuality,fps)
+      if(autoQuality.quality!==graphicsQuality)applyQuality(autoQuality.quality)
+    }
     elem('render-stats').textContent=fps+' FPS · '+renderer.info.render.calls+
       ' DRAWS · '+interior.decorativeProductCount+' PRODUCTS · '+graphicsQuality.toUpperCase()
     fpsFrames=0
     fpsWindowStart=now
   }
-  const cameraPeriod=graphicsQuality==='high'?150:
-    graphicsQuality==='balanced'?350:900
-  if(now-lastCameraRender>cameraPeriod){
+  if(shouldCaptureSensorPreview({
+    now,lastCapture:lastCameraRender,quality:graphicsQuality,
+    panelsVisible:!document.body.classList.contains('showcase'),
+    pageVisible:!document.hidden,
+  })){
     slamView.renderCamera(robot,scene)
     lastCameraRender=now
   }
@@ -218,17 +222,26 @@ elem('route').addEventListener('change',()=>void run((elem('route') as HTMLSelec
 elem('lidar-toggle').addEventListener('click',()=>{const visible=slamView.toggleRays();elem('lidar-toggle').textContent=visible?'Hide rays':'Show rays'})
 graphicsSelect.addEventListener('change',()=>{
   const selected=graphicsSelect.value
-  if(selected==='auto')applyQuality(softwareRenderer?'performance':'high')
+  if(selected==='auto')applyQuality(softwareRenderer?'performance':'balanced')
   else if(selected==='high'||selected==='balanced'||selected==='performance')
     applyQuality(selected)
-  lowFpsWindows=0
-})
-elem('presentation').addEventListener('click',()=>{
-  const hidden=document.body.classList.toggle('showcase')
-  elem('presentation').textContent=hidden?'Show panels':'Hide panels'
+  autoQuality={quality:graphicsQuality,slowWindows:0,fastWindows:0}
 })
 type CameraMode='orbit'|'top'|'reference'
 let cameraMode:CameraMode='orbit'
+const syncPresentationGeometry=()=>{
+  const diagnosticsVisible=!document.body.classList.contains('showcase')&&
+    cameraMode!=='reference'
+  goal.visible=diagnosticsVisible
+  trail.visible=diagnosticsVisible
+  coverage.visible=diagnosticsVisible
+  slamView.setOverlaysVisible(diagnosticsVisible)
+}
+elem('presentation').addEventListener('click',()=>{
+  const hidden=document.body.classList.toggle('showcase')
+  elem('presentation').textContent=hidden?'Show panels':'Hide panels'
+  syncPresentationGeometry()
+})
 const setCameraMode=(mode:CameraMode)=>{
   cameraMode=mode
   if(mode==='top'){
@@ -247,6 +260,7 @@ const setCameraMode=(mode:CameraMode)=>{
   }
   camera.updateProjectionMatrix()
   interior.setCeilingVisible(mode!=='top')
+  syncPresentationGeometry()
   controls.enabled=mode!=='reference'
   controls.update()
   elem('camera').textContent=mode==='top'?'Perspective':'Top view'
