@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import { supermarketObstacles } from '../src/geometry.ts'
 import {createSupermarketStock} from './supermarket-products.ts'
+import {createSupermarketDecor} from './supermarket-decor.ts'
 import terrazzoDiffuse from '../assets/materials/terrazzo_tiles_diff_1k.jpg?url'
 import terrazzoRough from '../assets/materials/terrazzo_tiles_rough_1k.jpg?url'
 import terrazzoNormal from '../assets/materials/terrazzo_tiles_nor_gl_1k.jpg?url'
@@ -15,11 +16,6 @@ import terrazzoNormal from '../assets/materials/terrazzo_tiles_nor_gl_1k.jpg?url
  */
 const baseMaterial=(color:number,roughness=.58,metalness=.04)=>
   new THREE.MeshStandardMaterial({color,roughness,metalness})
-const shopWhite=baseMaterial(0xdce6df,.44,.2)
-const steel=baseMaterial(0x6c7f87,.27,.77)
-const trim=baseMaterial(0xbecac8,.35,.37)
-const billboard=baseMaterial(0x3c6967,.4,.15)
-
 /** CC0 photo-scanned material by Amal Kumar, Poly Haven: terrazzo_tiles.
  * All three 1K maps are vendored; no runtime texture CDN/network dependency. */
 const makeFloorMaps=(renderer:THREE.WebGLRenderer)=>{
@@ -135,23 +131,64 @@ export const createSupermarketInterior=(
   const {addBox,flushStaticBoxes}=createStaticBoxBatcher()
   const floorMaps=makeFloorMaps(renderer)
   const unit=new THREE.BoxGeometry(1,1,1)
-  const floor=new THREE.Mesh(
-    new THREE.PlaneGeometry(20,15),
-    new THREE.MeshPhysicalMaterial({
-      map:floorMaps.diffuse,
-      roughnessMap:floorMaps.roughness,
-      normalMap:floorMaps.normal,
-      normalScale:new THREE.Vector2(.38,.38),
-      color:0xe2ece7,
-      roughness:.56,metalness:.015,
-      clearcoat:.35,clearcoatRoughness:.21,envMapIntensity:.95,
-    }),
+  const shopWhite=baseMaterial(0xdce6df,.44,.2)
+  const steel=baseMaterial(0x6c7f87,.27,.77)
+  const trim=baseMaterial(0xbecac8,.35,.37)
+  const billboard=baseMaterial(0x3c6967,.4,.15)
+  const floorHigh=new THREE.MeshPhysicalMaterial({
+    map:floorMaps.diffuse,roughnessMap:floorMaps.roughness,
+    normalMap:floorMaps.normal,normalScale:new THREE.Vector2(.38,.38),
+    color:0xf1f4ed,roughness:.56,metalness:.015,
+    clearcoat:.29,clearcoatRoughness:.32,envMapIntensity:.65,
+  })
+  const floorBalanced=new THREE.MeshStandardMaterial({
+    map:floorMaps.diffuse,normalMap:floorMaps.normal,
+    normalScale:new THREE.Vector2(.25,.25),color:0xf1f4ed,
+    roughness:.67,metalness:0,
+  })
+  const floorPerformance=new THREE.MeshBasicMaterial({
+    map:floorMaps.diffuse,color:0xdadfd9,
+  })
+  const floor=new THREE.Mesh<THREE.PlaneGeometry,THREE.Material>(
+    new THREE.PlaneGeometry(20,15),floorHigh,
   )
   floor.name='PBR polished terrazzo tile floor'
   floor.rotation.x=-Math.PI/2
   floor.position.set(4.2,-.015,0)
   floor.receiveShadow=true
   room.add(floor)
+
+  // Soft baked contact shadow: one small transparent atlas, five instances,
+  // no additional shadow-map renders or collision/SLAM geometry.
+  const shadowCanvas=document.createElement('canvas')
+  shadowCanvas.width=64;shadowCanvas.height=64
+  const shadowCtx=shadowCanvas.getContext('2d')
+  if(!shadowCtx)throw Error('Contact shadow canvas unavailable')
+  const gradient=shadowCtx.createRadialGradient(32,32,8,32,32,32)
+  gradient.addColorStop(0,'rgba(17,24,24,.53)')
+  gradient.addColorStop(.62,'rgba(17,24,24,.28)')
+  gradient.addColorStop(1,'rgba(17,24,24,0)')
+  shadowCtx.fillStyle=gradient
+  shadowCtx.fillRect(0,0,64,64)
+  const shadowTexture=new THREE.CanvasTexture(shadowCanvas)
+  const shadowMaterial=new THREE.MeshBasicMaterial({
+    map:shadowTexture,transparent:true,depthWrite:false,
+    opacity:.58,polygonOffset:true,polygonOffsetFactor:-1,
+  })
+  const shadows=new THREE.InstancedMesh(
+    new THREE.PlaneGeometry(1,1),shadowMaterial,supermarketObstacles.length,
+  )
+  const shadowPose=new THREE.Object3D()
+  for(const [index,obstacle] of supermarketObstacles.entries()){
+    shadowPose.position.set(obstacle.x,.006,obstacle.z)
+    shadowPose.rotation.set(-Math.PI/2,0,0)
+    shadowPose.scale.set(obstacle.halfX*2+.55,obstacle.halfZ*2+.55,1)
+    shadowPose.updateMatrix()
+    shadows.setMatrixAt(index,shadowPose.matrix)
+  }
+  shadows.instanceMatrix.needsUpdate=true
+  shadows.name='Visual-only fixture contact shading'
+  room.add(shadows)
 
   const wall=baseMaterial(0xc2d0cf,.94,.015)
   const lowerWall=baseMaterial(0x6a827e,.8,.04)
@@ -224,42 +261,39 @@ export const createSupermarketInterior=(
   const border=baseMaterial(0xe5efee,.51,.16)
   const band=baseMaterial(0x2c706f,.42,.23)
   for(const o of supermarketObstacles){
-    const root=new THREE.Group()
-    root.position.set(o.x,0,o.z)
-    root.name='Fixture '+o.id
-    rack.add(root)
+    // Position each box directly in the rack's coordinate system. Batching
+    // by material now spans *all* fixtures, not one draw per shelf/material.
+    // This has identical world transforms to the previous translated roots.
+    const fixtureBox=(
+      w:number,h:number,d:number,x:number,y:number,z:number,
+      material:THREE.Material,castShadow=false,
+    )=>addBox(rack,unit,w,h,d,o.x+x,y,o.z+z,material,castShadow)
     if(o.kind==='obstruction'){
-      // No extra colliders: this uses the obstacle's actual AABB.
-      addBox(root,unit,o.halfX*2,o.height,o.halfZ*2,0,o.height/2,0,
-        new THREE.MeshPhysicalMaterial({
-          color:0xb7c6c3,roughness:.37,metalness:.23,clearcoat:.22,
-        }),true)
-      for(let level=0;level<3;level++){
-        addBox(root,unit,o.halfX*2+.035,.048,o.halfZ*2+.04,
-          0,.35+level*.49,0,steel)
-      }
+      // Render-only pallet display occupies the same canonical obstacle AABB.
+      // This broadphase fixture is not replaced in the Modelica geometry.
+      continue
     }else{
       const width=o.halfX*2
       const depth=o.halfZ*2
       for(const z of [-o.halfZ,o.halfZ])
         for(const x of [-o.halfX,o.halfX])
-          addBox(root,unit,.047,o.height,.047,x,o.height/2,z,steel)
+          fixtureBox(.047,o.height,.047,x,o.height/2,z,steel)
       for(let level=0;level<5;level++){
         const y=.27+level*.39
-        addBox(root,unit,width,.055,depth,0,y,0,shopWhite)
+        fixtureBox(width,.055,depth,0,y,0,shopWhite)
         for(const side of [-1,1]){
-          addBox(root,unit,width,.072,.023,0,y+.015,side*(o.halfZ-.015),border)
-          addBox(root,unit,width,.021,.028,0,y-.019,side*(o.halfZ+.002),band)
+          fixtureBox(width,.072,.023,0,y+.015,side*(o.halfZ-.015),border)
+          fixtureBox(width,.021,.028,0,y-.019,side*(o.halfZ+.002),band)
         }
       }
-      addBox(root,unit,width+.04,.077,depth+.04,0,2.07,0,trim)
-      // Endcaps on each physical shelf; render-only panels.
+      fixtureBox(width+.04,.077,depth+.04,0,2.07,0,trim)
       for(const x of [-o.halfX,o.halfX]){
-        addBox(root,unit,.025,1.76,depth-.03,x,1.12,0,billboard)
+        fixtureBox(.025,1.76,depth-.03,x,1.12,0,billboard)
       }
     }
   }
   const stock=createSupermarketStock(rack)
+  const decor=createSupermarketDecor(room,rack)
   const decorativeProductCount=stock.products
 
   // Overhead category boards and a store graphic are intentionally
@@ -290,6 +324,31 @@ export const createSupermarketInterior=(
   farWallSign.name='Far-aisle wall sign (render-only)'
   rack.add(farWallSign)
   flushStaticBoxes(unit)
+  // Large flat walls/ceiling can use baked color in Performance mode.
+  // Keep Lambert shading for the smaller 3D fixtures that need depth cues.
+  const fastFixtureMaterials=new Map<THREE.MeshStandardMaterial,THREE.Material>()
+  const fastBackgroundMaterials=new Map<THREE.MeshStandardMaterial,THREE.Material>()
+  const architecture:Array<{
+    mesh:THREE.InstancedMesh
+    original:THREE.MeshStandardMaterial
+    fast:THREE.Material
+  }>=[]
+  interior.traverse(object=>{
+    if(!(object instanceof THREE.InstancedMesh)||
+      object.name!=='Instanced store architecture'||
+      !(object.material instanceof THREE.MeshStandardMaterial))return
+    const original=object.material
+    const isFixture=object.parent===rack
+    const fallbackMaterials=isFixture?fastFixtureMaterials:fastBackgroundMaterials
+    let fast=fallbackMaterials.get(original)
+    if(!fast){
+      fast=isFixture
+        ? new THREE.MeshLambertMaterial({color:original.color,map:original.map})
+        : new THREE.MeshBasicMaterial({color:original.color,map:original.map})
+      fallbackMaterials.set(original,fast)
+    }
+    architecture.push({mesh:object,original,fast})
+  })
   const environment=createStudioReflection()
   scene.environment=environment
   scene.background=new THREE.Color(0x9eb3b5)
@@ -299,18 +358,16 @@ export const createSupermarketInterior=(
     // Lower GPU fragment work; preserve geometry and all simulation results.
     const low=quality==='performance'
     stock.setQuality(quality)
+    shadows.visible=!low
+    for(const {mesh,original,fast} of architecture)
+      mesh.material=low?fast:original
     scene.environment=low?null:environment
-    softLight.visible=!low
-    softWarm.visible=!low
+    softLight.visible=quality==='high'
+    softWarm.visible=quality==='high'
     // One shadow-casting key, no dynamic reflection captures.
     key.castShadow=!low
-    const material=floor.material as THREE.MeshPhysicalMaterial
-    material.clearcoat=low ? 0 : .35
-    material.roughness=low ? .88 : .56
-    material.metalness=low ? 0 : .015
-    material.normalMap=low ? null : floorMaps.normal
-    material.roughnessMap=low ? null : floorMaps.roughness
-    material.needsUpdate=true
+    floor.material=quality==='high'?floorHigh:
+      quality==='balanced'?floorBalanced:floorPerformance
   }
   return {
     decorativeProductCount,overheadLights:lamps,
@@ -318,6 +375,7 @@ export const createSupermarketInterior=(
     setCeilingVisible:visible=>{ceiling.visible=visible},
     dispose:()=>{
       stock.dispose()
+      decor.dispose()
       floorMaps.dispose()
       scene.remove(interior)
       interior.traverse(object=>{
@@ -328,6 +386,9 @@ export const createSupermarketInterior=(
           else object.material.dispose()
         }
       })
+      for(const material of [floorHigh,floorBalanced,floorPerformance])material.dispose()
+      for(const {original,fast} of architecture){original.dispose();fast.dispose()}
+      shadowTexture.dispose()
       environment.dispose()
     },
   }

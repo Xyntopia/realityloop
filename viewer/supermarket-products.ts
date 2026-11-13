@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import {supermarketObstacles} from '../src/geometry.ts'
+import {atlasStockGeometry,type AtlasLayout} from './stock-geometry.ts'
 
 type Packaging='carton'|'can'|'bottle'|'pouch'
 type Product=Readonly<{
@@ -144,6 +145,42 @@ const productGeometry=(kind:Packaging):THREE.BufferGeometry=>{
   }
 }
 
+/** All original package artwork, one mipmapped texture. Eight-pixel
+ * edge extrusion prevents unrelated packages bleeding across atlas tiles. */
+const createStockAtlas=()=>{
+  const layout:AtlasLayout={
+    columns:6,rows:Math.ceil(products.length/6),
+    tileWidth:256,tileHeight:384,padding:8,
+    width:6*(256+16),height:Math.ceil(products.length/6)*(384+16),
+  }
+  const canvas=document.createElement('canvas')
+  canvas.width=layout.width
+  canvas.height=layout.height
+  const ctx=canvas.getContext('2d')
+  if(!ctx)throw Error('Stock atlas canvas unavailable')
+  products.forEach((product,index)=>{
+    const sourceTexture=productTexture(product,index)
+    const image=sourceTexture.image as HTMLCanvasElement
+    const {tileWidth:w,tileHeight:h,padding:p}=layout
+    const x=(index%layout.columns)*(w+2*p)+p
+    const y=Math.floor(index/layout.columns)*(h+2*p)+p
+    ctx.drawImage(image,x,y,w,h)
+    ctx.drawImage(image,0,0,1,h,x-p,y,p,h)
+    ctx.drawImage(image,w-1,0,1,h,x+w,y,p,h)
+    ctx.drawImage(image,0,0,w,1,x,y-p,w,p)
+    ctx.drawImage(image,0,h-1,w,1,x,y+h,w,p)
+    for(const [sx,sy,dx,dy] of [
+      [0,0,x-p,y-p],[w-1,0,x+w,y-p],
+      [0,h-1,x-p,y+h],[w-1,h-1,x+w,y+h],
+    ])ctx.drawImage(image,sx,sy,1,1,dx,dy,p,p)
+    sourceTexture.dispose()
+  })
+  const texture=new THREE.CanvasTexture(canvas)
+  texture.colorSpace=THREE.SRGBColorSpace
+  texture.anisotropy=4
+  return {texture,layout}
+}
+
 export type StockDetails=Readonly<{
   products:number
   prices:number
@@ -151,8 +188,9 @@ export type StockDetails=Readonly<{
   dispose:()=>void
 }>
 
-/** Dense retail stock is a cosmetic layer. Nothing is added to contact/SLAM.
- * 1 InstancedMesh per SKU and 1 for every shelf-edge price strip. */
+/** Dense retail stock is cosmetic, never added to contact or LiDAR.
+ * Each SKU's indexed geometry is stored once per material/shape batch,
+ * rather than duplicating triangles for every item. */
 export const createSupermarketStock=(group:THREE.Group):StockDetails=>{
   const distributions:THREE.Matrix4[][]=products.map(()=>[])
   const pose=new THREE.Object3D()
@@ -194,32 +232,79 @@ export const createSupermarketStock=(group:THREE.Group):StockDetails=>{
       }
     }
   })
-  const textures:THREE.Texture[]=[]
+  const {texture:atlas,layout}=createStockAtlas()
   const geometries:THREE.BufferGeometry[]=[]
   const materials:THREE.Material[]=[]
-  const detailedMeshes:THREE.InstancedMesh[]=[]
-  distributions.forEach((matrices,index)=>{
-    if(!matrices.length)return
-    const product=products[index]!
-    const texture=productTexture(product,index)
-    const material=new THREE.MeshStandardMaterial({
-      map:texture,
-      roughness:product.packaging==='can' ? .29 : product.packaging==='bottle' ? .28 : .71,
-      metalness:product.packaging==='can' ? .48 : .02,
-    })
-    const geometry=productGeometry(product.packaging)
-    const mesh=new THREE.InstancedMesh(geometry,material,matrices.length)
-    mesh.name='Photographic-layout shelf stock: '+product.brand+' '+product.name
-    mesh.frustumCulled=false
-    matrices.forEach((matrix,i)=>mesh.setMatrixAt(i,matrix))
-    mesh.instanceMatrix.needsUpdate=true
-    // Dense stock does not cast hundreds of shadows every frame.
+  const detailedMeshes:Array<{
+    mesh:THREE.BatchedMesh
+    high:THREE.Material
+    balanced:THREE.MeshLambertMaterial
+  }>=[]
+  const lidMeshes:THREE.InstancedMesh[]=[]
+  for(const kind of ['carton','can','bottle','pouch'] as const){
+    const skuIndices=products.flatMap((product,index)=>
+      product.packaging===kind&&distributions[index]!.length?[index]:[])
+    const instances=skuIndices.flatMap(sku=>
+      distributions[sku]!.map(matrix=>({sku,matrix})))
+    if(!instances.length)continue
+    const base=productGeometry(kind)
+    // Printed paper cartons and pouches are effectively diffuse at this
+    // scale. Reserve the more expensive specular shader for metal/plastic.
+    const high=kind==='can'||kind==='bottle'
+      ? new THREE.MeshStandardMaterial({
+          map:atlas,roughness:kind==='can' ? .29 : .32,
+          metalness:kind==='can' ? .38 : .015,
+        })
+      : new THREE.MeshLambertMaterial({map:atlas})
+    const balanced=new THREE.MeshLambertMaterial({map:atlas})
+    const mesh=new THREE.BatchedMesh(
+      instances.length,
+      skuIndices.length*base.getAttribute('position').count,
+      skuIndices.length*(base.index?.count??base.getAttribute('position').count),
+      high,
+    )
+    mesh.sortObjects=false
+    mesh.perObjectFrustumCulled=true
+    for(const sku of skuIndices){
+      const geometry=atlasStockGeometry(base,sku,layout)
+      const geometryId=mesh.addGeometry(geometry)
+      for(const matrix of distributions[sku]!){
+        const instanceId=mesh.addInstance(geometryId)
+        mesh.setMatrixAt(instanceId,matrix)
+      }
+      geometry.dispose()
+    }
+    base.dispose()
+    mesh.name='Photographic-layout shelf stock: '+kind
     mesh.castShadow=false
     mesh.receiveShadow=false
     group.add(mesh)
-    detailedMeshes.push(mesh)
-    textures.push(texture);materials.push(material);geometries.push(geometry)
-  })
+    detailedMeshes.push({mesh,high,balanced})
+    geometries.push(mesh.geometry)
+    materials.push(high,balanced)
+    if(kind==='can'||kind==='bottle'){
+      // Small metal pull-tab rims and molded plastic bottle caps give the
+      // near-field render a recognizable silhouette at two extra draws.
+      const metal=kind==='can'
+      const radius=metal ? .053 : .033
+      const lidGeometry=new THREE.CylinderGeometry(radius,radius,.018,6)
+      const lidMaterial=metal
+        ? new THREE.MeshStandardMaterial({color:0xc8cbca,metalness:.8,roughness:.35})
+        : new THREE.MeshLambertMaterial({color:0xe8e8dc})
+      const lids=new THREE.InstancedMesh(lidGeometry,lidMaterial,instances.length)
+      const local=new THREE.Matrix4().makeTranslation(0,metal ? .134 : .15,0)
+      const world=new THREE.Matrix4()
+      instances.forEach(({matrix},i)=>lids.setMatrixAt(i,world.multiplyMatrices(matrix,local)))
+      lids.instanceMatrix.needsUpdate=true
+      lids.name='Decorative package caps: '+kind
+      lids.castShadow=false
+      lids.receiveShadow=false
+      group.add(lids)
+      lidMeshes.push(lids)
+      geometries.push(lidGeometry)
+      materials.push(lidMaterial)
+    }
+  }
   const labelTexture=priceStrip()
   const labelGeometry=new THREE.PlaneGeometry(1,1)
   const labelMaterial=new THREE.MeshBasicMaterial({
@@ -258,13 +343,17 @@ export const createSupermarketStock=(group:THREE.Group):StockDetails=>{
     products:distributions.reduce((count,items)=>count+items.length,0),
     prices,
     setQuality:quality=>{
-      const low=quality==='performance'
-      detailedMeshes.forEach(mesh=>{mesh.visible=!low})
-      simplified.visible=low
-      labels.visible=!low
+      for(const {mesh,high,balanced} of detailedMeshes){
+        mesh.visible=quality!=='performance'
+        mesh.material=quality==='balanced'?balanced:high
+      }
+      simplified.visible=quality==='performance'
+      labels.visible=quality!=='performance'
+      for(const lids of lidMeshes)lids.visible=quality==='high'
     },
     dispose:()=>{
-      textures.forEach(texture=>texture.dispose())
+      for(const {mesh} of detailedMeshes)mesh.dispose()
+      atlas.dispose()
       geometries.forEach(geometry=>geometry.dispose())
       materials.forEach(material=>material.dispose())
       labelTexture.dispose()

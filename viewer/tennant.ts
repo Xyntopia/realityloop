@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import { lidars } from '../src/slam.ts'
+import {createStaticRobotBatcher} from './static-robot-batcher.ts'
 
 /**
  * Lightweight procedural visual approximation of the Tennant T7AMR.
@@ -21,24 +22,9 @@ export const createTennantT7AMR = (): THREE.Group => {
   const orange = new THREE.MeshStandardMaterial({ color: 0xff8f14, emissive: 0x7e3100, emissiveIntensity: 0.35, roughness: 0.4 })
   const red = new THREE.MeshStandardMaterial({ color: 0xc44c32, roughness: 0.75 })
 
-  const box = (sx:number,sy:number,sz:number,x:number,y:number,z:number,material:THREE.Material,bevel=0) => {
-    const geometry = new THREE.BoxGeometry(sx,sy,sz)
-    const mesh = new THREE.Mesh(geometry,material)
-    mesh.position.set(x,y,z)
-    mesh.castShadow = true
-    mesh.receiveShadow = true
-    if(bevel) mesh.rotation.z=bevel
-    root.add(mesh)
-    return mesh
-  }
-  const cylinder = (radius:number,depth:number,x:number,y:number,z:number,material:THREE.Material,axis:'x'|'y'|'z'='z')=>{
-    const mesh = new THREE.Mesh(new THREE.CylinderGeometry(radius,radius,depth,20),material)
-    mesh.rotation[axis==='x'?'z':axis==='z'?'x':'y']=Math.PI/2
-    mesh.position.set(x,y,z)
-    mesh.castShadow=true
-    root.add(mesh)
-    return mesh
-  }
+  // Static body and sensor mounts move together with root; batch by material
+  // to preserve detail while avoiding dozens of independent WebGL draw calls.
+  const {box,cylinder,flush}=createStaticRobotBatcher(root)
 
   // Lower frame / long grey battery tray.
   box(1.49,0.27,0.70,-0.02,0.28,0,grey)
@@ -113,5 +99,6 @@ export const createTennantT7AMR = (): THREE.Group => {
   label('T7 AMR',-0.53,1.04,0.339,0,0.31)
   label('T7 AMR',-0.53,1.04,-0.339,Math.PI,0.31)
   label('TENNANT',0.824,0.77,0,Math.PI/2,0.28)
+  flush()
   return root
 }
