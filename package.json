@@ -28,6 +28,7 @@
   "scripts": {
     "build": "tsup src/index.ts src/cli.ts src/modelica/node.ts --format esm --dts --clean --target node22",
     "build:web": "vite build --outDir dist-web",
+    "bench:render": "node scripts/benchmark-supermarket.mjs",
     "build:dag-runtime": "node tools/build-comp-dag-runtime.mjs",
     "dev": "vite --host 127.0.0.1",
     "check": "tsc --noEmit",

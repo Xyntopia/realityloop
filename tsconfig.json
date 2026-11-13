@@ -21,6 +21,7 @@
     "src/**/*.ts",
     "tests/**/*.ts",
     "viewer/**/*.ts",
+    "benchmarks/**/*.ts",
     "vite.config.ts"
   ]
 }
