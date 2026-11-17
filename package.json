@@ -30,6 +30,7 @@
     "build:web": "vite build --outDir dist-web",
     "bench:render": "node scripts/benchmark-supermarket.mjs",
     "capture:readme": "node scripts/capture-readme.mjs",
+    "capture:gallery": "node scripts/capture-gallery.mjs",
     "check:visual": "node scripts/check-browser-lighting.mjs",
     "check:browser:prod": "node scripts/check-production-supermarket.mjs",
     "build:dag-runtime": "node tools/build-comp-dag-runtime.mjs",

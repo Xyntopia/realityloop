@@ -56,6 +56,16 @@ detour replay, checks actual ICP registrations and rejects JavaScript errors
 or growing geometry warnings. It also deliberately breaks a PCL constructor
 after the successful run to verify that grid fallback keeps replaying.
 
+### Example gallery previews
+
+Both gallery thumbnails are fresh **1440×810 screenshots of RealityLoop itself**:
+the supermarket shows its completed Modelica replay and Taskyon-styled controls;
+the wheel-traction laboratory shows successfully compiled Modelica trajectories,
+charts, and the current navy/orange interface. They are captured by
+`npm run capture:gallery` using Playwright/Chromium (not stock photos,
+externally sourced screenshots, or synthetic mockups). Regenerate them when the
+visual theme changes; the gallery imports the versioned build assets directly.
+
 ## Design Graph is mandatory; P2P is optional
 
 Both the headless CLI and browser examples use the **real Taskyon `@taskyon/comp-dag` node engine**. The module is bundled offline in `src/vendor/taskyon-comp-dag.mjs` from `frontend/packages/comp-dag`, with a recorded source and bundle lock at `src/vendor/taskyon-comp-dag.lock.json`. This is a temporary standalone packaging solution, not a second graph implementation. Rebuild only when intentionally updating canonical Taskyon sources:

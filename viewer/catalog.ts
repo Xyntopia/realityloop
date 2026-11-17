@@ -1,12 +1,12 @@
 import { realityLoopExamples } from '../src/examples.ts'
-import supermarketPreview from '../docs/realityloop-pbr-supermarket-preview.jpg?url'
-import tractionPreview from '../docs/modelica-drive-lab-preview.png?url'
+import supermarketPreview from '../docs/realityloop-gallery-supermarket.jpg?url'
+import tractionPreview from '../docs/realityloop-gallery-traction.jpg?url'
 import './theme.css'
 import './catalog.css'
 
 const previews: Readonly<Record<string, string>> = {
-  '/docs/realityloop-pbr-supermarket-preview.jpg': supermarketPreview,
-  '/docs/modelica-drive-lab-preview.png': tractionPreview,
+  '/docs/realityloop-gallery-supermarket.jpg': supermarketPreview,
+  '/docs/realityloop-gallery-traction.jpg': tractionPreview,
 }
 
 const grid = document.querySelector<HTMLElement>('#examples')

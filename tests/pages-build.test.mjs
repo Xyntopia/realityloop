@@ -56,10 +56,20 @@ test('production pcl.js retains PointXYZ class identity required by WASM', async
     'Production minifier stripped pcl.js PointXYZ constructor name')
 })
 
-test('gallery previews are bundled in the Pages artifact', async () => {
+test('gallery uses recent RealityLoop-generated previews for both examples', async () => {
   const assets = await readdir(new URL('assets/', site))
-  assert.ok(assets.some(name => /^realityloop-pbr-supermarket-preview-.*\.jpg$/.test(name)), 'Supermarket preview missing')
-  assert.ok(assets.some(name => /^modelica-drive-lab-preview-.*\.png$/.test(name)), 'Traction lab preview missing')
+  const examples = await readFile(new URL('../src/examples.ts', import.meta.url), 'utf8')
+  for (const subject of ['supermarket','traction']) {
+    const filename = `realityloop-gallery-${subject}.jpg`
+    assert.ok(examples.includes(`/docs/${filename}`), `Wrong preview path: ${subject}`)
+    assert.ok(assets.some(name => new RegExp(`^realityloop-gallery-${subject}-.*\\.jpg$`).test(name)),
+      `Gallery preview not bundled: ${filename}`)
+    const jpg = await readFile(new URL(`../docs/${filename}`,import.meta.url))
+    assert.ok(jpg.length > 60_000, `Gallery preview suspiciously small: ${filename}`)
+    assert.equal(jpg.subarray(0,2).toString('hex'),'ffd8', 'Expected a JPEG capture')
+  }
+  assert.ok(!assets.some(name => /^(?:modelica-drive-lab-preview|realityloop-pbr-supermarket-preview)-/.test(name)),
+    'Outdated preview assets should not be included in deployment')
 })
 
 test('README documents real browser-rendered operator and shopper screenshots', async () => {

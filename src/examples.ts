@@ -18,7 +18,7 @@ export const realityLoopExamples: readonly RealityLoopExample[] = [
     category: 'simulation',
     description: 'A Tennant-inspired cleaning robot navigates a supermarket with Modelica contacts, LiDAR, localization and clearance checks.',
     viewerPath: '/examples/supermarket.html',
-    previewImage: '/docs/realityloop-pbr-supermarket-preview.jpg',
+    previewImage: '/docs/realityloop-gallery-supermarket.jpg',
     headlessScenarios: [
       'scenarios/modelica-supermarket-detour.json',
       'scenarios/modelica-supermarket-blocked.json',
@@ -32,7 +32,7 @@ export const realityLoopExamples: readonly RealityLoopExample[] = [
     category: 'physics-lab',
     description: 'Explore static/kinetic friction, drive torque, wet-floor traction and wheel slip using compiled Modelica equations.',
     viewerPath: '/drive-lab.html',
-    previewImage: '/docs/modelica-drive-lab-preview.png',
+    previewImage: '/docs/realityloop-gallery-traction.jpg',
     headlessScenarios: [
       'scenarios/modelica-wheel-breakaway.json',
       'scenarios/modelica-tennant-traction.json',
