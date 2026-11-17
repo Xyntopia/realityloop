@@ -26,11 +26,19 @@ export type RealityLoopObservations = {
  * timestamped at the solver's observation cadence.
  */
 export const createSensorObservations=(
-  result:{observations:readonly unknown[]},
+  result:{observations:readonly unknown[];scenario?:unknown},
   lidarPeriodSeconds=1,
 ):RealityLoopObservations=>{
   if(!(lidarPeriodSeconds>0 && Number.isFinite(lidarPeriodSeconds))) {
     throw Error('Invalid LiDAR observation period')
+  }
+  // The existing LiDAR extrinsics/obstacles belong to the supermarket only.
+  // Never silently export supermarket scans for Mars or a construction site.
+  const scenario=result.scenario
+  if(scenario&&typeof scenario==='object'&&'kind' in scenario&&
+    ['satellite-adcs','orbital-docking','terrain-traverse'].includes(String(scenario.kind))){
+    return {schema:'realityloop.sensor-observations/v1',available:false,
+      frames:[],lidar:[],source:'simulation-trajectory',lidarPeriodSeconds}
   }
   const poses=result.observations.filter(isPoseSample)
   if(poses.length!==result.observations.length || poses.length===0){

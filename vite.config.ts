@@ -12,6 +12,7 @@ export default defineConfig({
         catalog: fileURLToPath(new URL('./index.html', import.meta.url)),
         supermarket: fileURLToPath(new URL('./examples/supermarket.html', import.meta.url)),
         traction: fileURLToPath(new URL('./drive-lab.html', import.meta.url)),
+        missions: fileURLToPath(new URL('./examples/mission.html', import.meta.url)),
       },
     },
   },

@@ -1,12 +1,20 @@
 import { realityLoopExamples } from '../src/examples.ts'
 import supermarketPreview from '../docs/realityloop-gallery-supermarket.jpg?url'
 import tractionPreview from '../docs/realityloop-gallery-traction.jpg?url'
+import satellitePreview from '../docs/realityloop-gallery-satellite.jpg?url'
+import dockingPreview from '../docs/realityloop-gallery-docking.jpg?url'
+import marsPreview from '../docs/realityloop-gallery-mars.jpg?url'
+import constructionPreview from '../docs/realityloop-gallery-construction.jpg?url'
 import './theme.css'
 import './catalog.css'
 
 const previews: Readonly<Record<string, string>> = {
   '/docs/realityloop-gallery-supermarket.jpg': supermarketPreview,
   '/docs/realityloop-gallery-traction.jpg': tractionPreview,
+  '/docs/realityloop-gallery-satellite.jpg': satellitePreview,
+  '/docs/realityloop-gallery-docking.jpg': dockingPreview,
+  '/docs/realityloop-gallery-mars.jpg': marsPreview,
+  '/docs/realityloop-gallery-construction.jpg': constructionPreview,
 }
 
 const grid = document.querySelector<HTMLElement>('#examples')

@@ -14,11 +14,29 @@ npm run dev                  # local browser example gallery
 npm run sim -- examples      # list examples
 npm run sim -- scenarios/modelica-supermarket-detour.json runs/detour
 npm run sim -- scenarios/modelica-wheel-breakaway.json runs/wheel
+npm run sim -- scenarios/modular-satellite-compact.json runs/satellite
+npm run sim -- scenarios/iboss-module-docking.json runs/docking
+npm run sim -- scenarios/mars-rover-traverse.json runs/mars
+npm run sim -- scenarios/construction-delivery.json runs/construction
 npm run sim -- verify "$INVOCATION_ID" runs/.dag  # separate uncached replay proof
 npm run check && npm test && npm run build && npm run build:web
 ```
 
-The root page lists independent examples: supermarket cleaning and wheel traction. Start the Vite test server with `npm run dev -- --port 5174` (local only) and open `http://localhost:5174/`. The supermarket is at `/examples/supermarket.html` and the traction lab at `/drive-lab.html`; neither is the definition of RealityLoop. Use `npm run dev -- --host 0.0.0.0 --port 5174` only on a trusted network.
+The root page lists independent examples: supermarket cleaning, wheel traction, modular-satellite attitude control, iBOSS docking, Mars rover traversal and construction-site material delivery. Start the Vite test server with `npm run dev -- --port 5174` (local only) and open `http://localhost:5174/`. The supermarket is at `/examples/supermarket.html` and the traction lab at `/drive-lab.html`; neither is the definition of RealityLoop. Use `npm run dev -- --host 0.0.0.0 --port 5174` only on a trusted network.
+
+## New mission examples: reconfigurable spacecraft and field robotics
+
+The **modular satellite** example is informed by *Design Automation and Performance Analysis of Modular Reconfigurable Attitude Control Systems* (Meschede, TU Berlin, 2019, DOI [10.14279/depositonce-8949](https://doi.org/10.14279/depositonce-8949)). It procedurally reconstructs the modular concepts, rather than reusing published figure assets: 40 cm cube-shaped blocks, visible connection interfaces, solar arrays, reaction-wheel assemblies, and compact/distributed/asymmetric layouts. The solver computes the assembly's **full inertia tensor using the parallel-axis theorem**, then integrates three-axis rigid-body angular motion with bounded reaction-wheel PD torque and a quaternion attitude state. Selecting a different layout changes both the generated spacecraft and its simulated pointing dynamics. This is an intentionally simplified ADCS model; it does **not** simulate orbital motion, sensor fusion/UKF calibration, flexible appendages, magnetic torque rods or flight-qualified actuator allocation. Published CAD and thesis illustrations are **not bundled**.
+
+The **iBOSS docking** example represents intelligent 40 cm cube blocks with circular face interfaces, drawing on the modular servicing concept and its mechanical/power/data/thermal interface architecture. Its actual executable model covers *bounded-thrust relative translation and a gated soft-capture condition*, not full contact compliance, ROS/DDS, robotic manipulation or docking qualification. Relevant background: [iBOSS modular architecture](https://www.mmi.rwth-aachen.de/en/projekt/iboss/) and [modular interface publication](https://dl.iafastro.directory/event/IAC-2015/paper/28809/).
+
+The **Mars rover** example generates synthetic terrain and rock obstacles with Martian gravity (3.71 m/s²) and a reduced-order traction/grade and bounded-steering model. The vehicle configuration menu contains **Ares RTG Explorer**, **Helios Solar Rover** and **Pathfinder Light** using the mass/power *concept parameters* from Taskyon's bundled Mars-rover Design Graph example. This snapshot is local so RealityLoop remains independently runnable; choosing a candidate affects the speed/power-to-mass model. It does not claim mission-calibrated soil, rocker-bogie suspension, measured dynamics, onboard SLAM or sensor realism.
+
+The **construction site** example renders equipment, exclusion-zone cones, a crane, worksite fencing, and a mobile material-delivery vehicle. It reuses the terrain/traction framework with 9.81 m/s² gravity and tests goal arrival plus positive geometric clearance. It is **not a safety-certified construction-site planner**.
+
+All four scenes run the existing **Taskyon Design Graph** node chain and are available as direct browser examples at `/examples/mission.html?scene=satellite`, `docking`, `mars` and `construction`. Headless CLI JSON scenarios are versioned under `scenarios/`. Each browser page displays the actual recorded state, timeline and telemetry; no pre-scripted playback stands in for the experiment. The existing supermarket LiDAR/camera mounts are **not** incorrectly reported for these worlds: their independent sensor suite is not yet modeled, and the DAG observations explicitly say so.
+
+Gallery images are original browser captures, reproduced with `npm run capture:missions` using Playwright. No external diagrams, photographs, figures, satellite CAD or design-reference assets are included in the build.
 
 ## Taskyon-family visual identity
 

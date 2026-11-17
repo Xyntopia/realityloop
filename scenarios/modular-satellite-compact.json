@@ -1,0 +1,8 @@
+{
+  "kind": "satellite-adcs",
+  "name": "modular-satellite-compact-pointing",
+  "layout": "compact",
+  "durationSeconds": 100,
+  "intervalSeconds": 0.05,
+  "torqueLimitNm": 0.3
+}

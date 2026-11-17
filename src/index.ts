@@ -11,6 +11,14 @@ export {
 } from './tennant.ts'
 export { referenceFootprint } from './geometry.ts'
 export {
+  satelliteModules,calculateSatelliteInertia,terrainHazards,terrainElevation,
+  marsRoverCandidates,
+  parseMissionScenario,runMissionExperiment,
+  runSatelliteScenario,runDockingScenario,runTerrainScenario,
+  satelliteScenarioSchema,dockingScenarioSchema,terrainScenarioSchema,
+  type MissionResult,type MissionScenario,type CubeModule,
+} from './mission-experiments.ts'
+export {
   signedFootprintClearance, clearanceAtPose, checkSweptClearance,
   type ClearanceReport, type ClearanceReading,
 } from './clearance.ts'

@@ -1,0 +1,7 @@
+{
+  "kind": "orbital-docking",
+  "name": "iboss-interface-soft-capture",
+  "durationSeconds": 65,
+  "intervalSeconds": 0.05,
+  "thrusterLimitN": 3
+}

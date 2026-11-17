@@ -1,0 +1,8 @@
+{
+  "kind": "terrain-traverse",
+  "name": "mars-six-wheel-route",
+  "terrain": "mars",
+  "durationSeconds": 110,
+  "intervalSeconds": 0.05,
+  "frictionCoefficient": 0.78
+}

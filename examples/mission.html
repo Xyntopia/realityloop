@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>RealityLoop · Mission simulations</title>
+  <link rel="icon" type="image/svg+xml" href="/realityloop-icon.svg"/>
+  <link rel="stylesheet" href="../viewer/mission.css"/>
+</head>
+<body>
+<header class="mission-header">
+  <a class="brand" href="../"><img src="/realityloop-icon.svg" alt=""/> <span><strong>RealityLoop</strong><small>MISSION / DIGITAL TWIN EXAMPLES</small></span></a>
+  <nav><a href="../">Example gallery</a><a href="https://taskyon.space/">Taskyon</a></nav>
+</header>
+<main class="mission-layout">
+  <section class="stage" aria-label="Live simulated 3D scene">
+    <div id="viewport" class="viewport"></div>
+    <div class="scene-caption"><span id="scene-tag">SIMULATION</span><span id="scene-name">Loading</span></div>
+    <div class="stage-timeline">
+      <button id="play" type="button">Pause</button>
+      <input id="timeline" type="range" min="0" value="0" max="100" step="1" aria-label="Timeline frame"/>
+      <span id="timeline-time">0.0 s</span>
+      <select id="playback-speed" aria-label="Playback speed">
+        <option value="1">1×</option><option value="4" selected>4×</option><option value="12">12×</option>
+      </select>
+    </div>
+    <p class="stage-note">3D rendering follows the recorded experiment state. Camera decoration does not modify physics or observations.</p>
+  </section>
+  <aside class="panel">
+    <p class="eyebrow">INDEPENDENT · TASKYON DAG</p>
+    <h1 id="mission-title">Mission simulation</h1>
+    <p id="mission-description">Loading example configuration…</p>
+    <label for="mission-select">Example</label>
+    <select id="mission-select">
+      <option value="satellite">Modular satellite ADCS</option>
+      <option value="docking">iBOSS modular docking</option>
+      <option value="mars">Mars rover traverse</option>
+      <option value="construction">Construction site delivery</option>
+    </select>
+    <div id="layout-controls" class="control">
+      <label for="module-layout">Spacecraft module configuration</label>
+      <select id="module-layout">
+        <option value="compact">Compact cluster</option>
+        <option value="distributed">Distributed modules</option>
+        <option value="asymmetric">Asymmetric structure</option>
+      </select>
+    </div>
+    <div id="rover-candidate-controls" class="control">
+      <label for="rover-candidate">Mars rover design candidate</label>
+      <select id="rover-candidate">
+        <option value="ares-rtg">Ares RTG Explorer · 315 kg / 780 W</option>
+        <option value="helios-solar">Helios Solar Rover · 218 kg / 620 W</option>
+        <option value="pathfinder-light">Pathfinder Light · 128 kg / 410 W</option>
+      </select>
+    </div>
+    <div id="terrain-controls" class="control">
+      <label for="friction">Surface traction coefficient: <span id="friction-value">0.78</span></label>
+      <input id="friction" type="range" min="0.25" max="1.1" step="0.05" value="0.78"/>
+    </div>
+    <button id="simulate" class="primary" type="button">Run simulation</button>
+    <p id="mission-status" role="status" aria-live="polite">Preparing simulation…</p>
+    <div id="metrics" class="metrics">
+      <div><strong id="metric-a">—</strong><small id="metric-a-label">METRIC</small></div>
+      <div><strong id="metric-b">—</strong><small id="metric-b-label">METRIC</small></div>
+      <div><strong id="metric-c">—</strong><small id="metric-c-label">METRIC</small></div>
+      <div><strong id="metric-d">—</strong><small id="metric-d-label">METRIC</small></div>
+    </div>
+    <h2>Simulation telemetry</h2>
+    <canvas id="telemetry" width="520" height="158" aria-label="Simulation telemetry plot"></canvas>
+    <p id="model-limit" class="note"></p>
+    <div class="footnotes">
+      <div><b>Engine:</b> <span id="mission-engine">—</span></div>
+      <div><b>Taskyon DAG:</b> <span id="mission-artifact">—</span></div>
+    </div>
+  </aside>
+</main>
+<script type="module" src="../viewer/mission.ts"></script>
+</body>
+</html>

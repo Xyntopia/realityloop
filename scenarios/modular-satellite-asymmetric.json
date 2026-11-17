@@ -1,0 +1,8 @@
+{
+  "kind": "satellite-adcs",
+  "name": "modular-satellite-asymmetric-pointing",
+  "layout": "asymmetric",
+  "durationSeconds": 100,
+  "intervalSeconds": 0.05,
+  "torqueLimitNm": 0.3
+}

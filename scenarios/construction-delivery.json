@@ -1,0 +1,8 @@
+{
+  "kind": "terrain-traverse",
+  "name": "construction-material-delivery",
+  "terrain": "construction",
+  "durationSeconds": 70,
+  "intervalSeconds": 0.05,
+  "frictionCoefficient": 0.66
+}

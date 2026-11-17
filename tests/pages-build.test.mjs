@@ -5,7 +5,8 @@ import { test } from 'node:test'
 
 const site = new URL('../dist-web/', import.meta.url)
 const prefix = process.env.REALITYLOOP_PAGES_BASE ?? '/realityloop/'
-const pages = ['index.html', 'drive-lab.html', 'examples/supermarket.html']
+const pages = ['index.html', 'drive-lab.html', 'examples/supermarket.html',
+  'examples/mission.html']
 
 for (const page of pages) {
   test(`GitHub Pages build serves ${page} under ${prefix}`, async () => {
@@ -83,6 +84,27 @@ test('dynamic AO algorithms are independently selectable and GTAO is code-split'
   const assets = await readdir(new URL('assets/', site))
   assert.ok(assets.some(name=>/^GTAOPass-.*\.js$/.test(name)),
     'GTAO must remain a separate on-demand chunk, not part of the default scene')
+})
+
+test('gallery includes runnable modular-space, Mars and construction examples', async () => {
+  const html=await readFile(new URL('examples/mission.html',site),'utf8')
+  for(const key of ['satellite','docking','mars','construction'])
+    assert.match(html,new RegExp('value="'+key+'"'))
+  assert.match(html,/id="module-layout"/)
+  assert.match(html,/id="rover-candidate"/)
+  assert.match(html,/id="timeline"/)
+  const examples=await readFile(new URL('../src/examples.ts',import.meta.url),'utf8')
+  for(const key of ['satellite','docking','mars','construction']){
+    assert.ok(examples.includes('mission.html?scene='+key))
+    const filename='realityloop-gallery-'+key+'.jpg'
+    const jpg=await readFile(new URL('../docs/'+filename,import.meta.url))
+    assert.ok(jpg.length>30_000,filename+' should be a real browser capture')
+    assert.equal(jpg.subarray(0,2).toString('hex'),'ffd8')
+  }
+  const assets=await readdir(new URL('assets/',site))
+  for(const key of ['satellite','docking','mars','construction'])
+    assert.ok(assets.some(name=>name.startsWith('realityloop-gallery-'+key+'-')),
+      'Bundled gallery image missing: '+key)
 })
 
 test('gallery uses recent RealityLoop-generated previews for both examples', async () => {
