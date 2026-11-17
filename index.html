@@ -9,7 +9,18 @@
 <meta name="description" content="RealityLoop is an open, customer-owned foundation for building and testing engineering simulations with Modelica, reproducible runs and headless CI."/>
 </head>
 <body>
-<header class="site-header"><div class="brand"><img class="logo" src="/realityloop-icon.svg" alt=""/><div><strong>RealityLoop</strong><small>SIMULATION / EXPERIMENT PLATFORM</small></div></div><nav class="site-links" aria-label="Related projects"><a href="https://taskyon.space/">Taskyon</a><a href="https://github.com/CogniPilot/rumoca">Rumoca / Modelica</a></nav></header>
+<header class="site-header" id="top">
+ <a class="brand" href="#top" aria-label="RealityLoop homepage, back to top"><img class="logo" src="/realityloop-icon.svg" alt=""/><span><strong>RealityLoop</strong><small>SIMULATION / EXPERIMENT PLATFORM</small></span></a>
+ <nav class="site-links" aria-label="Page sections and related projects">
+  <a class="section-link" href="#examples">Examples</a>
+  <a class="section-link" href="#other-experiments">Other experiments</a>
+  <a class="section-link" href="#how-it-works">How it works</a>
+  <span class="nav-divider" aria-hidden="true"></span>
+  <a href="https://xyntopia.com/">Xyntopia</a>
+  <a href="https://taskyon.space/">Taskyon</a>
+  <a href="https://github.com/CogniPilot/rumoca">Rumoca / Modelica</a>
+ </nav>
+</header>
 <main>
 <section class="hero">
   <div class="overline">OPEN, CUSTOMER-OWNED SIMULATION</div>
@@ -40,13 +51,13 @@
   </div>
   <p class="prototype-disclaimer">RealityLoop is still experimental. The examples below demonstrate building blocks and research workflows; they are not yet validated, production-ready digital twins.</p>
 </section>
-<section class="catalog">
+<section class="catalog" id="examples">
  <div class="section-title"><div><span class="overline">EXAMPLE GALLERY</span><h2>Experiments</h2></div><span class="count">Independent research demonstrations</span></div>
- <div id="examples" class="example-grid" aria-label="Featured RealityLoop experiments"></div>
+ <div id="examples-grid" class="example-grid" aria-label="Featured RealityLoop experiments"></div>
 </section>
-<section class="catalog other-catalog">
+<section class="catalog other-catalog" id="other-experiments">
  <div class="section-title"><div><span class="overline">MODULAR ROBOTICS &amp; SPACE SYSTEMS</span><h2>Other experiments</h2></div><span class="count">Early-stage research concepts</span></div>
- <div id="other-experiments" class="example-grid" aria-label="Other RealityLoop experiments"></div>
+ <div id="other-experiments-grid" class="example-grid" aria-label="Other RealityLoop experiments"></div>
 </section>
 <section class="architecture" id="how-it-works" aria-labelledby="architecture-title">
  <span class="overline">OWNERSHIP · VERIFICATION · OPTIONAL INTEGRATION</span>
@@ -67,10 +78,17 @@
   </article>
  </div>
  <p class="architecture-status"><strong>Available today:</strong> independent local and headless simulations, Design Graph artifacts, reproducibility checks and replay verification. <strong>Not yet integrated:</strong> Taskyon UI, remote cluster orchestration, centralized monitoring and authorized P2P publication.</p>
+ <nav class="documentation-links" aria-label="Related Taskyon documentation">
+  <strong>Learn about the foundations in Taskyon's docs:</strong>
+  <a href="https://taskyon.space/docs/taskyon/user/design-workspaces.md">Reproducible design workspaces</a>
+  <a href="https://taskyon.space/docs/taskyon/developer/design-graphs.md">Immutable design graphs &amp; execution</a>
+  <a href="https://taskyon.space/docs/taskyon/user/task-trees.md">Inspectable tasks &amp; parallel workflows</a>
+  <a href="https://taskyon.space/docs/taskyon/developer/modelica.md">Modelica integration</a>
+ </nav>
  <code>npm run sim -- scenarios/modelica-wheel-breakaway.json runs/wheel</code>
 </section>
 </main>
-<footer>RealityLoop · Customer-owned simulation foundations · Research prototypes; physical fidelity must be validated for each use case.</footer>
+<footer>RealityLoop · Developed by <a href="https://xyntopia.com/">Xyntopia</a> · Customer-owned simulation foundations · Research prototypes; physical fidelity must be validated for each use case. <a href="#top">Back to top</a></footer>
 <script type="module" src="/viewer/catalog.ts"></script>
 </body>
 </html>

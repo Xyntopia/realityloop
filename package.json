@@ -38,6 +38,7 @@
     "check:browser:prod": "node scripts/check-production-supermarket.mjs",
     "check:browser:missions": "node scripts/check-production-missions.mjs",
     "check:browser:solar": "node scripts/check-production-solar.mjs",
+    "check:browser:homepage": "node scripts/check-homepage-navigation.mjs",
     "build:dag-runtime": "node tools/build-comp-dag-runtime.mjs",
     "dev": "vite --host 127.0.0.1",
     "check": "tsc --noEmit",

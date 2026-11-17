@@ -22,11 +22,42 @@ for (const page of pages) {
   })
 }
 
-test('catalog header links to Taskyon and Rumoca', async () => {
+test('homepage navigation links to sections, developer and related projects', async () => {
   const html = await readFile(new URL('index.html', site), 'utf8')
-  assert.match(html, /<nav class="site-links" aria-label="Related projects">/)
+  assert.match(html, /<nav class="site-links" aria-label="Page sections and related projects">/)
+  for (const fragment of ['examples','other-experiments','how-it-works'])
+    assert.ok(html.includes(`href="#${fragment}"`),`Missing navigation link #${fragment}`)
+  for (const fragment of ['examples','other-experiments','how-it-works'])
+    assert.ok(html.includes(`id="${fragment}"`),`Missing target #${fragment}`)
+  assert.match(html, /href="https:\/\/xyntopia\.com\/"[^>]*>Xyntopia<\/a>/)
+  assert.match(html, /Developed by <a href="https:\/\/xyntopia\.com\/">Xyntopia<\/a>/)
   assert.match(html, /href="https:\/\/taskyon\.space\/"[^>]*>Taskyon<\/a>/)
   assert.match(html, /href="https:\/\/github\.com\/CogniPilot\/rumoca"/)
+})
+
+test('Taskyon documentation links target project, graph, workflow and Modelica docs',async()=>{
+  const html=await readFile(new URL('index.html',site),'utf8')
+  const docs=[
+    'user/design-workspaces.md',
+    'developer/design-graphs.md',
+    'user/task-trees.md',
+    'developer/modelica.md',
+  ]
+  assert.match(html,/class="documentation-links"/)
+  for(const file of docs)
+    assert.ok(html.includes('https://taskyon.space/docs/taskyon/'+file),
+      'Missing Taskyon documentation link: '+file)
+})
+
+test('each gallery card has a unique stable public homepage fragment',async()=>{
+  const source=await readFile(new URL('../src/examples.ts',import.meta.url),'utf8')
+  for(const fragment of ['supermarket','wheel-slip','construction','solar','mars','satellite'])
+    assert.ok(source.includes(`anchor: '${fragment}'`),`Missing shareable fragment #${fragment}`)
+  const script=await readFile(new URL('../viewer/catalog.ts',import.meta.url),'utf8')
+  assert.match(script,/card\.id = example\.anchor/)
+  assert.match(script,/permalink\.href = '#' \+ example\.anchor/)
+  assert.match(script,/requestAnimationFrame\(scrollToHashTarget\)/)
+  assert.match(script,/addEventListener\('hashchange',scrollToHashTarget\)/)
 })
 
 test('home hero presents ownership and physical fidelity as goals, not proven results', async () => {

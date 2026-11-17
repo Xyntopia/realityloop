@@ -18,14 +18,15 @@ const previews: Readonly<Record<string, string>> = {
 }
 
 const grids: Record<'featured'|'other',HTMLElement|null> = {
-  featured:document.querySelector<HTMLElement>('#examples'),
-  other:document.querySelector<HTMLElement>('#other-experiments'),
+  featured:document.querySelector<HTMLElement>('#examples-grid'),
+  other:document.querySelector<HTMLElement>('#other-experiments-grid'),
 }
 if (!grids.featured||!grids.other) throw Error('Missing example catalog section')
 
 for (const example of realityLoopExamples) {
   const card = document.createElement('article')
   card.className = 'example-card'
+  card.id = example.anchor
   const media = document.createElement('a')
   media.href = new URL(example.viewerPath.slice(1), document.baseURI).href
   media.className = 'preview'
@@ -57,7 +58,28 @@ for (const example of realityLoopExamples) {
   link.className = 'open-example'
   link.href = media.href
   link.textContent = 'Open example'
-  body.append(category, title, description, tags, link)
+  const permalink = document.createElement('a')
+  permalink.className = 'card-permalink'
+  permalink.href = '#' + example.anchor
+  permalink.textContent = 'Link to this card'
+  permalink.setAttribute('aria-label', 'Share homepage link to ' + example.title)
+  const actions = document.createElement('div')
+  actions.className = 'card-actions'
+  actions.append(link, permalink)
+  body.append(category, title, description, tags, actions)
   card.append(media, body)
   grids[example.group]!.append(card)
 }
+
+// Browser hash navigation runs before the JavaScript-rendered cards exist.
+// Correct the initial position once the catalog is mounted, and support
+// later hash changes (including back/forward) without reloading the page.
+const scrollToHashTarget = () => {
+  // Anchors are intentionally stable ASCII slugs; no decoding of untrusted
+  // fragments is necessary (or able to throw on malformed percent sequences).
+  const targetId = window.location.hash.slice(1)
+  if (!targetId) return
+  document.getElementById(targetId)?.scrollIntoView({block:'start',behavior:'auto'})
+}
+window.addEventListener('hashchange',scrollToHashTarget)
+requestAnimationFrame(scrollToHashTarget)

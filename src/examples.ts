@@ -1,6 +1,8 @@
 /** Portable example catalog. Entries describe demos, not a separate graph engine. */
 export type RealityLoopExample = Readonly<{
   id: string
+  /** Stable homepage fragment identifier for shareable gallery cards. */
+  anchor: string
   title: string
   group: 'featured' | 'other'
   category: 'simulation' | 'physics-lab'
@@ -15,6 +17,7 @@ export type RealityLoopExample = Readonly<{
 export const realityLoopExamples: readonly RealityLoopExample[] = [
   {
     id: 'supermarket-cleaning',
+    anchor: 'supermarket',
     title: 'Autonomous floor cleaning',
     group: 'featured',
     category: 'simulation',
@@ -30,6 +33,7 @@ export const realityLoopExamples: readonly RealityLoopExample[] = [
   },
   {
     id: 'traction-laboratory',
+    anchor: 'wheel-slip',
     title: 'Wheel slip laboratory',
     group: 'featured',
     category: 'physics-lab',
@@ -45,6 +49,7 @@ export const realityLoopExamples: readonly RealityLoopExample[] = [
   },
   {
     id: 'construction-delivery',
+    anchor: 'construction',
     title: 'Construction-site delivery',
     group: 'featured',
     category: 'simulation',
@@ -57,6 +62,7 @@ export const realityLoopExamples: readonly RealityLoopExample[] = [
   },
   {
     id: 'renewable-plant',
+    anchor: 'solar',
     title: 'Utility-scale solar & storage plant',
     group: 'featured',
     category: 'simulation',
@@ -69,6 +75,7 @@ export const realityLoopExamples: readonly RealityLoopExample[] = [
   },
   {
     id: 'mars-rover',
+    anchor: 'mars',
     title: 'Mars habitat construction & rover',
     group: 'other',
     category: 'simulation',
@@ -81,6 +88,7 @@ export const realityLoopExamples: readonly RealityLoopExample[] = [
   },
   {
     id: 'satellite-adcs',
+    anchor: 'satellite',
     title: 'Reconfigurable satellite ADCS',
     group: 'other',
     category: 'simulation',

@@ -36,6 +36,10 @@ jobs:
         run: node --test tests/pages-build.test.mjs
       - name: Install Chromium for production runtime regression
         run: npx playwright install --with-deps chromium
+      - name: Verify homepage navigation, deep links and documentation links
+        env:
+          REALITYLOOP_CAPTURE_NO_SANDBOX: '1'
+        run: npm run check:browser:homepage
       - name: Verify minified supermarket replay and PCL ICP
         env:
           REALITYLOOP_CAPTURE_NO_SANDBOX: '1'
