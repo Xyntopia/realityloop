@@ -228,6 +228,7 @@ export const terrainElevation=(terrain:TerrainKind,x:number,z:number):number=>
   terrain==='mars'
     ? .17*Math.sin(x*.45)*Math.cos(z*.42)+.08*Math.sin(1.3*z+.7*x)
       -.21*Math.exp(-((x+1)**2+(z-2.5)**2)/4)
+      +.024*Math.sin(x*7.2+.55*Math.sin(z*2.8))
     : .07*Math.sin(x*.8)*Math.cos(z*.6)+.03*Math.cos(2*z)
 const terrainWaypoints=(terrain:TerrainKind):readonly [number,number][]=>
   terrain==='mars'

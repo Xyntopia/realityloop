@@ -34,15 +34,30 @@ try{
       null,{timeout:60000})
     await page.evaluate(()=>{
       const slider=document.getElementById('timeline')
-      const factor=new URLSearchParams(location.search).get('scene')==='satellite'?.6:.8
+      const scene=new URLSearchParams(location.search).get('scene')
+      const factor=scene==='satellite'?.6:scene==='mars'?.85:.8
       slider.value=String(Math.round(Number(slider.max)*factor))
       slider.dispatchEvent(new Event('input',{bubbles:true}))
     })
     await page.waitForTimeout(400)
     assert.deepEqual(errors,[],kind+' browser errors')
+    // The gallery is about the scene, not a miniature controls sidebar.
+    // Remove only presentation chrome after the model/timeline is ready.
+    // The live WebGL viewport fills a reproducible 16:9 capture surface.
+    await page.addStyleTag({content:`
+      .mission-header,.panel,.scene-caption,.stage-timeline,.stage-note
+        {display:none!important}
+      .mission-layout{display:block;height:100vh}
+      .stage{height:100vh;min-height:0}
+      .viewport{width:100vw;height:100vh;min-height:0;flex:none}
+    `})
+    await page.waitForTimeout(450)
+    assert.deepEqual(errors,[],kind+' browser scene errors')
     const destination=resolve(root,'docs/realityloop-gallery-'+kind+'.jpg')
-    await page.screenshot({path:destination,type:'jpeg',quality:87,
-      animations:'disabled',timeout:60000})
+    await page.locator('#viewport').screenshot({
+      path:destination,type:'jpeg',quality:87,
+      animations:'disabled',timeout:60000,
+    })
     const status=await page.locator('#mission-status').innerText()
     const metric=await page.locator('#metric-a').innerText()
     console.log(kind,{status,metric,destination})

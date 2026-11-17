@@ -1,4 +1,5 @@
 node_modules/
+.winx/
 runs/
 dist/
 *.log

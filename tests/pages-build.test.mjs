@@ -98,7 +98,7 @@ test('gallery includes runnable modular-space, Mars and construction examples', 
     assert.ok(examples.includes('mission.html?scene='+key))
     const filename='realityloop-gallery-'+key+'.jpg'
     const jpg=await readFile(new URL('../docs/'+filename,import.meta.url))
-    assert.ok(jpg.length>30_000,filename+' should be a real browser capture')
+    assert.ok(jpg.length>18_000,filename+' should be a real 3D viewport capture')
     assert.equal(jpg.subarray(0,2).toString('hex'),'ffd8')
   }
   const assets=await readdir(new URL('assets/',site))

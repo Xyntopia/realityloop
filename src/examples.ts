@@ -53,9 +53,9 @@ export const realityLoopExamples: readonly RealityLoopExample[] = [
   },
   {
     id: 'mars-rover',
-    title: 'Mars rover terrain traverse',
+    title: 'Mars habitat construction & rover',
     category: 'simulation',
-    description: 'A six-wheel concept rover traverses uneven Martian terrain, respects the local gravity and navigates rock hazards.',
+    description: 'A modular Mars habitat, articulated assembly arms, a legged utility robot and a six-wheel rover in a dusty desert deployment scene. The rover traverse is simulated; habitat assembly is visualization-only.',
     viewerPath: '/examples/mission.html?scene=mars',
     previewImage: '/docs/realityloop-gallery-mars.jpg',
     headlessScenarios: ['scenarios/mars-rover-traverse.json'],

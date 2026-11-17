@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import {addMarsHabitat,proceduralSandNormal} from './mars-habitat.ts'
 import {
   calculateSatelliteInertia,satelliteModules,terrainElevation,terrainHazards,
   type CubeModule,type TerrainKind,
@@ -149,12 +150,15 @@ const createGround=(scene:THREE.Scene,terrain:TerrainKind)=>{
   scene.background=new THREE.Color(terrain==='mars'?0x8d5540:0x9aa7af)
   scene.fog=new THREE.Fog(scene.background,16,45)
   const sun=new THREE.DirectionalLight(0xffdfb9,3)
-  sun.position.set(-3,11,7);sun.castShadow=true
+  sun.position.set(terrain==='mars'?-4:-3,
+    terrain==='mars'?9:11,terrain==='mars'?-7:7)
+  sun.castShadow=true
   sun.shadow.mapSize.set(1024,1024)
   sun.shadow.camera.left=-14;sun.shadow.camera.right=14
   sun.shadow.camera.top=11;sun.shadow.camera.bottom=-11
   scene.add(sun,new THREE.HemisphereLight(0xdbe7ee,0x746251,1.3))
-  const floor=new THREE.PlaneGeometry(28,17,84,50)
+  const floor=new THREE.PlaneGeometry(28,17,
+    terrain==='mars'?150:84,terrain==='mars'?95:50)
   const vertices=floor.attributes.position
   const colors=new Float32Array(vertices.count*3)
   const color=new THREE.Color()
@@ -162,14 +166,19 @@ const createGround=(scene:THREE.Scene,terrain:TerrainKind)=>{
     const x=vertices.getX(i),z=-vertices.getY(i)
     vertices.setZ(i,terrainElevation(terrain,x,z))
     const variation=.07*Math.sin(x*1.8+z*2.1)+.04*Math.cos(x*3.8-z)
-    color.set(terrain==='mars'?0xc17e56:0x91826f)
-    color.multiplyScalar(1+variation)
+    const weathering=terrain==='mars'
+      ?Math.max(0,Math.sin(x*.75)*Math.cos(z*.88)+.27*Math.sin(1.8*z+.33*x)-.20)*.22
+      :0
+    color.set(terrain==='mars'?0xce9872:0x91826f)
+    color.multiplyScalar(1+variation-weathering)
     colors.set(color.toArray(),i*3)
   }
   floor.setAttribute('color',new THREE.BufferAttribute(colors,3))
   floor.computeVertexNormals()
   const mesh=new THREE.Mesh(floor,new THREE.MeshStandardMaterial({
     vertexColors:true,roughness:1,metalness:0,side:THREE.DoubleSide,
+    ...(terrain==='mars'?{normalMap:proceduralSandNormal(),
+      normalScale:new THREE.Vector2(.14,.14)}:{}),
   }))
   mesh.rotation.x=-Math.PI/2
   mesh.receiveShadow=true;scene.add(mesh)
@@ -241,20 +250,46 @@ const buildRover=(terrain:TerrainKind)=>{
   const vehicle=new THREE.Group()
   const isMars=terrain==='mars'
   const hull=new THREE.MeshStandardMaterial({
-    color:isMars?0xc5b7a1:0xdfa442,metalness:.56,roughness:.44,
+    color:isMars?0xc47b42:0xdfa442,metalness:.5,roughness:.48,
   })
   addBox(vehicle,1.36,.36,.85,0,.46,0,hull)
   addBox(vehicle,.96,.18,.68,-.05,.71,0,dark)
   if(isMars){
-    addBox(vehicle,1.85,.045,1.15,-.1,.89,0,blue)
-    for(let n=0;n<6;n++){
-      const x=-.56+(n%3)*.56,z=n<3?-.65:.65
-      addBox(vehicle,.08,.035,.2,x,.9,z,silver)
+    // Low-poly six-wheel cargo rover with a high-mounted sensor housing,
+    // modular side rails and articulated delivery manipulator.
+    addBox(vehicle,1.72,.10,.91,0,.71,0,dark)
+    addBox(vehicle,.87,.58,.79,-.33,1.04,0,hull)
+    addBox(vehicle,.73,.31,.59,-.36,1.14,.12,emissive)
+    addBox(vehicle,.95,.11,.90,-.35,1.46,0,silver)
+    for(const side of [-1,1]){
+      addBox(vehicle,1.65,.06,.08,0,.47,side*.58,silver)
+      addBox(vehicle,.42,.30,.05,-.16,1.13,side*.43,dark)
     }
-    addCylinder(vehicle,.07,.65,.28,1.15,0,silver)
-    const mast=addBox(vehicle,.31,.17,.18,.28,1.55,0,dark)
-    mast.rotation.y=.1
-    addCylinder(vehicle,.075,.08,.43,1.55,0,emissive).rotation.z=Math.PI/2
+    addBox(vehicle,.65,.58,.70,.62,1.08,0,hull)
+    const interfaceRing=new THREE.Mesh(
+      new THREE.TorusGeometry(.21,.03,8,20),dark)
+    interfaceRing.position.set(.62,1.13,.36)
+    vehicle.add(interfaceRing)
+    addCylinder(vehicle,.07,.62,-.52,1.78,0,silver)
+    addBox(vehicle,.31,.18,.21,-.52,2.12,0,dark)
+    const detector=addCylinder(vehicle,.06,.09,-.39,2.12,0,emissive)
+    detector.rotation.z=Math.PI/2
+    const armStart=new THREE.Vector3(.38,1.43,-.24)
+    const armElbow=new THREE.Vector3(.87,2.07,-.38)
+    const armTip=new THREE.Vector3(1.3,1.72,-.3)
+    const link=(a:THREE.Vector3,b:THREE.Vector3,r:number)=>{
+      const delta=b.clone().sub(a)
+      const member=addCylinder(vehicle,r,delta.length(),
+        (a.x+b.x)/2,(a.y+b.y)/2,(a.z+b.z)/2,silver)
+      member.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),delta.normalize())
+      for(const jointPoint of [b]){
+        const bearing=new THREE.Mesh(new THREE.SphereGeometry(r*1.45,12,8),dark)
+        bearing.position.copy(jointPoint);vehicle.add(bearing)
+      }
+    }
+    link(armStart,armElbow,.065)
+    link(armElbow,armTip,.055)
+    addBox(vehicle,.19,.11,.10,armTip.x+.07,armTip.y,armTip.z,dark)
   }else{
     addBox(vehicle,.9,.72,.75,-.35,1.0,0,hull)
     addBox(vehicle,.3,.55,.5,-.35,1.05,0,emissive)
@@ -276,6 +311,7 @@ export const createMissionWorld=(kind:MissionScene,layout:'compact'|'distributed
   const root=new THREE.Group();scene.add(root)
   const camera=new THREE.PerspectiveCamera(56,16/9,.06,120)
   let moving:THREE.Group
+  let marsHabitat:ReturnType<typeof addMarsHabitat>|undefined
   if(kind==='satellite'){
     addStarfield(scene)
     moving=createModularSatellite(layout)
@@ -292,8 +328,15 @@ export const createMissionWorld=(kind:MissionScene,layout:'compact'|'distributed
     createGround(scene,terrain)
     moving=buildRover(terrain)
     root.add(moving)
-    camera.position.set(0,9,14)
-    camera.lookAt(0,0,0)
+    if(kind==='mars'){
+      marsHabitat=addMarsHabitat(scene)
+      camera.fov=58;camera.updateProjectionMatrix()
+      camera.position.set(5.3,4.1,-6.3)
+      camera.lookAt(1.2,1.15,1.65)
+    }else{
+      camera.position.set(0,9,14)
+      camera.lookAt(0,0,0)
+    }
   }
   const move=(sample:Record<string,any>)=>{
     if(kind==='satellite'){
@@ -304,6 +347,8 @@ export const createMissionWorld=(kind:MissionScene,layout:'compact'|'distributed
     }else{
       moving.position.set(sample.x??-8,(sample.y??0),sample.z??0)
       moving.rotation.y=-(sample.yaw??0)
+      marsHabitat?.update(sample.timeSeconds??0,
+        1-(sample.distanceToGoalMetres??16)/16)
     }
   }
   move({})

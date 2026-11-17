@@ -27,9 +27,9 @@ const metadata:Record<MissionScene,{
     tag:'ON-ORBIT SERVICING',
   },
   mars:{
-    name:'Mars rover terrain traverse',
-    description:'Drive a six-wheel concept rover across synthetic Martian topography while avoiding boulders and respecting local traction limits.',
-    limit:'Reduced-order steering, slope and traction dynamics; no suspension, deformable regolith, wheel-soil terramechanics, terrain-specific LiDAR or autonomous SLAM.',
+    name:'Mars habitat construction & rover',
+    description:'Traverse a dusty Mars deployment site with modular habitat blocks, docking interfaces, articulated assembly arms and support robots.',
+    limit:'The rover traverse uses reduced-order steering, slope and traction. Habitat stacking, articulated arms and walking/scouting robots are decorative procedural animations, not simulated manipulators or contact bodies. No deformable regolith, suspension, terrain LiDAR or autonomous SLAM.',
     tag:'PLANETARY EXPLORATION',
   },
   construction:{
@@ -152,11 +152,27 @@ const showFrame=(index:number)=>{
   chart()
 }
 const resetWorld=()=>{
-  const old=world.scene
-  old.traverse(object=>{
-    if(object instanceof THREE.Mesh)object.geometry.dispose()
-    if(object instanceof THREE.Points)object.geometry.dispose()
+  // Mission switching creates different geometry and textures; dispose
+  // redundant GPU allocations before building the next immutable scene.
+  const geometries=new Set<THREE.BufferGeometry>()
+  const materials=new Set<THREE.Material>()
+  world.scene.traverse(object=>{
+    if(object instanceof THREE.Mesh||
+      object instanceof THREE.Points||object instanceof THREE.Line){
+      geometries.add(object.geometry)
+      for(const material of Array.isArray(object.material)
+        ?object.material:[object.material])materials.add(material)
+      if(object instanceof THREE.InstancedMesh)object.dispose()
+    }
   })
+  const textures=new Set<THREE.Texture>()
+  for(const material of materials){
+    for(const value of Object.values(material))
+      if(value instanceof THREE.Texture)textures.add(value)
+    material.dispose()
+  }
+  for(const geometry of geometries)geometry.dispose()
+  for(const texture of textures)texture.dispose()
   world=createMissionWorld(kind,
     $<HTMLSelectElement>('module-layout').value as 'compact'|'distributed'|'asymmetric')
   fit()
