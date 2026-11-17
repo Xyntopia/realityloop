@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title">
+  <title id="title">RealityLoop — iterative simulation around a design node</title>
+  <rect width="128" height="128" rx="27" fill="#2a3548"/>
+  <path d="M28 72a38 38 0 0 1 70-23" fill="none" stroke="#f78f3b" stroke-width="9" stroke-linecap="round"/>
+  <path d="M101 60a38 38 0 0 1-71 20" fill="none" stroke="#f3f5f8" stroke-width="9" stroke-linecap="round"/>
+  <circle cx="99" cy="50" r="6.5" fill="#f78f3b"/>
+  <circle cx="29" cy="79" r="5" fill="#f3f5f8"/>
+  <path d="m64 44 22 12-22 13-22-13z" fill="#fff"/>
+  <path d="m42 56 22 13v25L42 81z" fill="#d6e0ed"/>
+  <path d="m86 56-22 13v25l22-13z" fill="#8fa8c6"/>
+  <path d="M64 69v25" stroke="#2a3548" stroke-opacity=".28" stroke-width="1.5"/>
+</svg>

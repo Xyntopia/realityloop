@@ -27,7 +27,7 @@ export class SlamView {
     this.pixelCanvas.height = this.tracker.grid.height
     this.beams = lidars.map(sensor => {
       const material = new THREE.LineBasicMaterial({
-        color: sensor.side === 'front' ? 0x55eff0 : 0xefc073,
+        color: sensor.side === 'front' ? 0x8bb4ed : 0xf78f3b,
         transparent: true, opacity: sensor.side === 'front' ? 0.27 : 0.23,
         depthWrite: false,
       })
@@ -38,7 +38,7 @@ export class SlamView {
     })
     this.points = new THREE.Points(
       new THREE.BufferGeometry(),
-      new THREE.PointsMaterial({color: 0x50efdf, size: 0.035, transparent: true,
+      new THREE.PointsMaterial({color: 0x8bb4ed, size: 0.035, transparent: true,
         opacity: 0.85, sizeAttenuation: true, depthWrite: false}),
     )
     this.points.frustumCulled = false
@@ -96,7 +96,7 @@ export class SlamView {
     return this.visible
   }
 
-  /** Hides diagnostic geometry in photo view without changing scan results
+  /** Hides diagnostic geometry in aisle view without changing scan results
    * or overriding the operator's preferred LiDAR toggle. */
   setOverlaysVisible(visible:boolean):void {
     this.overlaysVisible=visible
@@ -173,8 +173,8 @@ export class SlamView {
     for (let z = 0; z < grid.height; z++) for (let x = 0; x < grid.width; x++) {
       const weight = grid.logOdds[z * grid.width + x]
       const offset = ((grid.height - 1 - z) * grid.width + x) * 4
-      const rgb = weight > 5 ? [233,183,96] : weight < -3
-        ? [51,105,109] : [17,39,48]
+      const rgb = weight > 5 ? [247,143,59] : weight < -3
+        ? [42,53,72] : [13,17,23]
       img.data.set([...rgb,255],offset)
     }
     raw.putImageData(img,0,0)
@@ -191,8 +191,8 @@ export class SlamView {
     ctx.save()
     ctx.translate(px,pz)
     ctx.rotate(-pose.yaw)
-    ctx.fillStyle='#3ef4d6'
-    ctx.strokeStyle='#e6f7f2'
+    ctx.fillStyle='#f78f3b'
+    ctx.strokeStyle='#f3f5f8'
     ctx.lineWidth=1.5
     ctx.beginPath();ctx.arc(0,0,4,0,Math.PI*2);ctx.fill()
     ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(11,0);ctx.stroke()

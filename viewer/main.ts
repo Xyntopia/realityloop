@@ -9,6 +9,7 @@ import type { TennantResult, TennantScenario } from '../src/tennant.ts'
 import type { SupermarketReplay } from '../src/modelica/supermarket.ts'
 import { createTennantT7AMR } from './tennant.ts'
 import { SlamView } from './slam-view.ts'
+import './theme.css'
 import './style.css'
 
 const elem = (id:string) => {
@@ -55,17 +56,17 @@ const applyQuality=(quality:VisualQuality)=>{
   interior.setVisualQuality(quality)
 }
 applyQuality(softwareRenderer?'performance':'balanced')
-const goal = new THREE.Mesh(new THREE.RingGeometry(0.43,0.51,48),new THREE.MeshBasicMaterial({color:0x3ce0b7,side:THREE.DoubleSide}))
+const goal = new THREE.Mesh(new THREE.RingGeometry(0.43,0.51,48),new THREE.MeshBasicMaterial({color:0x7fa042,side:THREE.DoubleSide}))
 goal.rotation.x=-Math.PI/2;goal.position.set(7.5,0.016,0);scene.add(goal)
 const robot=createTennantT7AMR()
 scene.add(robot)
 const slamView=new SlamView(elem('slam-map') as HTMLCanvasElement,scene)
 const trailGeometry=new THREE.BufferGeometry()
-const trailMaterial=new THREE.LineBasicMaterial({color:0xf3c16a,transparent:true,opacity:0.95})
+const trailMaterial=new THREE.LineBasicMaterial({color:0x8bb4ed,transparent:true,opacity:0.95})
 const trail=new THREE.Line(trailGeometry,trailMaterial)
 scene.add(trail)
 const coverageGeometry=new THREE.PlaneGeometry(0.22,0.22)
-const coverageMaterial=new THREE.MeshBasicMaterial({color:0x38bea8,transparent:true,opacity:0.17,depthWrite:false,side:THREE.DoubleSide})
+const coverageMaterial=new THREE.MeshBasicMaterial({color:0xf78f3b,transparent:true,opacity:0.17,depthWrite:false,side:THREE.DoubleSide})
 const coverage=new THREE.InstancedMesh(coverageGeometry,coverageMaterial,6000)
 coverage.count=0
 coverage.instanceMatrix.setUsage(THREE.DynamicDrawUsage)
@@ -227,11 +228,11 @@ graphicsSelect.addEventListener('change',()=>{
     applyQuality(selected)
   autoQuality={quality:graphicsQuality,slowWindows:0,fastWindows:0}
 })
-type CameraMode='orbit'|'top'|'reference'
+type CameraMode='orbit'|'top'|'aisle'
 let cameraMode:CameraMode='orbit'
 const syncPresentationGeometry=()=>{
   const diagnosticsVisible=!document.body.classList.contains('showcase')&&
-    cameraMode!=='reference'
+    cameraMode!=='aisle'
   goal.visible=diagnosticsVisible
   trail.visible=diagnosticsVisible
   coverage.visible=diagnosticsVisible
@@ -248,8 +249,8 @@ const setCameraMode=(mode:CameraMode)=>{
     camera.position.set(4.4,17,0.1)
     controls.target.set(4,0,0)
     camera.fov=43
-  }else if(mode==='reference'){
-    // 1.68 m eye-height, aisle center-line looking into the shelving rows.
+  }else if(mode==='aisle'){
+    // Generic eye-height aisle camera; no external reference image is required.
     camera.position.set(-2.35,1.68,-.1)
     controls.target.set(6.9,1.55,-.1)
     camera.fov=65
@@ -261,13 +262,13 @@ const setCameraMode=(mode:CameraMode)=>{
   camera.updateProjectionMatrix()
   interior.setCeilingVisible(mode!=='top')
   syncPresentationGeometry()
-  controls.enabled=mode!=='reference'
+  controls.enabled=mode!=='aisle'
   controls.update()
   elem('camera').textContent=mode==='top'?'Perspective':'Top view'
-  elem('reference-camera').textContent=mode==='reference'?'Exit photo view':'Photo view'
+  elem('aisle-camera').textContent=mode==='aisle'?'Exit aisle view':'Aisle view'
 }
 elem('camera').addEventListener('click',()=>setCameraMode(cameraMode==='top'?'orbit':'top'))
-elem('reference-camera').addEventListener('click',()=>setCameraMode(cameraMode==='reference'?'orbit':'reference'))
+elem('aisle-camera').addEventListener('click',()=>setCameraMode(cameraMode==='aisle'?'orbit':'aisle'))
 addEventListener('resize',()=>{
   camera.aspect=innerWidth/innerHeight
   camera.updateProjectionMatrix()

@@ -16,3 +16,4 @@ Locally vendored 1K JPEG material maps:
 
 Assets are bundled with the Vite build; they do not require runtime requests to Poly Haven. See `viewer/supermarket-interior.ts`.
 
+Development-only visual references are not included in this repository. The bundled floor maps above are distinct runtime assets, with their CC0 provenance retained.

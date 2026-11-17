@@ -1,5 +1,13 @@
 import { realityLoopExamples } from '../src/examples.ts'
+import supermarketPreview from '../docs/realityloop-pbr-supermarket-preview.jpg?url'
+import tractionPreview from '../docs/modelica-drive-lab-preview.png?url'
+import './theme.css'
 import './catalog.css'
+
+const previews: Readonly<Record<string, string>> = {
+  '/docs/realityloop-pbr-supermarket-preview.jpg': supermarketPreview,
+  '/docs/modelica-drive-lab-preview.png': tractionPreview,
+}
 
 const grid = document.querySelector<HTMLElement>('#examples')
 if (!grid) throw Error('Missing example catalog')
@@ -8,11 +16,11 @@ for (const example of realityLoopExamples) {
   const card = document.createElement('article')
   card.className = 'example-card'
   const media = document.createElement('a')
-  media.href = example.viewerPath
+  media.href = new URL(example.viewerPath.slice(1), document.baseURI).href
   media.className = 'preview'
   media.setAttribute('aria-label', 'Open ' + example.title)
   const image = document.createElement('img')
-  image.src = example.previewImage
+  image.src = previews[example.previewImage] ?? example.previewImage
   image.alt = ''
   image.loading = 'lazy'
   media.append(image)
@@ -34,7 +42,7 @@ for (const example of realityLoopExamples) {
   }
   const link = document.createElement('a')
   link.className = 'open-example'
-  link.href = example.viewerPath
+  link.href = media.href
   link.textContent = 'Open example'
   body.append(category, title, description, tags, link)
   card.append(media, body)

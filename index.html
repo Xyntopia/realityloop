@@ -3,11 +3,13 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
+<link rel="icon" href="/realityloop-icon.svg" type="image/svg+xml"/>
+<meta name="theme-color" content="#2a3548"/>
 <title>RealityLoop — Simulation and robotics experiments</title>
 <meta name="description" content="Run reproducible Modelica robotics simulations, sensor experiments and headless evaluations in RealityLoop."/>
 </head>
 <body>
-<header class="site-header"><div class="brand"><span class="logo">R</span><div><strong>RealityLoop</strong><small>SIMULATION / EXPERIMENT PLATFORM</small></div></div><a href="https://github.com/CogniPilot/rumoca">Rumoca / Modelica</a></header>
+<header class="site-header"><div class="brand"><img class="logo" src="/realityloop-icon.svg" alt=""/><div><strong>RealityLoop</strong><small>SIMULATION / EXPERIMENT PLATFORM</small></div></div><a href="https://github.com/CogniPilot/rumoca">Rumoca / Modelica</a></header>
 <main>
 <section class="hero">
   <div class="overline">OPEN, CUSTOMER-OWNED SIMULATION</div>
@@ -21,7 +23,7 @@
 </section>
 <section class="architecture">
  <span class="overline">COMPUTATION &amp; PROVENANCE</span><h2>Independent execution. Optional orchestration.</h2>
- <p>The headless experiment runner evaluates validated scenarios without a browser. It emits machine-readable observations, metrics and a SHA-256 integrity receipt. Taskyon DAG invocation, caching and StorageClient publication are a planned optional integration—not currently active.</p>
+ <p>The headless experiment runner evaluates scenarios through canonical Taskyon Design Graph nodes without requiring a Taskyon account. It emits cached simulation, metrics and observation artifacts with SHA-256 integrity receipts. Taskyon UI integration and authorized P2P publication are planned, not currently active.</p>
  <code>npm run sim -- scenarios/modelica-wheel-breakaway.json runs/wheel</code>
 </section>
 </main>

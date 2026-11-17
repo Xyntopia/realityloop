@@ -1,0 +1,48 @@
+name: Deploy RealityLoop examples to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Verify simulation and TypeScript
+        run: npm run check && npm test
+      - name: Build project Pages site
+        shell: bash
+        run: |
+          BASE="/${GITHUB_REPOSITORY#*/}/"
+          echo "REALITYLOOP_PAGES_BASE=$BASE" >> "$GITHUB_ENV"
+          npm run build:web -- --base "$BASE"
+      - name: Verify deployable files and subpath links
+        run: node --test tests/pages-build.test.mjs
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist-web
+      - name: Publish Pages site
+        id: deployment
+        uses: actions/deploy-pages@v4

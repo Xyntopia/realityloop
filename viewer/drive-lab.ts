@@ -5,6 +5,7 @@ import stickSlipModel from '../modelica/RealityLoopContacts.mo?raw'
 import rumocaWasmUrl from '../node_modules/@taskyon/rumoca/rumoca_bind_wasm_bg.wasm?url'
 import {runBrowserDag,hashBrowserBinary} from '../src/dag-browser.ts'
 import {canonicalHash} from '../src/vendor/taskyon-comp-dag.mjs'
+import './theme.css'
 import './drive-lab.css'
 
 const element = <T extends HTMLElement>(id: string): T => {
@@ -69,10 +70,12 @@ const plot = (canvas: HTMLCanvasElement, results: [ModelicaResult, ModelicaResul
   const yMin = minY - padding, yMax = maxY + padding
   const fx = (x: number) => margins.left + (x - xMin) / Math.max(xMax - xMin, 1e-12) * plotW
   const fy = (y: number) => margins.top + (yMax - y) / Math.max(yMax - yMin, 1e-12) * plotH
+  const theme = getComputedStyle(canvas)
+  const color = (token: string) => theme.getPropertyValue(token).trim()
   ctx.lineWidth = 1
   ctx.font = '10px ui-sans-serif,system-ui,sans-serif'
-  ctx.fillStyle = '#9fbdc2'
-  ctx.strokeStyle = '#2a4550'
+  ctx.fillStyle = color('--rl-muted')
+  ctx.strokeStyle = color('--rl-border')
   for (let j = 0; j <= 4; j++) {
     const x = margins.left + j / 4 * plotW
     const y = margins.top + j / 4 * plotH
@@ -84,7 +87,7 @@ const plot = (canvas: HTMLCanvasElement, results: [ModelicaResult, ModelicaResul
   results.forEach((result, k) => {
     ctx.beginPath()
     ctx.lineWidth = 2.4
-    ctx.strokeStyle = k === 0 ? '#36dbc7' : '#f0b861'
+    ctx.strokeStyle = color(k === 0 ? '--rl-orange-light' : '--rl-blue')
     result.observations.forEach((_, i) => {
       const [x, y] = value(result, i)
       if (i === 0) ctx.moveTo(fx(x), fy(y))

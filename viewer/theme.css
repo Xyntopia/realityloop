@@ -1,0 +1,32 @@
+/* RealityLoop brand: Taskyon/Constellation/Syncpeer canonical colors.
+ * Copy the small public palette only; RealityLoop remains standalone. */
+:root {
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  color-scheme: dark;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  --rl-primary: #2a3548;
+  --rl-secondary: #f78f3b;
+  --rl-accent: #7fa042;
+  --rl-background: #0d1117;
+  --rl-surface: #161d27;
+  --rl-surface-raised: #1b2635;
+  --rl-surface-hover: #243349;
+  --rl-field: #202c3d;
+  --rl-border: #37475e;
+  --rl-border-soft: #293647;
+  --rl-ink: #f3f5f8;
+  --rl-ink-soft: #d6deea;
+  --rl-muted: #a5b2c2;
+  --rl-orange-light: #ffb778;
+  --rl-orange-soft: rgba(247,143,59,.12);
+  --rl-orange-border: rgba(247,143,59,.42);
+  --rl-blue: #8bb4ed;
+  --rl-success: #a3c47e;
+  --rl-warning: #e9b66f;
+  --rl-danger: #e18481;
+  --rl-shadow: 0 22px 64px rgba(3,7,14,.48);
+}
+
+:focus-visible { outline: 2px solid var(--rl-secondary); outline-offset: 3px; }
+::selection { background: rgba(247,143,59,.32); color: var(--rl-ink); }

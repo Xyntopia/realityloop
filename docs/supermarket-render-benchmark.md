@@ -10,7 +10,7 @@ npm run bench:render
 
 This requires Playwright and a compatible Chromium browser installed separately; neither is a production dependency. If necessary, set `REALITYLOOP_PLAYWRIGHT` to an existing Playwright package directory and `REALITYLOOP_CHROMIUM` to a Chromium executable. Set `REALITYLOOP_BENCH_OUTPUT` for the JSON destination (default: system temporary directory), or `REALITYLOOP_BENCH_DURATION_MS` for per-case duration (1000–30000 ms, default 4000). The script starts and stops its own temporary Vite server. By default Chromium retains its security sandbox and normal GPU selection; do not force SwiftShader when benchmarking real hardware. Only in an isolated test sandbox, set `REALITYLOOP_BENCH_NO_SANDBOX=1` and/or `REALITYLOOP_BENCH_SWIFTSHADER=1` if those compatibility flags are specifically needed.
 
-`benchmarks/supermarket.html` loads the **actual production supermarket interior** with the photographed floor textures, lights, and instanced shelf products. It uses the fixed 1100×650 eye-level photo camera, Three.js ACES tonemapping, and PCF soft shadows. The harness changes one rendering factor at a time, reporting RAF frame throughput, CPU rendering-submission time, draw calls, geometry and browser renderer. The isolated scene excludes robot simulation, LiDAR/SLAM, overlays, and the secondary RGB camera, so these numbers isolate display rendering. It uses a software renderer here, **not a physical GPU**. Ablations intentionally change appearance and are **diagnostics only**.
+`benchmarks/supermarket.html` loads the **actual production supermarket interior** with the photographed floor textures, lights, and instanced shelf products. It uses the fixed 1100×650 eye-level aisle camera, Three.js ACES tonemapping, and PCF soft shadows. The harness changes one rendering factor at a time, reporting RAF frame throughput, CPU rendering-submission time, draw calls, geometry and browser renderer. The isolated scene excludes robot simulation, LiDAR/SLAM, overlays, and the secondary RGB camera, so these numbers isolate display rendering. It uses a software renderer here, **not a physical GPU**. Ablations intentionally change appearance and are **diagnostics only**.
 
 The following figures are a **pre-atlas baseline** from two runs in headless Chromium using ANGLE/SwiftShader software Vulkan, ~3 s / ~2.5 s per case. They are not current post-optimization performance claims:
 
@@ -88,7 +88,7 @@ wheel, brush and visual LiDAR mount batches are rigidly transformed by the
 same root pose. They do **not** change solver state, sensor extrinsics or
 robot collision geometry.
 
-A single headless Chromium photo-view run at 1100×650 with **Performance**
+A single headless Chromium aisle-view run at 1100×650 with **Performance**
 graphics (0.48 DPR on this environment) reported **17 FPS, 43 draw calls,
 zero JavaScript errors, and COMPLETE · GOAL REACHED**. The same page before
 this robot batching reported 76 draw calls in a separate High-quality
