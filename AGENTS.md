@@ -2,6 +2,10 @@
 
 RealityLoop is a standalone, customer-owned simulation/verification repository and Git submodule. **Always use the real Taskyon Design Graph node engine internally**, but never require Taskyon UI, account, services, Space or P2P to simulate, cache or evaluate.
 
+## Git identity
+
+- Commit as `Thomas Rose Meschede <thomas.meschede@xyntopia.com>` for both author and committer. Never use an AI identity such as `OpenAI Assistant <assistant@local.invalid>`, `Codex`, a model or vendor name, or an AI attribution trailer; history must show who is responsible for the change. Verify with `git log -1 --format='%an <%ae> | %cn <%ce>'` before pushing.
+
 - `src/dag-nodes.ts` defines the canonical `RealityLoop.Scenario → Simulation → Metrics/Observations` Taskyon DAG nodes. Node/CLI runs use local `src/dag.ts` and `src/dag-storage.ts` to persist the exact Taskyon graph/invocation/run/project schemas with SHA-256 artifacts. Browser examples use the same nodes, with in-memory caching pending durable browser persistence.
 - The bundle `src/vendor/taskyon-comp-dag.mjs` is generated from canonical `frontend/packages/comp-dag` and pinned by `src/vendor/taskyon-comp-dag.lock.json`. Never write a new DAG runtime or invent a parallel identity scheme. Source checkout needed only when regenerating, not when running.
 - P2P should only be optional transport for explicitly permitted artifact synchronization/import into Taskyon UI. It is never a physics or graph execution dependency. No ambient Space credentials or unauthorized StorageClient write authority.
