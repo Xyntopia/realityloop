@@ -2,6 +2,10 @@
 
 **A compiler for physical-world experiments:** describe a scenario, execute its simulation as canonical Design Graph nodes, and verify the results before testing real hardware. The supermarket robot and wheel traction lab are examples, not the limits of RealityLoop. **Taskyon UI, cloud services, Space and P2P are not required** to execute, record, inspect or cache experiments. Taskyon/P2P integration is a future optional *transport and visualization* concern—not a runtime dependency.
 
+![Actual RealityLoop supermarket simulation from a customer's eye-level perspective](docs/realityloop-supermarket-shopper-view.png)
+
+*Actual screenshot from RealityLoop's browser renderer, using its 1.68 m aisle camera; not a reference photograph or AI-generated image.*
+
 ## Run
 
 ```sh
@@ -67,17 +71,11 @@ Five synthetic 3D LiDAR point clouds feed a PCL.js WASM ICP scan-registration/2D
 
 High PBR retains the rich textures; automatic **Performance** mode uses one flat-colored stock draw call, lower render resolution, and disables costly reflections/shadows. Software Chromium measured ~1 FPS in High and ~2 FPS in Performance for the aisle-view screenshot tests—**not acceptable real-time performance and not indicative of an actual GPU**. The separate front RGB WebGL preview is now rendered only while its telemetry panel is visible and the page is active (rate-limited by graphics quality); source sensor data remain unaffected. This is validated by `tests/render-policy.test.ts`, but no new on-GPU browser FPS number is yet available. A repeatable browser/scene-layer benchmark is provided by `npm run bench:render` (optional Playwright + Chromium; see [render benchmark and findings](docs/supermarket-render-benchmark.md)). The pre-atlas 2026-11-12 headless SwiftShader baseline isolated expensive PBR material/shader work and pixel fill rate: about 1 FPS for the static high-PBR scene versus 18–21 FPS with Performance LOD. Subsequent atlas/batch work reduced detailed/Performance draw calls to ~27/21 and added diffuse paper shading, six-segment package caps and decorative contact shadows; the software-only follow-up **did not establish a reliable FPS improvement**. These measurements are environment-specific and do not demonstrate real GPU performance. A later full-page browser smoke also batches the stationary Tennant body by material (moving with the same root pose, without changing vehicle physics). In one 1100×650 SwiftShader Performance-mode aisle-view test, the complete scene recorded **43 draw calls, 17 FPS, no JavaScript errors**, and the Modelica route reached its goal. This is a single software-renderer measurement, not a hardware speedup claim or guaranteed steady-state performance. Real GPU profiling remains required. This is a procedural approximation, *not* an almost-photorealistic reconstructed store: genuine scanned products, calibrated lighting and GI would be separate, costly assets.
 
-### Simulator screenshots
+### Operator screenshot
 
 ![RealityLoop supermarket simulation — Taskyon-styled controls and telemetry](docs/realityloop-supermarket-ui.png)
 
-*Operator view: Taskyon-styled controls, simulation scene and telemetry from the actual browser renderer.*
-
-![RealityLoop supermarket from customer eye height, looking down the aisle](docs/realityloop-supermarket-shopper-view.png)
-
-*Customer perspective: 1.68 m eye-height camera in the procedural supermarket. This is the simulated environment—not an external photograph or a calibrated digital twin.*
-
-These captures are reproducible with `npm run capture:readme` after providing an optional Playwright/Chromium installation (e.g. `REALITYLOOP_PLAYWRIGHT=/path/to/playwright`). The capture script waits until the Modelica/Taskyon graph run starts and uses the browser-rendered scene.
+*Operator view from the same running application. Both this screenshot and the customer-eye-level image at the top are reproducible with `npm run capture:readme` and an optional Playwright/Chromium installation (e.g. `REALITYLOOP_PLAYWRIGHT=/path/to/playwright`). The capture script waits for the Modelica/Taskyon graph run and screenshots only the app's browser-rendered scene.*
 
 ## Offline H.264 video export (no browser)
 

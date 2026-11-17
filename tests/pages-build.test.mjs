@@ -50,6 +50,10 @@ test('gallery previews are bundled in the Pages artifact', async () => {
 
 test('README documents real browser-rendered operator and shopper screenshots', async () => {
   const readme = await readFile(new URL('../README.md', import.meta.url), 'utf8')
+  assert.ok(
+    readme.indexOf('docs/realityloop-supermarket-shopper-view.png') < readme.indexOf('## Run'),
+    'The customer-eye-level capture must be the leading README image',
+  )
   for (const filename of ['realityloop-supermarket-ui.png', 'realityloop-supermarket-shopper-view.png']) {
     assert.ok(readme.includes(`docs/${filename}`), `README missing ${filename}`)
     const png = await readFile(new URL(`../docs/${filename}`, import.meta.url))
