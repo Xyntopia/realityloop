@@ -28,7 +28,7 @@ main { max-width: 1250px; margin: auto; padding: 30px 38px 80px; }
   display: block; font-size: 9px; letter-spacing: .2em;
   color: var(--rl-muted); margin-top: 4px;
 }
-.hero { padding: 72px 0 76px; max-width: 960px; }
+.hero { padding: 72px 0 76px; }
 .overline {
   display: block; color: var(--rl-orange-light); font-size: 11px;
   letter-spacing: .19em; font-weight: 750;
@@ -38,32 +38,37 @@ main { max-width: 1250px; margin: auto; padding: 30px 38px 80px; }
   line-height: 1.08; margin: 21px 0 24px;
 }
 .hero h1 span { color: var(--rl-orange-light); }
-.hero p, .architecture p {
-  max-width: 750px; color: var(--rl-muted);
+.hero > p:first-of-type, .architecture p {
+  max-width: 820px; color: var(--rl-muted);
   line-height: 1.8; font-size: 16px;
 }
-.velocity-proof {
-  display: grid; grid-template-columns: minmax(160px, 205px) minmax(0, 1fr);
-  gap: 28px; align-items: center;
-  margin-top: 34px; padding: 26px 29px;
-  background: linear-gradient(115deg, rgba(247,143,59,.12), rgba(42,53,72,.58));
+.ownership-principle {
+  max-width: 980px; margin-top: 34px; padding: 28px 32px;
   border: 1px solid var(--rl-orange-border); border-radius: 13px;
+  background: linear-gradient(115deg, rgba(247,143,59,.09), rgba(42,53,72,.5));
 }
-.velocity-time { display: flex; flex-direction: column; align-items: flex-start; }
-.velocity-time strong {
-  font-size: clamp(64px, 7vw, 96px); line-height: 1; letter-spacing: -.085em;
-  color: var(--rl-orange-light); font-variant-numeric: tabular-nums;
+.ownership-principle h2 {
+  font-size: clamp(22px, 2.5vw, 30px); line-height: 1.22;
+  letter-spacing: -.04em; margin: 12px 0 8px;
 }
-.velocity-time strong span { font-size: .53em; letter-spacing: -.04em; }
-.velocity-time > span {
-  margin-top: 10px; font-size: 10px; font-weight: 750;
-  letter-spacing: .14em; color: var(--rl-ink-soft);
+.ownership-principle p {
+  max-width: 850px; font-size: 14px; line-height: 1.75;
+  color: var(--rl-ink-soft); margin: 0;
 }
-.velocity-story h2 { font-size: clamp(20px, 2.3vw, 27px); line-height: 1.2; margin: 9px 0; letter-spacing: -.035em; }
-.velocity-story p { font-size: 13px; line-height: 1.65; margin: 0 0 12px; }
-.velocity-story p a, .velocity-link { color: var(--rl-orange-light); }
-.velocity-link { font-size: 12px; font-weight: 750; text-decoration: none; }
-.velocity-link:hover, .velocity-story p a:hover { text-decoration: underline; }
+.approach-grid {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px 32px; max-width: 980px; margin-top: 34px;
+}
+.approach-grid article { padding-left: 16px; border-left: 2px solid var(--rl-border); }
+.approach-grid h3 { font-size: 17px; margin: 0 0 7px; letter-spacing: -.02em; }
+.approach-grid p {
+  font-size: 13px; line-height: 1.7; color: var(--rl-muted); margin: 0;
+}
+.hero .prototype-disclaimer {
+  max-width: 980px; margin: 30px 0 0; padding-top: 16px;
+  border-top: 1px solid var(--rl-border-soft);
+  font-size: 12px; line-height: 1.6; color: var(--rl-muted);
+}
 .pill-row, .tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 25px; }
 .pill-row span, .tags span {
   background: rgba(42,53,72,.57); color: var(--rl-ink-soft);
@@ -128,9 +133,9 @@ footer {
   .site-header, main { padding-left: 20px; padding-right: 20px; }
   .site-header { flex-wrap: wrap; gap: 15px; }
   .count { display: none; }
-  .hero p { font-size: 14px; }
-  .velocity-proof { grid-template-columns: 1fr; gap: 16px; padding: 20px; }
-  .velocity-time strong { font-size: 68px; }
+  .hero > p:first-of-type { font-size: 14px; }
+  .ownership-principle { padding: 22px 20px; }
+  .approach-grid { grid-template-columns: 1fr; gap: 22px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .preview img, .example-card { transition: none; }

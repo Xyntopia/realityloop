@@ -29,16 +29,20 @@ test('catalog header links to Taskyon and Rumoca', async () => {
   assert.match(html, /href="https:\/\/github\.com\/CogniPilot\/rumoca"/)
 })
 
-test('home hero highlights fast AI-agent prototype without claiming production validation', async () => {
+test('home hero presents ownership and physical fidelity as goals, not proven results', async () => {
   const html = await readFile(new URL('index.html', site), 'utf8')
-  assert.match(html, /class="velocity-proof"/)
-  assert.match(html, /~3<span>h<\/span>/)
-  assert.match(html, /AI AGENT BUILD TIME/)
-  assert.match(html, /AI coding agent created the supermarket robotics demo/)
-  assert.match(html, /Taskyon<\/a>'s Design Graph/)
-  assert.match(html, /Rumoca<\/a>'s Modelica toolchain/)
-  assert.match(html, /not a validated production simulator/)
-  assert.match(html, /href="\.\/examples\/supermarket\.html"/)
+  assert.match(html, /Build simulations faster/)
+  assert.match(html, /Own the toolchain/)
+  assert.match(html, /age of AI agents/)
+  assert.match(html, /own the code, models, data and execution environment/)
+  assert.match(html, /Test more scenarios/)
+  assert.match(html, /locally or in CI/)
+  assert.match(html, /Modelica, an established modeling language/)
+  assert.match(html, /reproducible runs and auditable results/)
+  assert.match(html, /Expert updates, without dependency/)
+  assert.match(html, /fidelity must be demonstrated against real-world measurements/)
+  assert.match(html, /not yet validated, production-ready digital twins/)
+  assert.doesNotMatch(html, /prototyped in an afternoon|AI AGENT BUILD TIME|~3<span>h<\/span>/)
 })
 
 test('every page ships the RealityLoop flask/caliper icon and Taskyon palette', async () => {

@@ -6,25 +6,39 @@
 <link rel="icon" href="/realityloop-icon.svg" type="image/svg+xml"/>
 <meta name="theme-color" content="#2a3548"/>
 <title>RealityLoop — Simulation and robotics experiments</title>
-<meta name="description" content="Run reproducible Modelica robotics simulations, sensor experiments and headless evaluations in RealityLoop."/>
+<meta name="description" content="RealityLoop is an open, customer-owned foundation for building and testing engineering simulations with Modelica, reproducible runs and headless CI."/>
 </head>
 <body>
 <header class="site-header"><div class="brand"><img class="logo" src="/realityloop-icon.svg" alt=""/><div><strong>RealityLoop</strong><small>SIMULATION / EXPERIMENT PLATFORM</small></div></div><nav class="site-links" aria-label="Related projects"><a href="https://taskyon.space/">Taskyon</a><a href="https://github.com/CogniPilot/rumoca">Rumoca / Modelica</a></nav></header>
 <main>
 <section class="hero">
   <div class="overline">OPEN, CUSTOMER-OWNED SIMULATION</div>
-  <h1>Model reality.<span> Test what happens.</span></h1>
-  <p>One reproducible simulation core, different models and experiments. Build working research prototypes quickly, run locally or headlessly, and inspect observations and metrics.</p>
-  <aside class="velocity-proof" aria-label="AI-assisted supermarket simulation case study">
-    <div class="velocity-time"><strong>~3<span>h</span></strong><span>AI AGENT BUILD TIME</span></div>
-    <div class="velocity-story">
-      <span class="overline">FROM IDEA TO WORKING SIMULATION</span>
-      <h2>Supermarket robotics, prototyped in an afternoon.</h2>
-      <p>An AI coding agent created the supermarket robotics demo in approximately three hours, building on <a href="https://taskyon.space/">Taskyon</a>'s Design Graph and <a href="https://github.com/CogniPilot/rumoca">Rumoca</a>'s Modelica toolchain. A research prototype, not a validated production simulator.</p>
-      <a class="velocity-link" href="./examples/supermarket.html">Open the supermarket simulation</a>
-    </div>
+  <h1>Build simulations faster.<span> Own the toolchain.</span></h1>
+  <p>We are developing RealityLoop to help engineering teams create and adapt simulations, explore more test scenarios, and verify products virtually before committing to physical tests. Our goal is sufficient fidelity to make those results useful for engineering decisions. That fidelity must be demonstrated against real-world measurements, not assumed from a convincing visualization.</p>
+  <aside class="ownership-principle" aria-label="Why owning the simulation toolchain matters">
+    <div class="overline">WHAT WE KEEP HEARING FROM CUSTOMERS</div>
+    <h2>In the age of AI agents, owning the tools matters.</h2>
+    <p>Models and tests generated or modified by AI agents must remain understandable, inspectable and under your control. We want companies to own the code, models, data and execution environment—not depend on a vendor to keep their simulation running.</p>
   </aside>
-  <div class="pill-row"><span>Modelica-first dynamics</span><span>Replaceable collision backends</span><span>Headless evaluation</span><span>Sensor simulation</span></div>
+  <div class="approach-grid" aria-label="What we are building toward">
+    <article>
+      <h3>Test more scenarios</h3>
+      <p>Run repeatable experiments and parameter variations, locally or in CI. Compare virtual results with physical measurements to establish where the model can be trusted.</p>
+    </article>
+    <article>
+      <h3>Build and change quickly</h3>
+      <p>Give engineers and AI agents a modular foundation they can adapt, rather than rebuilding each experiment from scratch. Run headlessly across supported environments.</p>
+    </article>
+    <article>
+      <h3>Engineering foundations</h3>
+      <p>Build on Modelica, an established modeling language used across industries, with explicit physical models, reproducible runs and auditable results. The foundations are developed by engineers, not hidden behind a black box.</p>
+    </article>
+    <article>
+      <h3>Expert updates, without dependency</h3>
+      <p>Benefit from improvements by the people developing the foundation—or maintain and extend your own copy. Future updates should be an option, never a condition for using your simulations.</p>
+    </article>
+  </div>
+  <p class="prototype-disclaimer">RealityLoop is still experimental. The examples below demonstrate building blocks and research workflows; they are not yet validated, production-ready digital twins.</p>
 </section>
 <section class="catalog">
  <div class="section-title"><div><span class="overline">EXAMPLE GALLERY</span><h2>Explore the experiments</h2></div><span class="count">Standalone demonstrations</span></div>
@@ -36,7 +50,7 @@
  <code>npm run sim -- scenarios/modelica-wheel-breakaway.json runs/wheel</code>
 </section>
 </main>
-<footer>RealityLoop · Standalone simulation kernel · The examples are research prototypes, not certified digital twins.</footer>
+<footer>RealityLoop · Customer-owned simulation foundations · Research prototypes; physical fidelity must be validated for each use case.</footer>
 <script type="module" src="/viewer/catalog.ts"></script>
 </body>
 </html>
