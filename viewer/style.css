@@ -80,7 +80,7 @@ button.mini { padding: 7px 11px; font-size: 11px; }
 }
 .swatch { display: inline-block; width: 13px; height: 8px; margin-right: 8px; border-radius: 2px; }
 .swatch.trail { background: var(--rl-orange-light); }
-.swatch.path { background: var(--rl-blue); }
+.swatch.path { background: var(--rl-ink-soft); }
 .swatch.blocked { background: var(--rl-danger); }
 .status {
   font-weight: 730; font-size: 13px; margin: 14px 0 21px;
@@ -107,7 +107,7 @@ button.mini { padding: 7px 11px; font-size: 11px; }
 .live-dot {
   display: inline-block; background: var(--rl-success);
   width: 7px; height: 7px; border-radius: 50%;
-  margin-right: 8px; box-shadow: 0 0 10px rgba(127,160,66,.52);
+  margin-right: 8px; box-shadow: 0 0 10px rgba(247,143,59,.4);
 }
 .lab-link {
   pointer-events: auto; text-decoration: none;

@@ -1,6 +1,6 @@
 # RealityLoop
 
-**Standalone robotics simulation and experimentation platform.** All normal simulations run through the canonical Taskyon Design Graph engine. **Taskyon UI, cloud services, Space and P2P are not required** to execute, record, inspect or cache experiments. Taskyon/P2P integration is a future optional *transport and visualization* concern—not a runtime dependency.
+**A compiler for physical-world experiments:** describe a scenario, execute its simulation as canonical Design Graph nodes, and verify the results before testing real hardware. The supermarket robot and wheel traction lab are examples, not the limits of RealityLoop. **Taskyon UI, cloud services, Space and P2P are not required** to execute, record, inspect or cache experiments. Taskyon/P2P integration is a future optional *transport and visualization* concern—not a runtime dependency.
 
 ## Run
 
@@ -18,13 +18,15 @@ The root page lists independent examples: supermarket cleaning and wheel tractio
 
 ## Taskyon-family visual identity
 
-The standalone gallery, supermarket controls and traction lab share `viewer/theme.css` (derived from the Taskyon/Constellation/Syncpeer public brand palette: primary `#2A3548`, secondary `#F78F3B`, accent `#7FA042`). The original `public/realityloop-icon.svg` represents a design node (cube) inside a repeatable execution loop; the same vector is used for browser favicons and page branding. Each HTML page imports the shared theme through its viewer entrypoint. Scene materials, simulated robot manufacturer-like paint, product/package artwork and physical sensor calculations deliberately do **not** inherit branding; only UI and diagnostic visualization colors do.
+The standalone gallery, supermarket controls and traction lab share `viewer/theme.css`, using **primary slate `#2A3548` and secondary orange `#F78F3B`**. The optional Taskyon olive accent is intentionally not part of the everyday RealityLoop interface. Diagnostic overlays use orange and neutral white/slate for distinct data series. The current `public/realityloop-icon.svg` remains the provisional favicon and page mark until the final physical-world identity is selected. Scene materials, robot paint, products and sensor calculations do **not** inherit brand colors.
 
 ## GitHub Pages deployment (static demos)
 
-The independent repository has a GitHub Actions workflow at `.github/workflows/pages.yml`. When the `main` branch is pushed to a **GitHub** repository, it runs TypeScript checks and simulation tests, builds the Vite multi-page gallery with that repository's `/<repository>/` Pages base, verifies the resulting links/assets, and deploys `dist-web/` through the official Pages artifact flow. In GitHub repository **Settings → Pages**, set **Build and deployment → Source: GitHub Actions**. Workflow dispatch is supported.
+The independent repository has a GitHub Actions workflow at `.github/workflows/pages.yml`. GitHub `main` pushes run TypeScript and simulation tests, build the multi-page Vite gallery at the repository's `/<repository>/` Pages base, verify paths/assets, and **upload the artifact in the build job**. A separate deploy job publishes it to Pages. Workflow dispatch is also supported.
 
-The configured `origin` is currently **GitLab**, not GitHub. GitLab pushes will not trigger this workflow: create or connect a GitHub repository/mirror and push the RealityLoop `main` branch there. The workflow does not change remotes or publish automatically from this local checkout. The resulting site is publicly viewable; it contains no credentials.
+**One-time repository setup is required:** in **GitHub → Settings → Pages → Build and deployment → Source**, select **GitHub Actions**. The initial deployment failed because Pages was not enabled (HTTP 404 in `actions/configure-pages@v5`); the workflow now emits a specific configuration error while preserving the successful build artifact. The standard `GITHUB_TOKEN` cannot enable Pages through `configure-pages`'s `enablement: true` option. Site initialization requires repository administration, not an extra token embedded in the workflow.
+
+The repository has both `github` (`git@github.com:Xyntopia/realityloop.git`) and `origin` (`git@gitlab.com:xyntopia/realityloop.git`) remotes. Only GitHub pushes trigger GitHub Actions. The workflow does not modify remotes or expose credentials; the resulting static site is public.
 
 To test the expected project Pages layout locally:
 
@@ -65,7 +67,17 @@ Five synthetic 3D LiDAR point clouds feed a PCL.js WASM ICP scan-registration/2D
 
 High PBR retains the rich textures; automatic **Performance** mode uses one flat-colored stock draw call, lower render resolution, and disables costly reflections/shadows. Software Chromium measured ~1 FPS in High and ~2 FPS in Performance for the aisle-view screenshot tests—**not acceptable real-time performance and not indicative of an actual GPU**. The separate front RGB WebGL preview is now rendered only while its telemetry panel is visible and the page is active (rate-limited by graphics quality); source sensor data remain unaffected. This is validated by `tests/render-policy.test.ts`, but no new on-GPU browser FPS number is yet available. A repeatable browser/scene-layer benchmark is provided by `npm run bench:render` (optional Playwright + Chromium; see [render benchmark and findings](docs/supermarket-render-benchmark.md)). The pre-atlas 2026-11-12 headless SwiftShader baseline isolated expensive PBR material/shader work and pixel fill rate: about 1 FPS for the static high-PBR scene versus 18–21 FPS with Performance LOD. Subsequent atlas/batch work reduced detailed/Performance draw calls to ~27/21 and added diffuse paper shading, six-segment package caps and decorative contact shadows; the software-only follow-up **did not establish a reliable FPS improvement**. These measurements are environment-specific and do not demonstrate real GPU performance. A later full-page browser smoke also batches the stationary Tennant body by material (moving with the same root pose, without changing vehicle physics). In one 1100×650 SwiftShader Performance-mode aisle-view test, the complete scene recorded **43 draw calls, 17 FPS, no JavaScript errors**, and the Modelica route reached its goal. This is a single software-renderer measurement, not a hardware speedup claim or guaranteed steady-state performance. Real GPU profiling remains required. This is a procedural approximation, *not* an almost-photorealistic reconstructed store: genuine scanned products, calibrated lighting and GI would be separate, costly assets.
 
-![Supermarket simulation preview](docs/realityloop-pbr-supermarket-preview.jpg)
+### Simulator screenshots
+
+![RealityLoop supermarket simulation — Taskyon-styled controls and telemetry](docs/realityloop-supermarket-ui.png)
+
+*Operator view: Taskyon-styled controls, simulation scene and telemetry from the actual browser renderer.*
+
+![RealityLoop supermarket from customer eye height, looking down the aisle](docs/realityloop-supermarket-shopper-view.png)
+
+*Customer perspective: 1.68 m eye-height camera in the procedural supermarket. This is the simulated environment—not an external photograph or a calibrated digital twin.*
+
+These captures are reproducible with `npm run capture:readme` after providing an optional Playwright/Chromium installation (e.g. `REALITYLOOP_PLAYWRIGHT=/path/to/playwright`). The capture script waits until the Modelica/Taskyon graph run starts and uses the browser-rendered scene.
 
 ## Offline H.264 video export (no browser)
 

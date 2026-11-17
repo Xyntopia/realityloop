@@ -87,7 +87,7 @@ const plot = (canvas: HTMLCanvasElement, results: [ModelicaResult, ModelicaResul
   results.forEach((result, k) => {
     ctx.beginPath()
     ctx.lineWidth = 2.4
-    ctx.strokeStyle = color(k === 0 ? '--rl-orange-light' : '--rl-blue')
+    ctx.strokeStyle = color(k === 0 ? '--rl-secondary' : '--rl-ink-soft')
     result.observations.forEach((_, i) => {
       const [x, y] = value(result, i)
       if (i === 0) ctx.moveTo(fx(x), fy(y))

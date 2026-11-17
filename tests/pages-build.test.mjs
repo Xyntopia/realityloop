@@ -36,13 +36,26 @@ test('every page ships the original RealityLoop icon and shared Taskyon palette'
       .filter(file => file.endsWith('.css'))
       .map(file => readFile(new URL(`assets/${file}`, site), 'utf8')),
   )).join('\n')
-  for (const color of ['#2a3548', '#f78f3b', '#7fa042']) {
+  for (const color of ['#2a3548', '#f78f3b']) {
     assert.ok(styles.includes(color), `Missing canonical Taskyon brand color ${color}`)
   }
+  assert.doesNotMatch(styles, /#7fa042|--rl-accent/, 'Accent olive is reserved, not part of normal UI')
 })
 
 test('gallery previews are bundled in the Pages artifact', async () => {
   const assets = await readdir(new URL('assets/', site))
   assert.ok(assets.some(name => /^realityloop-pbr-supermarket-preview-.*\.jpg$/.test(name)), 'Supermarket preview missing')
   assert.ok(assets.some(name => /^modelica-drive-lab-preview-.*\.png$/.test(name)), 'Traction lab preview missing')
+})
+
+test('README documents real browser-rendered operator and shopper screenshots', async () => {
+  const readme = await readFile(new URL('../README.md', import.meta.url), 'utf8')
+  for (const filename of ['realityloop-supermarket-ui.png', 'realityloop-supermarket-shopper-view.png']) {
+    assert.ok(readme.includes(`docs/${filename}`), `README missing ${filename}`)
+    const png = await readFile(new URL(`../docs/${filename}`, import.meta.url))
+    assert.ok(png.length > 100_000, `Screenshot appears empty: ${filename}`)
+    assert.equal(png.subarray(0, 8).toString('hex'), '89504e470d0a1a0a')
+    assert.equal(png.readUInt32BE(16), 1600)
+    assert.equal(png.readUInt32BE(20), 900)
+  }
 })

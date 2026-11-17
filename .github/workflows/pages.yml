@@ -13,15 +13,10 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     permissions:
       contents: read
-      pages: write
-      id-token: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -39,10 +34,38 @@ jobs:
           npm run build:web -- --base "$BASE"
       - name: Verify deployable files and subpath links
         run: node --test tests/pages-build.test.mjs
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
         with:
           path: dist-web
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    steps:
+      - name: Verify Pages is enabled
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          code=$(curl -sS -o /tmp/realityloop-pages.json -w '%{http_code}' \
+            -H 'Accept: application/vnd.github+json' \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/pages")
+          if [ "$code" != "200" ]; then
+            echo "::error::GitHub Pages is not configured or accessible (HTTP $code). An administrator must open Settings > Pages > Build and deployment > Source: GitHub Actions. Then re-run this workflow. The default GITHUB_TOKEN cannot initialize Pages using configure-pages enablement."
+            exit 1
+          fi
+          echo 'Pages configuration detected.'
+      - uses: actions/configure-pages@v5
       - name: Publish Pages site
         id: deployment
         uses: actions/deploy-pages@v4

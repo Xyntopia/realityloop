@@ -27,7 +27,7 @@ export class SlamView {
     this.pixelCanvas.height = this.tracker.grid.height
     this.beams = lidars.map(sensor => {
       const material = new THREE.LineBasicMaterial({
-        color: sensor.side === 'front' ? 0x8bb4ed : 0xf78f3b,
+        color: sensor.side === 'front' ? 0xd6deea : 0xf78f3b,
         transparent: true, opacity: sensor.side === 'front' ? 0.27 : 0.23,
         depthWrite: false,
       })
@@ -38,7 +38,7 @@ export class SlamView {
     })
     this.points = new THREE.Points(
       new THREE.BufferGeometry(),
-      new THREE.PointsMaterial({color: 0x8bb4ed, size: 0.035, transparent: true,
+      new THREE.PointsMaterial({color: 0xd6deea, size: 0.035, transparent: true,
         opacity: 0.85, sizeAttenuation: true, depthWrite: false}),
     )
     this.points.frustumCulled = false
