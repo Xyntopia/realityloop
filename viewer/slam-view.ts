@@ -3,6 +3,7 @@ import * as PCL from 'pcl.js'
 import pclWasmUrl from 'pcl.js/pcl-core.wasm?url'
 import { beamEnd, lidars, sensorOrigin, SlamTracker, type Pose2D, type SlamEstimate } from '../src/slam.ts'
 import { PclIcpSlamTracker } from '../src/icp-slam.ts'
+import { assertPclRuntime } from '../src/pcl-icp.ts'
 import { sampleRobotSensors, scanLidar3D } from '../src/sensors.ts'
 
 type Tracker = SlamTracker | PclIcpSlamTracker
@@ -59,10 +60,13 @@ export class SlamView {
       const response = await fetch(pclWasmUrl)
       if (!response.ok) throw Error('PCL wasm HTTP ' + response.status)
       await PCL.init({arrayBuffer: await response.arrayBuffer()})
+      assertPclRuntime(PCL)
       this.pclReady = true
       this.reset()
       document.getElementById('slam-method')!.textContent = 'PCL WASM · ICP + occupancy grid'
     } catch (error) {
+      this.pclReady = false
+      this.reset()
       // Explicitly indicate fallback; do not call the grid matcher real SLAM.
       document.getElementById('slam-method')!.textContent =
         'Scan-to-grid fallback · ICP unavailable'
@@ -108,9 +112,22 @@ export class SlamView {
     this.lastStamp = stampSeconds
     const sensors = sampleRobotSensors(truth, speed, stampSeconds, this.previousTruth)
     this.previousTruth = {pose: {...truth}, speed, stampSeconds}
-    this.latest = this.tracker instanceof PclIcpSlamTracker
-      ? this.tracker.step(truth, speed, stampSeconds)
-      : this.tracker.step(truth)
+    try{
+      this.latest = this.tracker instanceof PclIcpSlamTracker
+        ? this.tracker.step(truth, speed, stampSeconds)
+        : this.tracker.step(truth)
+    }catch(error){
+      // Native PCL can also fail after initialization. Optional ICP must not
+      // terminate an otherwise valid physics/DAG replay.
+      if(!(this.tracker instanceof PclIcpSlamTracker))throw error
+      console.warn('PCL ICP runtime failure, switching to grid fallback',error)
+      this.pclReady=false
+      this.tracker=new SlamTracker()
+      this.latest=this.tracker.step(truth)
+      document.getElementById('slam-method')!.textContent=
+        'Scan-to-grid fallback · PCL runtime failure'
+      document.getElementById('icp-matches')!.textContent='ICP unavailable'
+    }
     for (let i = 0; i < this.latest.scans.length; i++) {
       const { sensor, rays } = this.latest.scans[i]
       const origin = sensorOrigin(truth, sensor)

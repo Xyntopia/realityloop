@@ -34,6 +34,13 @@ jobs:
           npm run build:web -- --base "$BASE"
       - name: Verify deployable files and subpath links
         run: node --test tests/pages-build.test.mjs
+      - name: Install Chromium for production runtime regression
+        run: npx playwright install --with-deps chromium
+      - name: Verify minified supermarket replay and PCL ICP
+        env:
+          REALITYLOOP_CAPTURE_NO_SANDBOX: '1'
+          REALITYLOOP_CAPTURE_SWIFTSHADER: '1'
+        run: npm run check:browser:prod
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:

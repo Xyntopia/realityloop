@@ -31,6 +31,7 @@
     "bench:render": "node scripts/benchmark-supermarket.mjs",
     "capture:readme": "node scripts/capture-readme.mjs",
     "check:visual": "node scripts/check-browser-lighting.mjs",
+    "check:browser:prod": "node scripts/check-production-supermarket.mjs",
     "build:dag-runtime": "node tools/build-comp-dag-runtime.mjs",
     "dev": "vite --host 127.0.0.1",
     "check": "tsc --noEmit",
@@ -52,6 +53,7 @@
     "@types/node": "^24.10.0",
     "@types/three": "^0.181.0",
     "esbuild": "0.28.1",
+    "playwright": "1.61.1",
     "tsup": "^8.5.0",
     "typescript": "^5.9.2",
     "vite": "^7.3.8"

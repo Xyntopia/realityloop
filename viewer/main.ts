@@ -2,6 +2,7 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { createSupermarketInterior } from './supermarket-interior.ts'
 import { createSupermarketPostFX } from './supermarket-postfx.ts'
+import { createReplayTrail } from './replay-trail.ts'
 import { createRobotContactShadow } from './contact-shading.ts'
 import {
   shouldCaptureSensorPreview,updateAutoQuality,
@@ -68,9 +69,10 @@ applyQuality(softwareRenderer?'performance':'balanced')
 const goal = new THREE.Mesh(new THREE.RingGeometry(0.43,0.51,48),new THREE.MeshBasicMaterial({color:0xf78f3b,side:THREE.DoubleSide}))
 goal.rotation.x=-Math.PI/2;goal.position.set(7.5,0.016,0);scene.add(goal)
 const slamView=new SlamView(elem('slam-map') as HTMLCanvasElement,scene)
-const trailGeometry=new THREE.BufferGeometry()
+const replayTrail=createReplayTrail()
 const trailMaterial=new THREE.LineBasicMaterial({color:0xd6deea,transparent:true,opacity:0.95})
-const trail=new THREE.Line(trailGeometry,trailMaterial)
+const trail=new THREE.Line(replayTrail.geometry,trailMaterial)
+trail.frustumCulled=false
 scene.add(trail)
 const coverageGeometry=new THREE.PlaneGeometry(0.22,0.22)
 const coverageMaterial=new THREE.MeshBasicMaterial({color:0xf78f3b,transparent:true,opacity:0.17,depthWrite:false,side:THREE.DoubleSide})
@@ -106,7 +108,7 @@ let elapsedPlayback=0
 const setStatus=(status:string)=>{elem('status').textContent=status}
 const resetVisual=()=>{
   sampleIndex=0;lastPaintedSample=-1;elapsedPlayback=0
-  trailGeometry.setFromPoints([])
+  replayTrail.reset()
   coverage.count=0
   slamView.reset()
   footprintCells.clear()
@@ -131,7 +133,9 @@ const run=async(route:'blocked'|'detour')=>{
           return result.result
         })
     if(current!==generation)return
-    result=next;resetVisual();playing=true;elem('play').textContent='Pause'
+    result=next;resetVisual()
+    replayTrail.setObservations(next.observations)
+    playing=true;elem('play').textContent='Pause'
     elem('engine-label').textContent=engine==='modelica'
       ? 'RUMOCA MODELICA · COMPILER-DRIVEN REPLAY'
       : 'RAPIER WASM · LEGACY COMPARISON REPLAY'
@@ -158,7 +162,7 @@ const displaySample=(i:number)=>{
     ? format(sample.lateralSlip)+' m/s'
     : contactMode===0?'STICK':contactMode>0?'SLIDE +':'SLIDE −'
   elem('frame').textContent='SAMPLE '+(i+1)+' / '+result.observations.length
-  trailGeometry.setFromPoints(result.observations.slice(0,i+1).map(p=>new THREE.Vector3(p.x,0.04,p.z)))
+  replayTrail.showThrough(i)
   for(let k=lastPaintedSample+1;k<=i;k++){
     const point=result.observations[k]
     for(let j=-2;j<=2;j++)addCoverage(point.x+0.13*j*Math.sin(point.yaw),point.z+0.13*j*Math.cos(point.yaw))

@@ -41,6 +41,21 @@ node --test tests/pages-build.test.mjs
 
 Substitute the GitHub repository name for `realityloop` when necessary and set `REALITYLOOP_PAGES_BASE=/your-repo/` for the smoke test. The static Pages site runs existing browser DAG simulations **locally in the tab**. It does not host an always-on agent or expose P2P/RPC endpoints. Authorized Taskyon remote DAG-node execution is a separate **planned v0.7.1** capability.
 
+The deployed supermarket previously had two runtime faults: repeated trail
+buffer warnings from per-frame `BufferGeometry.setFromPoints`, and a fatal
+`pcl.js` ICP constructor error when production minification renamed
+`PointXYZ.name`. The trail now preallocates a whole immutable replay trace
+and only advances `drawRange`; the Vite build preserves constructor names,
+checks WASM compatibility at initialization, and switches transparently to
+the grid fallback if PCL later fails rather than crashing replay. The Pages
+artifact tests check the class-name invariant, and **GitHub Pages deployment
+is now gated by a real Chromium smoke test**. Locally, after a Pages-base
+build, run `npx playwright install chromium` once, then
+`npm run check:browser:prod`. It completes the entire recorded Modelica
+detour replay, checks actual ICP registrations and rejects JavaScript errors
+or growing geometry warnings. It also deliberately breaks a PCL constructor
+after the successful run to verify that grid fallback keeps replaying.
+
 ## Design Graph is mandatory; P2P is optional
 
 Both the headless CLI and browser examples use the **real Taskyon `@taskyon/comp-dag` node engine**. The module is bundled offline in `src/vendor/taskyon-comp-dag.mjs` from `frontend/packages/comp-dag`, with a recorded source and bundle lock at `src/vendor/taskyon-comp-dag.lock.json`. This is a temporary standalone packaging solution, not a second graph implementation. Rebuild only when intentionally updating canonical Taskyon sources:

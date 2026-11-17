@@ -1,5 +1,21 @@
 import type * as PCL from 'pcl.js'
 
+/** pcl.js v1.16 resolves native WASM types through JavaScript class .name.
+ * Browser bundles must preserve PointXYZ and related constructor names.
+ * A successful WASM download/init alone does not prove the ICP ABI works. */
+export const assertPclRuntime=(pcl:typeof PCL):void=>{
+  if(pcl.PointXYZ.name!=='PointXYZ'){
+    throw Error('pcl.js PointXYZ constructor renamed by bundling: '+pcl.PointXYZ.name)
+  }
+  const cloud=new pcl.PointCloud(pcl.PointXYZ)
+  try{
+    const icp=new pcl.IterativeClosestPoint()
+    icp.manager.delete()
+  }finally{
+    cloud.manager.delete()
+  }
+}
+
 export type Point2 = { x: number; z: number }
 export type PclRegistration = {
   converged: boolean

@@ -45,6 +45,17 @@ test('every page ships the RealityLoop flask/caliper icon and Taskyon palette', 
   assert.doesNotMatch(styles, /#7fa042|--rl-accent/, 'Accent olive is reserved, not part of normal UI')
 })
 
+test('production pcl.js retains PointXYZ class identity required by WASM', async () => {
+  const assets = await readdir(new URL('assets/', site))
+  const chunk = assets.find(name => /^supermarket-.*\.js$/.test(name))
+  assert.ok(chunk, 'Built supermarket script missing')
+  const source = await readFile(new URL(`assets/${chunk}`, site), 'utf8')
+  // pcl.js resolves PointCloud types using _PT.name. The minifier must emit
+  // a keepNames assignment for PointXYZ, not just a string in a lookup.
+  assert.match(source, /\w+\(\w+,"PointXYZ"\)/,
+    'Production minifier stripped pcl.js PointXYZ constructor name')
+})
+
 test('gallery previews are bundled in the Pages artifact', async () => {
   const assets = await readdir(new URL('assets/', site))
   assert.ok(assets.some(name => /^realityloop-pbr-supermarket-preview-.*\.jpg$/.test(name)), 'Supermarket preview missing')
