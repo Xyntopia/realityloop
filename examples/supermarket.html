@@ -19,7 +19,8 @@
       <label class="effect-switch"><input id="fx-lighting" data-effect="lighting" type="checkbox">Lamp illumination</label>
       <label class="effect-switch"><input id="fx-glare" data-effect="glare" type="checkbox">Lamp glare / glow</label>
       <label class="effect-switch"><input id="fx-contactShadows" data-effect="contactShadows" type="checkbox">Contact / crevice shadows</label>
-      <label class="effect-switch"><input id="fx-ambientOcclusion" data-effect="ambientOcclusion" type="checkbox">Screen-space AO <small>GPU only</small></label>
+      <label class="effect-switch"><input id="fx-ambientOcclusion" data-effect="ambientOcclusion" type="checkbox">Dynamic AO <small>GPU only</small></label>
+      <div class="control-row"><label for="ao-method">AO method</label><select id="ao-method"><option value="ssao" selected>SSAO · fast</option><option value="gtao">GTAO · experimental</option></select></div>
       <label class="effect-switch"><input id="fx-reflections" data-effect="reflections" type="checkbox">Environment reflections</label>
       <label class="effect-switch"><input id="fx-surfaceDetail" data-effect="surfaceDetail" type="checkbox">Normal / roughness maps</label>
       <label class="effect-switch"><input id="fx-castShadows" data-effect="castShadows" type="checkbox">Dynamic shadow map</label>

@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { createSupermarketInterior } from './supermarket-interior.ts'
 import {isSoftwareRenderer} from './renderer-capabilities.ts'
-import { createSupermarketPostFX } from './supermarket-postfx.ts'
+import { createSupermarketPostFX, type AoMethod } from './supermarket-postfx.ts'
 import { createReplayTrail } from './replay-trail.ts'
 import { createRobotContactShadow } from './contact-shading.ts'
 import {
@@ -48,6 +48,7 @@ controls.update()
 const interior = createSupermarketInterior(scene,renderer)
 const graphicsSelect=elem('visual-quality') as HTMLSelectElement
 const graphicsDetailSelect=elem('graphics-detail') as HTMLSelectElement
+const aoMethodSelect=elem('ao-method') as HTMLSelectElement
 const softwareRenderer=isSoftwareRenderer(renderer)
 document.body.classList.toggle('software-renderer',softwareRenderer)
 const postFX=createSupermarketPostFX(renderer,scene,camera,softwareRenderer)
@@ -72,7 +73,8 @@ const applyQuality=(
   renderer.toneMappingExposure=quality==='high' ? .94 : quality==='balanced' ? .99 : 1.08
   renderer.shadowMap.needsUpdate=true
   interior.setVisualQuality(quality,currentEffects)
-  postFX.setQuality(currentEffects.ambientOcclusion,innerWidth,innerHeight)
+  postFX.setQuality(currentEffects.ambientOcclusion,innerWidth,innerHeight,
+    aoMethodSelect.value as AoMethod)
   contactShadow.setQuality(quality,currentEffects.contactShadows)
   graphicsDetailSelect.value=quality
   for(const key of graphicsEffects){
@@ -81,12 +83,13 @@ const applyQuality=(
     input.disabled=(key==='ambientOcclusion'&&!canUseAO)||
       (key==='glare'&&!currentEffects.lighting)
   }
+  aoMethodSelect.disabled=!canUseAO||!currentEffects.ambientOcclusion
   elem('graphics-effects-count').textContent=
     enabledEffectCount(currentEffects)+'/'+graphicsEffects.length+' on'
 }
 elem('graphics-effects-hint').textContent=canUseAO
-  ? 'SSAO requires extra GPU work. Changes affect visualization only.'
-  : 'SSAO unavailable on this software/legacy renderer. Effects do not change physics.'
+  ? 'GTAO is experimental and usually slower than SSAO. Both are half-resolution and visualization-only.'
+  : 'Dynamic AO unavailable on this software/legacy renderer. Static AO and contact shadows still work.'
 applyQuality(softwareRenderer?'performance':'balanced')
 const goal = new THREE.Mesh(new THREE.RingGeometry(0.43,0.51,48),new THREE.MeshBasicMaterial({color:0xf78f3b,side:THREE.DoubleSide}))
 goal.rotation.x=-Math.PI/2;goal.position.set(7.5,0.016,0);scene.add(goal)
@@ -232,7 +235,8 @@ const render=(now:number)=>{
     }
     elem('render-stats').textContent=fps+' FPS · '+renderer.info.render.calls+
       ' DRAWS · '+interior.decorativeProductCount+' PRODUCTS · '+graphicsQuality.toUpperCase()+
-      (graphicsSelect.value==='custom'?' CUSTOM':'')
+      (graphicsSelect.value==='custom'?' CUSTOM':'')+
+      (currentEffects.ambientOcclusion?' · '+postFX.getActiveMethod().toUpperCase():'')
     fpsFrames=0
     fpsWindowStart=now
   }
@@ -262,6 +266,10 @@ graphicsSelect.addEventListener('change',()=>{
     applyQuality(graphicsDetailSelect.value as VisualQuality,currentEffects)
   else applyQuality(selected)
   autoQuality={quality:graphicsQuality,slowWindows:0,fastWindows:0}
+})
+aoMethodSelect.addEventListener('change',()=>{
+  graphicsSelect.value='custom'
+  applyQuality(graphicsQuality,{...currentEffects,ambientOcclusion:true})
 })
 graphicsDetailSelect.addEventListener('change',()=>{
   graphicsSelect.value='custom'

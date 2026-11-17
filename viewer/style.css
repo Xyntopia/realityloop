@@ -35,7 +35,10 @@ canvas { display: block; }
   border-radius: 13px; backdrop-filter: blur(15px);
   box-shadow: var(--rl-shadow);
 }
-.controls { top: 105px; left: 25px; }
+.controls {
+  top: 105px; left: 25px;
+  max-height: calc(100vh - 145px); overflow-y: auto; scrollbar-width: thin;
+}
 .telemetry {
   right: 25px; top: 105px; width: 295px;
   max-height: calc(100vh - 145px); overflow-y: auto; scrollbar-width: thin;

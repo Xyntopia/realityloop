@@ -25,10 +25,12 @@ try{
     ],
   })
   const page=await browser.newPage({viewport:{width:960,height:560}})
-  const errors=[],geometryWarnings=[],pclWarnings=[],areaLightRequests=[]
+  const errors=[],geometryWarnings=[],pclWarnings=[],areaLightRequests=[],gtaoRequests=[]
   page.on('request',request=>{
     if(request.url().includes('RectAreaLightUniformsLib'))
       areaLightRequests.push(request.url())
+    if(request.url().includes('GTAOPass'))
+      gtaoRequests.push(request.url())
   })
   page.on('pageerror',error=>errors.push(error.message))
   page.on('console',msg=>{
@@ -44,11 +46,16 @@ try{
   assert.equal(await page.locator('#graphics-detail').inputValue(),'high')
   assert.equal(await page.locator('#fx-reflections').isChecked(),true)
   assert.equal(await page.locator('#fx-lighting').isChecked(),true)
+  assert.equal(await page.locator('#ao-method').inputValue(),'ssao',
+    'SSAO remains the conservative default pending real hardware comparison')
   if(await page.locator('body').evaluate(el=>el.classList.contains('software-renderer'))){
     assert.equal(await page.locator('#fx-ambientOcclusion').isDisabled(),true,
       'SSAO must not run under software Chromium')
     assert.deepEqual(areaLightRequests,[],
       'Realistic must not download the expensive area-light LUT on software renderers')
+    assert.equal(await page.locator('#ao-method').isDisabled(),true)
+    assert.deepEqual(gtaoRequests,[],
+      'Software Chromium must never load dynamic GTAO in production')
   }
   await page.selectOption('#visual-quality','balanced')
   assert.equal(await page.locator('#fx-ambientOcclusion').isChecked(),false)

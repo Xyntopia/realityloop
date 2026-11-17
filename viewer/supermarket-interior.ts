@@ -185,10 +185,12 @@ export const createSupermarketInterior=(
   // This costs one small AO texture upload, not an SSAO render every frame.
   const staticOcclusion=new THREE.CanvasTexture(
     bakeFloorOcclusion(supermarketObstacles))
-  const shopWhite=baseMaterial(0xdce6df,.38,.18)
+  // Darker neutral shelf framing and pale steel decks give merchandise
+  // greater separation and depth without branding the physical materials.
+  const shopWhite=baseMaterial(0xcdd5d3,.42,.14)
   const brushedSteel=createBrushedSteelMaps()
-  const steel=baseMaterial(0x6c7f87,.33,.79)
-  const trim=baseMaterial(0xbecac8,.38,.45)
+  const steel=baseMaterial(0x525e63,.33,.79)
+  const trim=baseMaterial(0x9da9ab,.38,.45)
   for(const metal of [steel,trim]){
     metal.normalMap=brushedSteel.normal
     metal.normalScale.set(.22,.22)
@@ -409,8 +411,8 @@ export const createSupermarketInterior=(
   const rack=new THREE.Group()
   rack.name='PBR shelving and merchandise'
   interior.add(rack)
-  const border=baseMaterial(0xe5efee,.51,.16)
-  const band=baseMaterial(0x2c706f,.42,.23)
+  const border=baseMaterial(0xbec9c9,.51,.16)
+  const band=baseMaterial(0x46575c,.42,.23)
   for(const o of supermarketObstacles){
     // Position each box directly in the rack's coordinate system. Batching
     // by material now spans *all* fixtures, not one draw per shelf/material.

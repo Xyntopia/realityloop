@@ -56,6 +56,16 @@ test('production pcl.js retains PointXYZ class identity required by WASM', async
     'Production minifier stripped pcl.js PointXYZ constructor name')
 })
 
+test('dynamic AO algorithms are independently selectable and GTAO is code-split', async () => {
+  const html = await readFile(new URL('examples/supermarket.html', site), 'utf8')
+  assert.match(html, /id="ao-method"/)
+  assert.match(html, /value="ssao" selected/)
+  assert.match(html, /value="gtao"/)
+  const assets = await readdir(new URL('assets/', site))
+  assert.ok(assets.some(name=>/^GTAOPass-.*\.js$/.test(name)),
+    'GTAO must remain a separate on-demand chunk, not part of the default scene')
+})
+
 test('gallery uses recent RealityLoop-generated previews for both examples', async () => {
   const assets = await readdir(new URL('assets/', site))
   const examples = await readFile(new URL('../src/examples.ts', import.meta.url), 'utf8')
