@@ -15,8 +15,9 @@ main { max-width: 1250px; margin: auto; padding: 30px 38px 80px; }
   display: flex; justify-content: space-between; align-items: center;
   border-bottom: 1px solid var(--rl-border-soft);
 }
-.site-header > a { font-size: 12px; color: var(--rl-orange-light); text-decoration: none; }
-.site-header > a:hover { color: var(--rl-ink); }
+.site-links { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 10px 22px; }
+.site-links a { font-size: 12px; color: var(--rl-orange-light); text-decoration: none; }
+.site-links a:hover { color: var(--rl-ink); }
 .brand { display: flex; align-items: center; gap: 12px; }
 .logo {
   width: 43px; height: 43px; display: block; flex: none;
@@ -41,6 +42,28 @@ main { max-width: 1250px; margin: auto; padding: 30px 38px 80px; }
   max-width: 750px; color: var(--rl-muted);
   line-height: 1.8; font-size: 16px;
 }
+.velocity-proof {
+  display: grid; grid-template-columns: minmax(160px, 205px) minmax(0, 1fr);
+  gap: 28px; align-items: center;
+  margin-top: 34px; padding: 26px 29px;
+  background: linear-gradient(115deg, rgba(247,143,59,.12), rgba(42,53,72,.58));
+  border: 1px solid var(--rl-orange-border); border-radius: 13px;
+}
+.velocity-time { display: flex; flex-direction: column; align-items: flex-start; }
+.velocity-time strong {
+  font-size: clamp(64px, 7vw, 96px); line-height: 1; letter-spacing: -.085em;
+  color: var(--rl-orange-light); font-variant-numeric: tabular-nums;
+}
+.velocity-time strong span { font-size: .53em; letter-spacing: -.04em; }
+.velocity-time > span {
+  margin-top: 10px; font-size: 10px; font-weight: 750;
+  letter-spacing: .14em; color: var(--rl-ink-soft);
+}
+.velocity-story h2 { font-size: clamp(20px, 2.3vw, 27px); line-height: 1.2; margin: 9px 0; letter-spacing: -.035em; }
+.velocity-story p { font-size: 13px; line-height: 1.65; margin: 0 0 12px; }
+.velocity-story p a, .velocity-link { color: var(--rl-orange-light); }
+.velocity-link { font-size: 12px; font-weight: 750; text-decoration: none; }
+.velocity-link:hover, .velocity-story p a:hover { text-decoration: underline; }
 .pill-row, .tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 25px; }
 .pill-row span, .tags span {
   background: rgba(42,53,72,.57); color: var(--rl-ink-soft);
@@ -103,8 +126,11 @@ footer {
   .example-grid { grid-template-columns: 1fr; }
   .hero { padding: 50px 0; }
   .site-header, main { padding-left: 20px; padding-right: 20px; }
+  .site-header { flex-wrap: wrap; gap: 15px; }
   .count { display: none; }
   .hero p { font-size: 14px; }
+  .velocity-proof { grid-template-columns: 1fr; gap: 16px; padding: 20px; }
+  .velocity-time strong { font-size: 68px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .preview img, .example-card { transition: none; }

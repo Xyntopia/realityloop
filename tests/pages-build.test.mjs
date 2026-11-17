@@ -21,6 +21,25 @@ for (const page of pages) {
   })
 }
 
+test('catalog header links to Taskyon and Rumoca', async () => {
+  const html = await readFile(new URL('index.html', site), 'utf8')
+  assert.match(html, /<nav class="site-links" aria-label="Related projects">/)
+  assert.match(html, /href="https:\/\/taskyon\.space\/"[^>]*>Taskyon<\/a>/)
+  assert.match(html, /href="https:\/\/github\.com\/CogniPilot\/rumoca"/)
+})
+
+test('home hero highlights fast AI-agent prototype without claiming production validation', async () => {
+  const html = await readFile(new URL('index.html', site), 'utf8')
+  assert.match(html, /class="velocity-proof"/)
+  assert.match(html, /~3<span>h<\/span>/)
+  assert.match(html, /AI AGENT BUILD TIME/)
+  assert.match(html, /AI coding agent created the supermarket robotics demo/)
+  assert.match(html, /Taskyon<\/a>'s Design Graph/)
+  assert.match(html, /Rumoca<\/a>'s Modelica toolchain/)
+  assert.match(html, /not a validated production simulator/)
+  assert.match(html, /href="\.\/examples\/supermarket\.html"/)
+})
+
 test('every page ships the RealityLoop flask/caliper icon and Taskyon palette', async () => {
   const icon = await readFile(new URL('realityloop-icon.svg', site), 'utf8')
   assert.match(icon, /viewBox="0 0 128 128"/)
