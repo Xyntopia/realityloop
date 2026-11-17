@@ -24,7 +24,7 @@ npm run check && npm test && npm run build && npm run build:web
 
 The homepage lists four featured experiments—supermarket cleaning, wheel traction, construction-site delivery, and a utility-scale solar/storage plant—and two further exploratory examples: Mars habitat rover traversal and modular-satellite attitude control. Start the Vite test server with `npm run dev -- --port 5174` (local only) and open `http://localhost:5174/`. The supermarket is at `/examples/supermarket.html` and the traction lab at `/drive-lab.html`; neither is the definition of RealityLoop. Use `npm run dev -- --host 0.0.0.0 --port 5174` only on a trusted network.
 
-Homepage cards have shareable, stable fragments: `#supermarket`, `#wheel-slip`, `#construction`, `#solar`, `#mars`, and `#satellite`. For example, `/realityloop/#supermarket` on GitHub Pages opens the **homepage**, scrolled to the supermarket card, rather than launching the simulator. Header links navigate to `#examples`, `#other-experiments` and `#how-it-works`. The latter also links to the related [Taskyon design-workspace documentation](https://taskyon.space/docs/taskyon/user/design-workspaces.md), design graphs, inspectable task trees, and Modelica integration; all are optional reading, not runtime dependencies.
+Homepage cards have shareable, stable fragments: `#supermarket`, `#wheel-slip`, `#construction`, `#solar`, `#mars`, and `#satellite`. For example, `https://realoop.xyntopia.com/#supermarket` on GitHub Pages opens the **homepage**, scrolled to the supermarket card, rather than launching the simulator. Header links navigate to `#examples`, `#other-experiments` and `#how-it-works`. The latter also links to the related [Taskyon design-workspace documentation](https://taskyon.space/docs/taskyon/user/design-workspaces.md), design graphs, inspectable task trees, and Modelica integration; all are optional reading, not runtime dependencies.
 
 ## Renewable power plant: realistic visualization, reproducible reduced-order physics
 
@@ -60,20 +60,20 @@ The standalone gallery, supermarket controls and traction lab share `viewer/them
 
 ## GitHub Pages deployment (static demos)
 
-The independent repository has a GitHub Actions workflow at `.github/workflows/pages.yml`. GitHub `main` pushes run TypeScript and simulation tests, build the multi-page Vite gallery at the repository's `/<repository>/` Pages base, verify paths/assets, and **upload the artifact in the build job**. A separate deploy job publishes it to Pages. Workflow dispatch is also supported.
+The independent repository has a GitHub Actions workflow at `.github/workflows/pages.yml`. GitHub `main` pushes run TypeScript and simulation tests, build the multi-page Vite gallery at the domain root (`/`), verify paths/assets, and **upload the artifact in the build job**. A separate deploy job publishes it to Pages. Workflow dispatch is also supported. GitHub Pages is configured with the custom domain `realoop.xyntopia.com`; the DNS provider must set a `realoop` CNAME to `xyntopia.github.io`, then GitHub issues the HTTPS certificate. No CNAME file is needed for the GitHub Actions deployment.
 
 **One-time repository setup is required:** in **GitHub → Settings → Pages → Build and deployment → Source**, select **GitHub Actions**. The initial deployment failed because Pages was not enabled (HTTP 404 in `actions/configure-pages@v5`); the workflow now emits a specific configuration error while preserving the successful build artifact. The standard `GITHUB_TOKEN` cannot enable Pages through `configure-pages`'s `enablement: true` option. Site initialization requires repository administration, not an extra token embedded in the workflow.
 
 The repository has both `github` (`git@github.com:Xyntopia/realityloop.git`) and `origin` (`git@gitlab.com:xyntopia/realityloop.git`) remotes. Only GitHub pushes trigger GitHub Actions. The workflow does not modify remotes or expose credentials; the resulting static site is public.
 
-To test the expected project Pages layout locally:
+To test the custom-domain-root Pages layout locally:
 
 ```sh
-npm run build:web -- --base /realityloop/
+npm run build:web -- --base /
 node --test tests/pages-build.test.mjs
 ```
 
-Substitute the GitHub repository name for `realityloop` when necessary and set `REALITYLOOP_PAGES_BASE=/your-repo/` for the smoke test. The static Pages site runs existing browser DAG simulations **locally in the tab**. It does not host an always-on agent or expose P2P/RPC endpoints. Authorized Taskyon remote DAG-node execution is a separate **planned v0.7.1** capability.
+The default test base is `/`; `REALITYLOOP_PAGES_BASE=/` makes that explicit in CI. The static Pages site runs existing browser DAG simulations **locally in the tab**. It does not host an always-on agent or expose P2P/RPC endpoints. Authorized Taskyon remote DAG-node execution is a separate **planned v0.7.1** capability.
 
 The deployed supermarket previously had two runtime faults: repeated trail
 buffer warnings from per-frame `BufferGeometry.setFromPoints`, and a fatal

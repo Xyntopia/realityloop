@@ -26,13 +26,11 @@ jobs:
       - run: npm ci
       - name: Verify simulation and TypeScript
         run: npm run check && npm test
-      - name: Build project Pages site
-        shell: bash
+      - name: Build custom-domain Pages site at the domain root
         run: |
-          BASE="/${GITHUB_REPOSITORY#*/}/"
-          echo "REALITYLOOP_PAGES_BASE=$BASE" >> "$GITHUB_ENV"
-          npm run build:web -- --base "$BASE"
-      - name: Verify deployable files and subpath links
+          echo "REALITYLOOP_PAGES_BASE=/" >> "$GITHUB_ENV"
+          npm run build:web -- --base /
+      - name: Verify deployable files and root-relative links
         run: node --test tests/pages-build.test.mjs
       - name: Install Chromium for production runtime regression
         run: npx playwright install --with-deps chromium

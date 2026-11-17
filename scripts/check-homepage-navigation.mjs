@@ -6,7 +6,7 @@ import {chromium} from 'playwright'
 import {strict as assert} from 'node:assert'
 
 const server=await preview({
-  root:process.cwd(),base:'/realityloop/',build:{outDir:'dist-web'},
+  root:process.cwd(),base:'/',build:{outDir:'dist-web'},
   preview:{host:'127.0.0.1',port:0},
 })
 let browser
@@ -22,7 +22,7 @@ try {
     const page=await browser.newPage({viewport:{width,height}})
     const errors=[]
     page.on('pageerror',error=>errors.push(error.message))
-    const url=new URL('/realityloop/#supermarket',origin)
+    const url=new URL('/#supermarket',origin)
     await page.goto(url.href,{waitUntil:'networkidle',timeout:60000})
     const cards=page.locator('.example-card')
     assert.equal(await cards.count(),6)

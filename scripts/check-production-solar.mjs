@@ -3,7 +3,7 @@
 import {preview} from 'vite'
 import {chromium} from 'playwright'
 import assert from 'node:assert/strict'
-const server=await preview({root:process.cwd(),base:'/realityloop/',
+const server=await preview({root:process.cwd(),base:'/',
   build:{outDir:'dist-web'},preview:{host:'127.0.0.1',port:0}})
 let browser
 try{
@@ -18,7 +18,7 @@ try{
   const origin=server.resolvedUrls?.local[0]
   assert(origin)
   const response=await page.goto(
-    new URL('/realityloop/examples/power-plant.html',origin).href,
+    new URL('/examples/power-plant.html',origin).href,
     {waitUntil:'domcontentloaded',timeout:60000})
   assert.equal(response?.status(),200)
   await page.waitForFunction(()=>

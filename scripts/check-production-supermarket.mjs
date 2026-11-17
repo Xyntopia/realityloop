@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/** Real minified Vite project-subpath browser acceptance.
+/** Real minified Vite custom-domain-root browser acceptance.
  * Dev Vite alone cannot detect pcl.js constructor-name minification. */
 import {createRequire} from 'node:module'
 import {preview} from 'vite'
@@ -10,7 +10,7 @@ const root=fileURLToPath(new URL('../',import.meta.url))
 const {chromium}=createRequire(import.meta.url)(
   process.env.REALITYLOOP_PLAYWRIGHT || 'playwright')
 const server=await preview({
-  root,base:'/realityloop/',build:{outDir:'dist-web'},
+  root,base:'/',build:{outDir:'dist-web'},
   preview:{host:'127.0.0.1',port:0,strictPort:false},
 })
 let browser
@@ -38,9 +38,9 @@ try{
     if(content.includes('Buffer size too small for points data'))geometryWarnings.push(content)
     if(content.includes('PCL ICP')&&/failed|failure/.test(content))pclWarnings.push(content)
   })
-  const response=await page.goto(new URL('/realityloop/examples/supermarket.html',origin).href,
+  const response=await page.goto(new URL('/examples/supermarket.html',origin).href,
     {waitUntil:'domcontentloaded',timeout:60000})
-  assert.equal(response?.status(),200,'Built supermarket HTML must load at /realityloop/')
+  assert.equal(response?.status(),200,'Built supermarket HTML must load at /examples/supermarket.html')
   await page.locator('#graphics-effects summary').click()
   await page.selectOption('#visual-quality','high')
   assert.equal(await page.locator('#graphics-detail').inputValue(),'high')

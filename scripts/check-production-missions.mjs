@@ -1,10 +1,10 @@
 #!/usr/bin/env node
-/** Validate all added examples against a minified GitHub Pages-base build,
+/** Validate all added examples against a minified custom-domain-root build,
  * including actual browser DAG evaluations and 3D rendering. */
 import {preview} from 'vite'
 import {chromium} from 'playwright'
 import {strict as assert} from 'node:assert'
-const server=await preview({root:process.cwd(),base:'/realityloop/',
+const server=await preview({root:process.cwd(),base:'/',
   build:{outDir:'dist-web'},preview:{host:'127.0.0.1',port:0}})
 let browser
 try{
@@ -18,7 +18,7 @@ try{
   const catalog=await browser.newPage({viewport:{width:1260,height:840}})
   const catErrors=[]
   catalog.on('pageerror',e=>catErrors.push(e.message))
-  await catalog.goto(new URL('/realityloop/',origin).href,{waitUntil:'networkidle'})
+  await catalog.goto(new URL('/',origin).href,{waitUntil:'networkidle'})
   assert.equal(await catalog.locator('.example-card').count(),6)
   assert.deepEqual(await catalog.locator('#examples .example-card h2').allTextContents(),
     ['Autonomous floor cleaning','Wheel slip laboratory',
@@ -41,7 +41,7 @@ try{
       if(response.url().includes('blue-marble-july-2048'))
         earthResponses.push({url:response.url(),status:response.status()})
     })
-    const res=await page.goto(new URL('/realityloop/examples/mission.html?scene='+kind,origin).href,
+    const res=await page.goto(new URL('/examples/mission.html?scene='+kind,origin).href,
       {waitUntil:'domcontentloaded',timeout:60000})
     assert.equal(res?.status(),200)
     await page.waitForFunction(()=>
@@ -62,7 +62,7 @@ try{
       assert.equal(earthResponses.length,1,
         'Satellite must fetch its Blue Marble asset only once')
       assert.equal(earthResponses[0].status,200)
-      assert(new URL(earthResponses[0].url).pathname.startsWith('/realityloop/assets/'),
+      assert(new URL(earthResponses[0].url).pathname.startsWith('/assets/'),
         'Earth imagery must load from the local Pages build, not a remote server')
       assert.equal(await page.locator('#earth-credit').isVisible(),true,
         'NASA Earth Observatory credit must appear in the satellite UI')

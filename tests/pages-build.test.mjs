@@ -4,7 +4,7 @@ import path from 'node:path'
 import { test } from 'node:test'
 
 const site = new URL('../dist-web/', import.meta.url)
-const prefix = process.env.REALITYLOOP_PAGES_BASE ?? '/realityloop/'
+const prefix = process.env.REALITYLOOP_PAGES_BASE ?? '/'
 const pages = ['index.html', 'drive-lab.html', 'examples/supermarket.html',
   'examples/mission.html','examples/power-plant.html']
 
