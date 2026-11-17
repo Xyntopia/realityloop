@@ -25,7 +25,11 @@ try{
     ],
   })
   const page=await browser.newPage({viewport:{width:960,height:560}})
-  const errors=[],geometryWarnings=[],pclWarnings=[]
+  const errors=[],geometryWarnings=[],pclWarnings=[],areaLightRequests=[]
+  page.on('request',request=>{
+    if(request.url().includes('RectAreaLightUniformsLib'))
+      areaLightRequests.push(request.url())
+  })
   page.on('pageerror',error=>errors.push(error.message))
   page.on('console',msg=>{
     const content=msg.text()
@@ -43,6 +47,8 @@ try{
   if(await page.locator('body').evaluate(el=>el.classList.contains('software-renderer'))){
     assert.equal(await page.locator('#fx-ambientOcclusion').isDisabled(),true,
       'SSAO must not run under software Chromium')
+    assert.deepEqual(areaLightRequests,[],
+      'Realistic must not download the expensive area-light LUT on software renderers')
   }
   await page.selectOption('#visual-quality','balanced')
   assert.equal(await page.locator('#fx-ambientOcclusion').isChecked(),false)

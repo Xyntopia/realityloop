@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { createSupermarketInterior } from './supermarket-interior.ts'
+import {isSoftwareRenderer} from './renderer-capabilities.ts'
 import { createSupermarketPostFX } from './supermarket-postfx.ts'
 import { createReplayTrail } from './replay-trail.ts'
 import { createRobotContactShadow } from './contact-shading.ts'
@@ -47,11 +48,7 @@ controls.update()
 const interior = createSupermarketInterior(scene,renderer)
 const graphicsSelect=elem('visual-quality') as HTMLSelectElement
 const graphicsDetailSelect=elem('graphics-detail') as HTMLSelectElement
-const gl=renderer.getContext()
-const rendererInfo=gl.getExtension('WEBGL_debug_renderer_info')
-const rendererName=String(gl.getParameter(
-  rendererInfo?rendererInfo.UNMASKED_RENDERER_WEBGL:gl.RENDERER))
-const softwareRenderer=/swiftshader|llvmpipe|softpipe|software|lavapipe/i.test(rendererName)
+const softwareRenderer=isSoftwareRenderer(renderer)
 document.body.classList.toggle('software-renderer',softwareRenderer)
 const postFX=createSupermarketPostFX(renderer,scene,camera,softwareRenderer)
 const robot=createTennantT7AMR()
@@ -72,6 +69,7 @@ const applyQuality=(
     quality==='high'?1.5:quality==='balanced'?1:.48)
   if(renderer.getPixelRatio()!==pixelRatio)renderer.setPixelRatio(pixelRatio)
   renderer.shadowMap.enabled=currentEffects.castShadows
+  renderer.toneMappingExposure=quality==='high' ? .94 : quality==='balanced' ? .99 : 1.08
   renderer.shadowMap.needsUpdate=true
   interior.setVisualQuality(quality,currentEffects)
   postFX.setQuality(currentEffects.ambientOcclusion,innerWidth,innerHeight)

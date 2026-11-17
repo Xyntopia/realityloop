@@ -1,7 +1,8 @@
 import {strict as assert} from 'node:assert'
 import {test} from 'node:test'
 import {
-  graphicsEffects,presetGraphicsEffects,resolveGraphicsEffects,enabledEffectCount,
+  graphicsEffects,presetGraphicsEffects,resolveGraphicsEffects,
+  enabledEffectCount,ceilingShadowBudget,
 } from '../viewer/graphics-settings.ts'
 
 test('realistic, balanced and performance presets have meaningful tiers',()=>{
@@ -28,8 +29,16 @@ test('custom graphics switches remain independent and cannot cause disconnected 
   assert.equal(custom.ambientOcclusion,true)
   assert.equal(custom.reflections,false)
   assert.equal(custom.contactShadows,true)
-  assert.equal(custom.castShadows,true)
+  assert.equal(custom.castShadows,false,'No dynamic shadows from disabled lamp sources')
   assert.equal(balanced.lighting,true,'preset must remain immutable')
+})
+
+test('dynamic ceiling-shadow map budget is bounded by graphics tier',()=>{
+  assert.equal(ceilingShadowBudget('high',true),2)
+  assert.equal(ceilingShadowBudget('balanced',true),1)
+  assert.equal(ceilingShadowBudget('performance',true),1)
+  for(const tier of ['high','balanced','performance'] as const)
+    assert.equal(ceilingShadowBudget(tier,false),0)
 })
 
 test('SSAO is gated on unsupported renderers without disabling other effects',()=>{

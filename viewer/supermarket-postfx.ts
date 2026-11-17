@@ -33,9 +33,11 @@ export const createSupermarketPostFX=(
       composer=new EffectComposer(renderer)
       composer.addPass(new RenderPass(scene,camera))
       ao=new SSAOPass(scene,camera,1,1,8)
-      ao.kernelRadius=9
-      ao.minDistance=.008
-      ao.maxDistance=.115
+      // Slightly wider crevice/contact response. Keep the same eight samples
+      // and half-resolution pass; avoid turning AO into global darkening.
+      ao.kernelRadius=12
+      ao.minDistance=.005
+      ao.maxDistance=.16
       composer.addPass(ao)
       composer.addPass(new OutputPass())
     }
