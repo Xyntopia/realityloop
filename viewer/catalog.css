@@ -116,8 +116,27 @@ main { max-width: 1250px; margin: auto; padding: 30px 38px 80px; }
   border-radius: 13px; padding: 31px;
   box-shadow: var(--rl-shadow);
 }
-.architecture h2 { font-size: 26px; letter-spacing: -.04em; }
+.architecture h2 { font-size: clamp(23px, 2.6vw, 31px); letter-spacing: -.04em; }
 .architecture p { font-size: 14px; }
+.architecture .architecture-lead { max-width: 900px; }
+.architecture-lead strong { color: var(--rl-ink); }
+.architecture-grid {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 26px; margin: 27px 0;
+}
+.architecture-grid article {
+  min-width: 0; padding-top: 17px;
+  border-top: 2px solid var(--rl-orange-border);
+}
+.architecture-grid h3 { margin: 0 0 11px; font-size: 17px; letter-spacing: -.025em; }
+.architecture-grid p { font-size: 13px; line-height: 1.7; margin: 0; color: var(--rl-muted); }
+.architecture-grid a { color: var(--rl-orange-light); }
+.architecture .architecture-status {
+  max-width: none; margin: 0 0 24px; padding-top: 17px;
+  border-top: 1px solid var(--rl-border);
+  font-size: 12px; line-height: 1.7; color: var(--rl-muted);
+}
+.architecture-status strong { color: var(--rl-ink); }
 .architecture code {
   display: block; overflow: auto; white-space: nowrap;
   font-size: 13px; border-radius: 7px; padding: 15px;
@@ -137,6 +156,8 @@ footer {
   .hero > p:first-of-type { font-size: 14px; }
   .ownership-principle { padding: 22px 20px; }
   .approach-grid { grid-template-columns: 1fr; gap: 22px; }
+  .architecture { padding: 23px 20px; }
+  .architecture-grid { grid-template-columns: 1fr; gap: 20px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .preview img, .example-card { transition: none; }

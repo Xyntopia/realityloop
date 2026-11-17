@@ -34,7 +34,7 @@ test('home hero presents ownership and physical fidelity as goals, not proven re
   assert.match(html, /Build simulations faster/)
   assert.match(html, /Own the toolchain/)
   assert.match(html, /age of AI agents/)
-  assert.match(html, /own the code, models, data and execution environment/)
+  assert.match(html, /The simulation you build is yours: its source code, physical models, scenarios, tests, data and execution pipeline/)
   assert.match(html, /Test more scenarios/)
   assert.match(html, /locally or in CI/)
   assert.match(html, /Modelica, an established modeling language/)
@@ -43,6 +43,23 @@ test('home hero presents ownership and physical fidelity as goals, not proven re
   assert.match(html, /fidelity must be demonstrated against real-world measurements/)
   assert.match(html, /not yet validated, production-ready digital twins/)
   assert.doesNotMatch(html, /prototyped in an afternoon|AI AGENT BUILD TIME|~3<span>h<\/span>/)
+})
+
+test('homepage explains customer ownership and a simulation CI feedback loop without overstating Taskyon integration',async()=>{
+  const html=await readFile(new URL('index.html',site),'utf8')
+  assert.match(html,/Your simulation\. Your source code\. Your feedback loop\./)
+  assert.match(html,/100% customer-owned simulation/)
+  assert.match(html,/including its source code, models, scenarios, tests, data and CI\/CD setup/)
+  assert.match(html,/underlying building blocks and dependencies retain their own licenses/)
+  assert.match(html,/feedback loop for AI agents/)
+  assert.match(html,/simulated reality/)
+  assert.match(html,/compilation and unit tests/)
+  assert.match(html,/Versioned inputs, reproducible artifacts and headless CI runs/)
+  assert.match(html,/Taskyon is an optional extension/)
+  assert.match(html,/integrated design automation, parameter exploration, performance analysis/)
+  assert.match(html,/parallel simulation runs across CI\/CD and clusters/)
+  assert.match(html,/Not yet integrated:/)
+  assert.match(html,/remote cluster orchestration, centralized monitoring/)
 })
 
 test('every page ships the RealityLoop flask/caliper icon and Taskyon palette', async () => {

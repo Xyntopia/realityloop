@@ -18,7 +18,7 @@
   <aside class="ownership-principle" aria-label="Why owning the simulation toolchain matters">
     <div class="overline">WHAT WE KEEP HEARING FROM CUSTOMERS</div>
     <h2>In the age of AI agents, owning the tools matters.</h2>
-    <p>Models and tests generated or modified by AI agents must remain understandable, inspectable and under your control. We want companies to own the code, models, data and execution environment—not depend on a vendor to keep their simulation running.</p>
+    <p>The simulation you build is yours: its source code, physical models, scenarios, tests, data and execution pipeline. RealityLoop offers building blocks, not a vendor-controlled service that you must depend on to run your own tools.</p>
   </aside>
   <div class="approach-grid" aria-label="What we are building toward">
     <article>
@@ -48,9 +48,25 @@
  <div class="section-title"><div><span class="overline">MODULAR ROBOTICS &amp; SPACE SYSTEMS</span><h2>Other experiments</h2></div><span class="count">Early-stage research concepts</span></div>
  <div id="other-experiments" class="example-grid" aria-label="Other RealityLoop experiments"></div>
 </section>
-<section class="architecture">
- <span class="overline">COMPUTATION &amp; PROVENANCE</span><h2>Independent execution. Optional orchestration.</h2>
- <p>The headless experiment runner evaluates scenarios through canonical Taskyon Design Graph nodes without requiring a Taskyon account. It emits cached simulation, metrics and observation artifacts with SHA-256 integrity receipts. Taskyon UI integration and authorized P2P publication are planned, not currently active.</p>
+<section class="architecture" id="how-it-works" aria-labelledby="architecture-title">
+ <span class="overline">OWNERSHIP · VERIFICATION · OPTIONAL INTEGRATION</span>
+ <h2 id="architecture-title">Your simulation. Your source code. Your feedback loop.</h2>
+ <p class="architecture-lead">RealityLoop is intended as a foundation that engineering teams take into their own repositories, adapt to their products and operate independently. The goal is to bring the fast, repeatable feedback loop of compilers and unit tests to systems that must also be tested against <strong>simulated reality</strong>.</p>
+ <div class="architecture-grid">
+  <article>
+   <h3>100% customer-owned simulation</h3>
+   <p>You own the simulation you develop—including its source code, models, scenarios, tests, data and CI/CD setup. You can inspect, change, run and maintain the toolchain yourself, without a Taskyon account or hosted runtime. The underlying building blocks and dependencies retain their own licenses.</p>
+  </article>
+  <article>
+   <h3>A feedback loop for AI agents</h3>
+   <p>Change a design, run a repeatable simulation, evaluate assertions and metrics, then feed the results back to engineers or coding agents—much like compilation and unit tests in software development. Versioned inputs, reproducible artifacts and headless CI runs make this practical. Results are only as trustworthy as the models validated against reality.</p>
+  </article>
+  <article>
+   <h3>Taskyon is an optional extension</h3>
+   <p>RealityLoop already uses the same underlying Taskyon Design Graph execution and reproducibility format independently. The intended optional <a href="https://taskyon.space/">Taskyon</a> connection builds on those artifacts for integrated design automation, parameter exploration, performance analysis and coordinating or monitoring parallel simulation runs across CI/CD and clusters. You retain ownership and can keep running without Taskyon.</p>
+  </article>
+ </div>
+ <p class="architecture-status"><strong>Available today:</strong> independent local and headless simulations, Design Graph artifacts, reproducibility checks and replay verification. <strong>Not yet integrated:</strong> Taskyon UI, remote cluster orchestration, centralized monitoring and authorized P2P publication.</p>
  <code>npm run sim -- scenarios/modelica-wheel-breakaway.json runs/wheel</code>
 </section>
 </main>
