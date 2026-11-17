@@ -19,7 +19,7 @@ try{
     ...(process.env.REALITYLOOP_CAPTURE_SWIFTSHADER==='1'
       ?['--enable-unsafe-swiftshader','--use-gl=angle','--use-angle=swiftshader']:[]),
   ]})
-  const all=['satellite','docking','mars','construction']
+  const all=['satellite','mars','construction']
   const requested=process.env.REALITYLOOP_CAPTURE_SCENE
   if(requested&&!all.includes(requested))throw Error('Unknown capture scene: '+requested)
   for(const kind of requested?[requested]:all){
@@ -32,10 +32,19 @@ try{
     await page.waitForFunction(()=>
       document.getElementById('mission-status')?.textContent?.startsWith('PASS'),
       null,{timeout:60000})
+    if(kind==='satellite'){
+      // Prevent placeholder/blank-texture screenshots if the image decode
+      // lags behind the fast ADCS simulation startup.
+      await page.waitForFunction(()=>
+        performance.getEntriesByType('resource').some(entry=>
+          entry.name.includes('blue-marble-july-2048')&&entry.responseEnd>0),
+        null,{timeout:20000})
+      await page.waitForTimeout(150)
+    }
     await page.evaluate(()=>{
       const slider=document.getElementById('timeline')
       const scene=new URLSearchParams(location.search).get('scene')
-      const factor=scene==='satellite'?.6:scene==='mars'?.85:.8
+      const factor=scene==='satellite'?.62:scene==='mars'?.85:.46
       slider.value=String(Math.round(Number(slider.max)*factor))
       slider.dispatchEvent(new Event('input',{bubbles:true}))
     })

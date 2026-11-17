@@ -41,11 +41,16 @@ jobs:
           REALITYLOOP_CAPTURE_NO_SANDBOX: '1'
           REALITYLOOP_CAPTURE_SWIFTSHADER: '1'
         run: npm run check:browser:prod
-      - name: Verify modular-satellite, docking, Mars and construction examples
+      - name: Verify modular satellite, Mars and construction examples
         env:
           REALITYLOOP_CAPTURE_NO_SANDBOX: '1'
           REALITYLOOP_CAPTURE_SWIFTSHADER: '1'
         run: npm run check:browser:missions
+      - name: Verify solar plant simulation and interactive controls
+        env:
+          REALITYLOOP_CAPTURE_NO_SANDBOX: '1'
+          REALITYLOOP_CAPTURE_SWIFTSHADER: '1'
+        run: npm run check:browser:solar
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:

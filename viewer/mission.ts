@@ -7,7 +7,7 @@ import {createMissionWorld,type MissionScene} from './mission-scene.ts'
 import {isSoftwareRenderer} from './renderer-capabilities.ts'
 
 const $=<T extends HTMLElement>(id:string)=>document.getElementById(id) as T
-const validScenes:readonly MissionScene[]=['satellite','docking','mars','construction']
+const validScenes:readonly MissionScene[]=['satellite','mars','construction']
 const requested=new URLSearchParams(location.search).get('scene')
 let kind:MissionScene=validScenes.includes(requested as MissionScene)
   ?requested as MissionScene:'satellite'
@@ -19,12 +19,6 @@ const metadata:Record<MissionScene,{
     description:'Reconfigure seven 40 cm modules and watch how the inertia tensor changes a reaction-wheel attitude manoeuvre.',
     limit:'3-axis rigid-body Euler dynamics, a bounded PD reaction-wheel controller and a recomputed full inertia tensor. No orbit propagation, flexible modes, disturbance calibration or flight-qualified ADCS.',
     tag:'RECONFIGURABLE SPACECRAFT',
-  },
-  docking:{
-    name:'iBOSS modular docking',
-    description:'Guide one intelligent building block toward a standardized modular interface with a bounded-thrust approach and gated latch.',
-    limit:'Relative translation and interface capture criteria only; no 6-DOF manipulator, contact compliance, thermal/power bus or rendezvous orbital mechanics.',
-    tag:'ON-ORBIT SERVICING',
   },
   mars:{
     name:'Mars habitat construction & rover',
@@ -45,10 +39,6 @@ const scenarioFor=():MissionScenario=>{
     kind:'satellite-adcs',name:'modular-attitude-pointing',
     layout:$<HTMLSelectElement>('module-layout').value as 'compact'|'distributed'|'asymmetric',
     durationSeconds:100,intervalSeconds:.05,torqueLimitNm:.3,
-  }
-  if(kind==='docking')return {
-    kind:'orbital-docking',name:'iboss-interface-soft-capture',
-    durationSeconds:65,intervalSeconds:.05,thrusterLimitN:3,
   }
   return {
     kind:'terrain-traverse',
@@ -98,13 +88,6 @@ const summary=(result:MissionResult)=>{
     metric('metric-b',r.totalMassKg+' kg','MODULE ASSEMBLY MASS')
     metric('metric-c',r.inertia[1][1].toFixed(1),'Y-AXIS INERTIA · KG M²')
     metric('metric-d',String(r.modules),'CONNECTED MODULES')
-  }else if('docked' in result.result){
-    const r=result.result
-    metric('metric-a',r.docked?'CAPTURED':'MISSED','DOCKING STATUS')
-    metric('metric-b',r.finalDistanceMetres.toFixed(3)+' m','INTERFACE OFFSET')
-    metric('metric-c',r.relativeSpeedMetresPerSecond.toFixed(3)+' m/s','RELATIVE SPEED')
-    metric('metric-d',r.timeToCaptureSeconds===null?'—':
-      r.timeToCaptureSeconds.toFixed(1)+' s','CAPTURE TIME')
   }else{
     const r=result.result
     metric('metric-a',r.goalReached?'ARRIVED':'EN ROUTE','DELIVERY / TRAVERSE')
@@ -116,7 +99,6 @@ const summary=(result:MissionResult)=>{
 }
 const telemetryValue=(sample:Record<string,any>):number=>{
   if(kind==='satellite')return sample.errorDegrees??0
-  if(kind==='docking')return sample.distanceMetres??0
   return sample.distanceToGoalMetres??0
 }
 const chart=()=>{
@@ -217,6 +199,7 @@ const setScene=(next:MissionScene)=>{
   $('mission-title').textContent=m.name
   $('mission-description').textContent=m.description
   $('model-limit').textContent=m.limit
+  $('earth-credit').hidden=kind!=='satellite'
   $('scene-tag').textContent=m.tag
   $('scene-name').textContent=m.name
   $<HTMLSelectElement>('mission-select').value=kind

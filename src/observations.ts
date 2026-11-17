@@ -36,7 +36,7 @@ export const createSensorObservations=(
   // Never silently export supermarket scans for Mars or a construction site.
   const scenario=result.scenario
   if(scenario&&typeof scenario==='object'&&'kind' in scenario&&
-    ['satellite-adcs','orbital-docking','terrain-traverse'].includes(String(scenario.kind))){
+    ['satellite-adcs','terrain-traverse'].includes(String(scenario.kind))){
     return {schema:'realityloop.sensor-observations/v1',available:false,
       frames:[],lidar:[],source:'simulation-trajectory',lidarPeriodSeconds}
   }

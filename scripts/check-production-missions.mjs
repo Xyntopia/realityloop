@@ -20,6 +20,11 @@ try{
   catalog.on('pageerror',e=>catErrors.push(e.message))
   await catalog.goto(new URL('/realityloop/',origin).href,{waitUntil:'networkidle'})
   assert.equal(await catalog.locator('.example-card').count(),6)
+  assert.deepEqual(await catalog.locator('#examples .example-card h2').allTextContents(),
+    ['Autonomous floor cleaning','Wheel slip laboratory',
+      'Construction-site delivery','Utility-scale solar & storage plant'])
+  assert.deepEqual(await catalog.locator('#other-experiments .example-card h2').allTextContents(),
+    ['Mars habitat construction & rover','Reconfigurable satellite ADCS'])
   const thumbnails=await catalog.locator('.example-card img').evaluateAll(images=>
     images.map(image=>({loaded:image.complete&&image.naturalWidth>0,
       width:image.naturalWidth,height:image.naturalHeight})))
@@ -27,10 +32,15 @@ try{
     'The homepage must load all six original previews')
   assert.deepEqual(catErrors,[])
   await catalog.close()
-  for(const kind of ['satellite','docking','mars','construction']){
+  for(const kind of ['satellite','mars','construction']){
     const page=await browser.newPage({viewport:{width:1100,height:700}})
     const errors=[]
+    const earthResponses=[]
     page.on('pageerror',e=>errors.push(e.message))
+    page.on('response',response=>{
+      if(response.url().includes('blue-marble-july-2048'))
+        earthResponses.push({url:response.url(),status:response.status()})
+    })
     const res=await page.goto(new URL('/realityloop/examples/mission.html?scene='+kind,origin).href,
       {waitUntil:'domcontentloaded',timeout:60000})
     assert.equal(res?.status(),200)
@@ -45,6 +55,17 @@ try{
     assert(await page.locator('#mission-artifact').innerText()!=='—')
     assert(await page.locator('#viewport canvas').count()===1)
     if(kind==='satellite'){
+      await page.waitForFunction(()=>
+        performance.getEntriesByType('resource').some(entry=>
+          entry.name.includes('blue-marble-july-2048')&&entry.responseEnd>0),
+        null,{timeout:20000})
+      assert.equal(earthResponses.length,1,
+        'Satellite must fetch its Blue Marble asset only once')
+      assert.equal(earthResponses[0].status,200)
+      assert(new URL(earthResponses[0].url).pathname.startsWith('/realityloop/assets/'),
+        'Earth imagery must load from the local Pages build, not a remote server')
+      assert.equal(await page.locator('#earth-credit').isVisible(),true,
+        'NASA Earth Observatory credit must appear in the satellite UI')
       const first=await page.locator('#metric-c').innerText()
       await page.selectOption('#module-layout','asymmetric')
       await page.waitForFunction(previous=>

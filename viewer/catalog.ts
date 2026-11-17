@@ -2,9 +2,9 @@ import { realityLoopExamples } from '../src/examples.ts'
 import supermarketPreview from '../docs/realityloop-gallery-supermarket.jpg?url'
 import tractionPreview from '../docs/realityloop-gallery-traction.jpg?url'
 import satellitePreview from '../docs/realityloop-gallery-satellite.jpg?url'
-import dockingPreview from '../docs/realityloop-gallery-docking.jpg?url'
 import marsPreview from '../docs/realityloop-gallery-mars.jpg?url'
 import constructionPreview from '../docs/realityloop-gallery-construction.jpg?url'
+import solarPreview from '../docs/realityloop-gallery-solar.jpg?url'
 import './theme.css'
 import './catalog.css'
 
@@ -12,13 +12,16 @@ const previews: Readonly<Record<string, string>> = {
   '/docs/realityloop-gallery-supermarket.jpg': supermarketPreview,
   '/docs/realityloop-gallery-traction.jpg': tractionPreview,
   '/docs/realityloop-gallery-satellite.jpg': satellitePreview,
-  '/docs/realityloop-gallery-docking.jpg': dockingPreview,
   '/docs/realityloop-gallery-mars.jpg': marsPreview,
   '/docs/realityloop-gallery-construction.jpg': constructionPreview,
+  '/docs/realityloop-gallery-solar.jpg': solarPreview,
 }
 
-const grid = document.querySelector<HTMLElement>('#examples')
-if (!grid) throw Error('Missing example catalog')
+const grids: Record<'featured'|'other',HTMLElement|null> = {
+  featured:document.querySelector<HTMLElement>('#examples'),
+  other:document.querySelector<HTMLElement>('#other-experiments'),
+}
+if (!grids.featured||!grids.other) throw Error('Missing example catalog section')
 
 for (const example of realityLoopExamples) {
   const card = document.createElement('article')
@@ -36,7 +39,9 @@ for (const example of realityLoopExamples) {
   body.className = 'example-body'
   const category = document.createElement('span')
   category.className = 'category'
-  category.textContent = example.category === 'simulation' ? 'ROBOTICS SIMULATION' : 'PHYSICS EXPERIMENT'
+  category.textContent = example.category === 'physics-lab' ? 'PHYSICS EXPERIMENT'
+    : example.id==='renewable-plant' ? 'ENERGY SYSTEM SIMULATION'
+    : 'ROBOTICS SIMULATION'
   const title = document.createElement('h2')
   title.textContent = example.title
   const description = document.createElement('p')
@@ -54,5 +59,5 @@ for (const example of realityLoopExamples) {
   link.textContent = 'Open example'
   body.append(category, title, description, tags, link)
   card.append(media, body)
-  grid.append(card)
+  grids[example.group]!.append(card)
 }

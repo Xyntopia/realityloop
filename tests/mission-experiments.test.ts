@@ -58,17 +58,6 @@ test('reconfiguration changes full inertia tensor and pointing dynamics',()=>{
   }
 })
 
-test('reduced-order docked interface meets distance and relative speed gates',()=>{
-  const r=runMissionExperiment({
-    kind:'orbital-docking',name:'soft-capture',durationSeconds:65,
-    intervalSeconds:.05,thrusterLimitN:3,
-  })
-  assert.equal(r.result.passed,true)
-  if(!('docked' in r.result))throw Error('Wrong result type')
-  assert(r.result.docked)
-  assert(r.result.finalDistanceMetres<.032)
-  assert(r.result.relativeSpeedMetresPerSecond<.027)
-})
 
 test('Mars and construction route avoid hazards with correctly scoped sensors',()=>{
   for(const terrain of ['mars','construction'] as const){
@@ -114,7 +103,7 @@ test('scenario schema rejects unsupported physics and arbitrary keys',()=>{
     hackPhysics:'none',
   }))
   assert.throws(()=>parseMissionScenario({
-    kind:'orbital-docking',name:'invalid',durationSeconds:65,
-    intervalSeconds:.05,thrusterLimitN:100,
+    kind:'orbital-docking',name:'removed',durationSeconds:65,
+    intervalSeconds:.05,thrusterLimitN:3,
   }))
 })

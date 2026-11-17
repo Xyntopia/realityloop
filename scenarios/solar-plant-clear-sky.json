@@ -1,0 +1,12 @@
+{
+  "kind": "solar-plant",
+  "name": "utility-scale-solar-clear-sky-day",
+  "sampleMinutes": 10,
+  "latitudeDegrees": 35.5,
+  "dayOfYear": 172,
+  "tracker": "tracking",
+  "dcLossFraction": 0.045,
+  "ambientTemperatureC": 30,
+  "exportLimitKw": 1800,
+  "bessEnabled": true
+}

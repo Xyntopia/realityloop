@@ -13,6 +13,7 @@ export default defineConfig({
         supermarket: fileURLToPath(new URL('./examples/supermarket.html', import.meta.url)),
         traction: fileURLToPath(new URL('./drive-lab.html', import.meta.url)),
         missions: fileURLToPath(new URL('./examples/mission.html', import.meta.url)),
+        solar: fileURLToPath(new URL('./examples/power-plant.html', import.meta.url)),
       },
     },
   },

@@ -5,10 +5,11 @@ import { parseTennantScenario, runTennantScenario, type TennantResult } from './
 import type { ModelicaResult } from './modelica/runtime.ts'
 import type { SupermarketReplay } from './modelica/supermarket.ts'
 import {runMissionExperiment,type MissionResult} from './mission-experiments.ts'
+import {runSolarPlantExperiment,type SolarPlantResult} from './solar-plant.ts'
 
 export type ExperimentResult =
   | SimulationResult | CleaningResult | TennantResult | ModelicaResult | SupermarketReplay
-  | MissionResult
+  | MissionResult | SolarPlantResult
 
 /** Run a validated, allowlisted scenario. No viewer, Taskyon or DAG required. */
 export const runExperiment = async (
@@ -16,7 +17,8 @@ export const runExperiment = async (
   projectDirectory: string = process.cwd(),
 ): Promise<ExperimentResult> => {
   const object = typeof raw === 'object' && raw !== null ? raw : {}
-  if ('kind' in object && ['satellite-adcs','orbital-docking','terrain-traverse'].includes(String(object.kind))){
+  if ('kind' in object && object.kind === 'solar-plant') return runSolarPlantExperiment(raw)
+  if ('kind' in object && ['satellite-adcs','terrain-traverse'].includes(String(object.kind))){
     return runMissionExperiment(raw)
   }
   if ('kind' in object && object.kind === 'modelica') {

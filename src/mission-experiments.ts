@@ -1,8 +1,8 @@
 import {z} from 'zod'
 
 /** Geometry and examples are independently authored, not imported artwork.
- * Every solver below is deterministic and deliberately scoped: attitude rigid
- * body, relative docking, or reduced-order terramechanics, not flight hardware. */
+ * Every solver below is deterministic and scoped to rigid-body attitude or
+ * reduced-order terrain mobility, not flight or field-qualified hardware. */
 export const satelliteScenarioSchema=z.object({
   kind:z.literal('satellite-adcs'),
   name:z.string().min(1),
@@ -10,13 +10,6 @@ export const satelliteScenarioSchema=z.object({
   durationSeconds:z.number().positive().max(160),
   intervalSeconds:z.number().min(.01).max(.15),
   torqueLimitNm:z.number().positive().max(2),
-}).strict()
-export const dockingScenarioSchema=z.object({
-  kind:z.literal('orbital-docking'),
-  name:z.string().min(1),
-  durationSeconds:z.number().positive().max(180),
-  intervalSeconds:z.number().min(.01).max(.15),
-  thrusterLimitN:z.number().positive().max(10),
 }).strict()
 export const terrainScenarioSchema=z.object({
   kind:z.literal('terrain-traverse'),
@@ -28,7 +21,7 @@ export const terrainScenarioSchema=z.object({
   roverCandidate:z.enum(['ares-rtg','helios-solar','pathfinder-light']).optional(),
 }).strict()
 export const missionScenarioSchema=z.discriminatedUnion('kind',[
-  satelliteScenarioSchema,dockingScenarioSchema,terrainScenarioSchema,
+  satelliteScenarioSchema,terrainScenarioSchema,
 ])
 export type MissionScenario=z.infer<typeof missionScenarioSchema>
 export const parseMissionScenario=(raw:unknown):MissionScenario=>missionScenarioSchema.parse(raw)
@@ -54,7 +47,6 @@ export const satelliteModules=(layout:SatelliteScenario['layout']):CubeModule[]=
     function:purposes[index]!,
   }))
 type SatelliteScenario=z.infer<typeof satelliteScenarioSchema>
-type DockingScenario=z.infer<typeof dockingScenarioSchema>
 type TerrainScenario=z.infer<typeof terrainScenarioSchema>
 type Vector=[number,number,number]
 type Matrix=[Vector,Vector,Vector]
@@ -177,36 +169,6 @@ export const runSatelliteScenario=(s:SatelliteScenario)=>{
   }
 }
 
-export const runDockingScenario=(s:DockingScenario)=>{
-  // Free-flyer translation in the target's local interface plane, no orbital
-  // gravity / 6-DOF contact dynamics. A gated latch is not physical docking.
-  const massKg=36
-  let x=-1.65,z=.19,vx=.04,vz=0,docked=false
-  const observations:Array<{
-    step:number;timeSeconds:number;x:number;z:number;vx:number;vz:number;
-    distanceMetres:number;relativeSpeedMetresPerSecond:number;docked:boolean;
-  }>=[]
-  for(let i=0;i<=Math.round(s.durationSeconds/s.intervalSeconds);i++){
-    const timeSeconds=i*s.intervalSeconds
-    const distance=Math.hypot(x,z)
-    const relativeSpeed=Math.hypot(vx,vz)
-    if(distance<.032&&relativeSpeed<.027)docked=true
-    observations.push({step:i,timeSeconds,x,z,vx,vz,
-      distanceMetres:distance,relativeSpeedMetresPerSecond:relativeSpeed,docked})
-    if(docked||i===Math.round(s.durationSeconds/s.intervalSeconds))break
-    const dt=s.intervalSeconds
-    const aX=clamp(-.42*x-.94*vx,-s.thrusterLimitN/massKg,s.thrusterLimitN/massKg)
-    const aZ=clamp(-.42*z-.94*vz,-s.thrusterLimitN/massKg,s.thrusterLimitN/massKg)
-    vx+=aX*dt;vz+=aZ*dt
-    x+=vx*dt;z+=vz*dt
-  }
-  const last=observations.at(-1)!
-  return {scenario:s,engine:{name:'relative-translation',model:'PD-limited thruster/ideal interface latch'},
-    result:{passed:docked,docked,finalDistanceMetres:last.distanceMetres,
-      relativeSpeedMetresPerSecond:last.relativeSpeedMetresPerSecond,
-      timeToCaptureSeconds:docked?last.timeSeconds:null},
-    observations}
-}
 
 /** Concept candidates mirrored from the bundled Taskyon Mars rover example;
  * not calibrated spacecraft performance or vendor specifications. */
@@ -304,7 +266,6 @@ export const runMissionExperiment=(raw:unknown)=>{
   const scenario=parseMissionScenario(raw)
   switch(scenario.kind){
     case 'satellite-adcs':return runSatelliteScenario(scenario)
-    case 'orbital-docking':return runDockingScenario(scenario)
     case 'terrain-traverse':return runTerrainScenario(scenario)
   }
 }

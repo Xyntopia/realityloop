@@ -6,7 +6,7 @@ import { test } from 'node:test'
 const site = new URL('../dist-web/', import.meta.url)
 const prefix = process.env.REALITYLOOP_PAGES_BASE ?? '/realityloop/'
 const pages = ['index.html', 'drive-lab.html', 'examples/supermarket.html',
-  'examples/mission.html']
+  'examples/mission.html','examples/power-plant.html']
 
 for (const page of pages) {
   test(`GitHub Pages build serves ${page} under ${prefix}`, async () => {
@@ -90,15 +90,45 @@ test('dynamic AO algorithms are independently selectable and GTAO is code-split'
     'GTAO must remain a separate on-demand chunk, not part of the default scene')
 })
 
+test('satellite bundles low-resolution NASA Blue Marble imagery locally',async()=>{
+  const assets=await readdir(new URL('assets/',site))
+  const file=assets.find(name=>/^blue-marble-july-2048-.*\.jpg$/.test(name))
+  assert.ok(file,'NASA Blue Marble texture must be available offline in Pages')
+  const img=await readFile(new URL('assets/'+file,site))
+  assert.equal(img.subarray(0,2).toString('hex'),'ffd8')
+  assert.ok(img.length>80_000&&img.length<500_000,
+    'NASA map should be low-res, visually useful, and lightweight')
+  const license=await readFile(new URL('../assets/textures/README.md',import.meta.url),'utf8')
+  assert.match(license,/NASA Earth Observatory/)
+  assert.match(license,/2048 × 1024/)
+  assert.match(license,/source/i)
+})
+
+test('power plant publishes a genuine viewer capture and controls',async()=>{
+  const html=await readFile(new URL('examples/power-plant.html',site),'utf8')
+  assert.match(html,/id="tracker-mode"/)
+  assert.match(html,/id="storage-enabled"/)
+  assert.match(html,/id="view-mode"/)
+  assert.match(html,/id="export-limit"/)
+  const source=await readFile(new URL('../src/examples.ts',import.meta.url),'utf8')
+  assert.match(source,/power-plant\.html/)
+  assert.match(source,/solar-plant-clear-sky\.json/)
+  const photo=await readFile(new URL('../docs/realityloop-gallery-solar.jpg',import.meta.url))
+  assert(photo.length>35_000,'Plant thumbnail must come from a rendered 3D scene')
+  assert.equal(photo.subarray(0,2).toString('hex'),'ffd8')
+  const assets=await readdir(new URL('assets/',site))
+  assert(assets.some(file=>/^realityloop-gallery-solar-.*\.jpg$/.test(file)))
+})
+
 test('gallery includes runnable modular-space, Mars and construction examples', async () => {
   const html=await readFile(new URL('examples/mission.html',site),'utf8')
-  for(const key of ['satellite','docking','mars','construction'])
+  for(const key of ['satellite','mars','construction'])
     assert.match(html,new RegExp('value="'+key+'"'))
   assert.match(html,/id="module-layout"/)
   assert.match(html,/id="rover-candidate"/)
   assert.match(html,/id="timeline"/)
   const examples=await readFile(new URL('../src/examples.ts',import.meta.url),'utf8')
-  for(const key of ['satellite','docking','mars','construction']){
+  for(const key of ['satellite','mars','construction']){
     assert.ok(examples.includes('mission.html?scene='+key))
     const filename='realityloop-gallery-'+key+'.jpg'
     const jpg=await readFile(new URL('../docs/'+filename,import.meta.url))
@@ -106,7 +136,7 @@ test('gallery includes runnable modular-space, Mars and construction examples', 
     assert.equal(jpg.subarray(0,2).toString('hex'),'ffd8')
   }
   const assets=await readdir(new URL('assets/',site))
-  for(const key of ['satellite','docking','mars','construction'])
+  for(const key of ['satellite','mars','construction'])
     assert.ok(assets.some(name=>name.startsWith('realityloop-gallery-'+key+'-')),
       'Bundled gallery image missing: '+key)
 })

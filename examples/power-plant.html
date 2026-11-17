@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+ <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+ <title>RealityLoop · Solar &amp; storage plant simulation</title>
+ <link rel="icon" type="image/svg+xml" href="/realityloop-icon.svg"/>
+ <link rel="stylesheet" href="../viewer/mission.css"/>
+ <link rel="stylesheet" href="../viewer/power-plant.css"/>
+</head>
+<body>
+<header class="mission-header">
+ <a class="brand" href="../"><img src="/realityloop-icon.svg" alt=""/><span><strong>RealityLoop</strong><small>RENEWABLE ENERGY SIMULATION</small></span></a>
+ <nav><a href="../">Example gallery</a><a href="https://joulios.com/">Joulios</a><a href="https://taskyon.space/">Taskyon</a></nav>
+</header>
+<main class="mission-layout">
+ <section class="stage" aria-label="3D solar power plant">
+   <div id="viewport" class="viewport"></div>
+   <div class="scene-caption"><span>SOLAR PV / BESS</span><span>Utility-scale renewable plant</span></div>
+   <div class="stage-timeline">
+     <button id="play" type="button">Pause</button>
+     <input id="timeline" type="range" min="0" max="144" value="72" step="1" aria-label="Solar day time"/>
+     <span id="time-label">12:00</span>
+     <select id="playback-speed" aria-label="Simulation playback speed"><option value="1">1×</option><option value="4" selected>4×</option><option value="12">12×</option></select>
+   </div>
+   <p class="stage-note">Drag to orbit · scroll to zoom · lighting and tracker geometry follow the simulated solar day. Layout is illustrative, not an as-built Darden study.</p>
+ </section>
+ <aside class="panel">
+   <p class="eyebrow">REPRODUCIBLE · TASKYON DESIGN GRAPH</p>
+   <h1>Solar generation and storage</h1>
+   <p class="plant-intro">A reduced-order plant model using <a href="https://joulios.com/">Joulios</a> equipment dimensions and layout conventions. Explore how tracker orientation, temperature, inverter limits and storage dispatch influence energy export.</p>
+   <div class="plant-settings">
+     <label for="view-mode">Camera</label>
+     <select id="view-mode"><option value="inspection" selected>Tracker aisle / service road</option><option value="overview">Aerial plant overview</option><option value="yard">Substation and inverter yard</option></select>
+     <label for="tracker-mode">PV mounting</label>
+     <select id="tracker-mode"><option value="tracking">Single-axis east–west tracking</option><option value="fixed">Fixed horizontal baseline</option></select>
+     <label for="export-limit">Grid export cap <strong id="export-limit-value">1,800 kW</strong></label>
+     <input id="export-limit" type="range" min="900" max="2500" step="100" value="1800"/>
+     <label class="storage-toggle"><input id="storage-enabled" type="checkbox" checked/> Enable 1 MW / 4 MWh battery</label>
+     <label for="ambient-temp">Ambient temperature <strong id="ambient-temp-value">30°C</strong></label>
+     <input id="ambient-temp" type="range" min="5" max="45" value="30" step="1"/>
+   </div>
+   <button type="button" class="primary" id="simulate">Run simulation</button>
+   <p id="mission-status" role="status" aria-live="polite">Calculating simulation…</p>
+   <div class="metrics">
+     <div><strong id="metric-a">—</strong><small>INSTANTANEOUS EXPORT</small></div>
+     <div><strong id="metric-b">—</strong><small>DC ARRAY OUTPUT</small></div>
+     <div><strong id="metric-c">—</strong><small>BATTERY STATE OF CHARGE</small></div>
+     <div><strong id="metric-d">—</strong><small>DAILY ENERGY EXPORTED</small></div>
+   </div>
+   <h2>Power and storage profile</h2>
+   <canvas id="telemetry" width="520" height="200" aria-label="Daily PV/export and battery profile"></canvas>
+   <div class="plant-legend"><span><i class="pv-line"></i>PV AC</span><span><i class="export-line"></i>Grid export</span><span><i class="bess-line"></i>Battery SOC</span></div>
+   <p class="note">Simplified clear-sky irradiance, module-temperature derating and inter-row shade approximation; actual production, losses, terrain shading, electrical faults and equipment limits require calibrated site-specific models. Scene equipment is decorative except for the specified reduced-order PV/BESS parameters.</p>
+   <div class="footnotes">
+     <div><b>Plant:</b> <span id="plant-summary">—</span></div>
+     <div><b>Model:</b> <span id="model-summary">—</span></div>
+     <div><b>DAG artifact:</b> <span id="artifact-id">—</span></div>
+   </div>
+ </aside>
+</main>
+<script type="module" src="../viewer/power-plant.ts"></script>
+</body>
+</html>

@@ -30,8 +30,7 @@
     <p id="mission-description">Loading example configuration…</p>
     <label for="mission-select">Example</label>
     <select id="mission-select">
-      <option value="satellite">Modular satellite ADCS</option>
-      <option value="docking">iBOSS modular docking</option>
+      <option value="satellite">iBOSS-inspired modular satellite ADCS</option>
       <option value="mars">Mars rover traverse</option>
       <option value="construction">Construction site delivery</option>
     </select>
@@ -66,6 +65,10 @@
     <h2>Simulation telemetry</h2>
     <canvas id="telemetry" width="520" height="158" aria-label="Simulation telemetry plot"></canvas>
     <p id="model-limit" class="note"></p>
+    <p id="earth-credit" class="note" hidden>Earth surface imagery:
+      <a href="https://science.nasa.gov/earth/earth-observatory/blue-marble-next-generation/">NASA Earth Observatory · Blue Marble: Next Generation</a>.
+      Visualization only; NASA does not endorse this project.
+    </p>
     <div class="footnotes">
       <div><b>Engine:</b> <span id="mission-engine">—</span></div>
       <div><b>Taskyon DAG:</b> <span id="mission-artifact">—</span></div>
