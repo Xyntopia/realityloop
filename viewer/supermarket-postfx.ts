@@ -3,14 +3,10 @@ import {EffectComposer} from 'three/addons/postprocessing/EffectComposer.js'
 import {RenderPass} from 'three/addons/postprocessing/RenderPass.js'
 import {SSAOPass} from 'three/addons/postprocessing/SSAOPass.js'
 import {OutputPass} from 'three/addons/postprocessing/OutputPass.js'
-import {type VisualQuality} from './render-policy.ts'
-
-/** Screen-space AO is deliberately a High/GPU-only option: the normal/depth
- * render costs more than a few contact decals. Balanced uses those decals,
- * Performance stays unprocessed, and software renderers never run SSAO. */
+/** Screen-space AO is user-selectable but only supported on hardware WebGL2. */
 export const useScreenSpaceAO=(
-  quality:VisualQuality,softwareRenderer:boolean,webgl2:boolean,
-):boolean=>quality==='high'&&!softwareRenderer&&webgl2
+  requested:boolean,softwareRenderer:boolean,webgl2:boolean,
+):boolean=>requested&&!softwareRenderer&&webgl2
 
 export const createSupermarketPostFX=(
   renderer:THREE.WebGLRenderer,scene:THREE.Scene,camera:THREE.Camera,
@@ -28,9 +24,9 @@ export const createSupermarketPostFX=(
     ao.setSize(Math.max(1,Math.floor(width*ratio*.5)),
       Math.max(1,Math.floor(height*ratio*.5)))
   }
-  const setQuality=(quality:VisualQuality,width:number,height:number)=>{
+  const setQuality=(requestedAO:boolean,width:number,height:number)=>{
     enabled=useScreenSpaceAO(
-      quality,softwareRenderer,renderer.capabilities.isWebGL2,
+      requestedAO,softwareRenderer,renderer.capabilities.isWebGL2,
     )
     if(!enabled)return
     if(!composer){

@@ -3,6 +3,7 @@ import { supermarketObstacles } from '../src/geometry.ts'
 import {createSupermarketStock} from './supermarket-products.ts'
 import {createSupermarketDecor} from './supermarket-decor.ts'
 import {createWallSeamShading} from './contact-shading.ts'
+import type {GraphicsEffects} from './graphics-settings.ts'
 import terrazzoDiffuse from '../assets/materials/terrazzo_tiles_diff_1k.jpg?url'
 import terrazzoRough from '../assets/materials/terrazzo_tiles_rough_1k.jpg?url'
 import terrazzoNormal from '../assets/materials/terrazzo_tiles_nor_gl_1k.jpg?url'
@@ -158,7 +159,7 @@ export type SupermarketInterior=Readonly<{
   decorativeProductCount:number
   overheadLights:number
   setCeilingVisible:(visible:boolean)=>void
-  setVisualQuality:(quality:'high'|'balanced'|'performance')=>void
+  setVisualQuality:(quality:'high'|'balanced'|'performance',effects:GraphicsEffects)=>void
   dispose:()=>void
 }>
 
@@ -457,27 +458,49 @@ export const createSupermarketInterior=(
   scene.background=new THREE.Color(0x9eb3b5)
   scene.fog=new THREE.FogExp2(0x9eb3b5,.012)
 
-  const setVisualQuality=(quality:'high'|'balanced'|'performance')=>{
-    // Lower GPU fragment work; preserve geometry and all simulation results.
+  const setVisualQuality=(
+    quality:'high'|'balanced'|'performance',effects:GraphicsEffects,
+  )=>{
+    // Render-only settings. The scene remains independent from all physics
+    // geometry, Modelica outputs and recorded LiDAR/SLAM observations.
     const low=quality==='performance'
-    stock.setQuality(quality)
-    shadows.visible=!low
-    seams.setQuality(quality)
+    const pbr=effects.reflections||effects.surfaceDetail
+    stock.setQuality(low&&pbr?'balanced':quality)
+    shadows.visible=effects.contactShadows
+    seams.setQuality(quality,effects.contactShadows)
     shadowMaterial.opacity=quality==='high' ? .89 : .74
     for(const {mesh,original,fast} of architecture)
-      mesh.material=low?fast:original
-    scene.environment=low?null:environment
-    led.emissiveIntensity=quality==='high' ? 3.1 : low ? .75 : 1.9
-    glare.visible=!low
+      mesh.material=low&&!pbr?fast:original
+    scene.environment=effects.reflections?environment:null
+    const setMaps=(
+      material:THREE.MeshStandardMaterial,
+      normal:THREE.Texture,rough:THREE.Texture,
+    )=>{
+      const targetNormal=effects.surfaceDetail?normal:null
+      const targetRoughness=effects.surfaceDetail?rough:null
+      if(material.normalMap!==targetNormal||material.roughnessMap!==targetRoughness){
+        material.normalMap=targetNormal
+        material.roughnessMap=targetRoughness
+        material.needsUpdate=true
+      }
+    }
+    for(const metal of [steel,trim,fixture])
+      setMaps(metal,brushedSteel.normal,brushedSteel.rough)
+    setMaps(floorHigh,floorMaps.normal,floorMaps.roughness)
+    setMaps(floorBalanced,floorMaps.normal,floorMaps.roughness)
+    led.emissiveIntensity=effects.lighting
+      ? (quality==='high'?3.1:low?0.75:1.9) : 0
+    glare.visible=effects.glare
     glareMaterial.opacity=quality==='high' ? .72 : .37
     ambient.intensity=quality==='high'?1.5:low?1.95:1.65
     for(const [index,light] of lightClusters.entries()){
-      light.visible=!low&&(quality==='high'||index===0||index===3)
+      light.visible=effects.lighting&&(quality==='high'||index===0||index===3)
     }
-    // One shadow-casting key, no dynamic reflection captures.
-    key.castShadow=!low
-    floor.material=quality==='high'?floorHigh:
-      quality==='balanced'?floorBalanced:floorPerformance
+    key.castShadow=effects.castShadows
+    // Even at low render resolution, a manually enabled dynamic shadow needs
+    // a lit receiving floor; MeshBasicMaterial cannot display shadow maps.
+    floor.material=low&&!pbr&&!effects.castShadows?floorPerformance:
+      quality==='high'?floorHigh:floorBalanced
   }
   return {
     decorativeProductCount,overheadLights:lamps,

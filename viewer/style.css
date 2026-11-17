@@ -72,7 +72,40 @@ button:hover { filter: brightness(1.13); }
 .control-row { display: flex; justify-content: space-between; align-items: center; margin: 12px 0; }
 .control-row label { margin: 0; }
 .control-row select { width: 92px; padding: 6px 7px; }
+.controls #visual-quality, .controls #graphics-detail { width: 124px; }
 button.mini { padding: 7px 11px; font-size: 11px; }
+.graphics-effects {
+  margin-top: -3px; margin-bottom: 12px;
+  border: 1px solid var(--rl-border-soft); border-radius: 8px;
+  background: rgba(32,44,61,.58);
+}
+.graphics-effects summary {
+  cursor: pointer; user-select: none; padding: 9px 11px;
+  color: var(--rl-ink-soft); font-size: 11px; font-weight: 700;
+}
+.graphics-effects summary span { float: right; color: var(--rl-orange-light); }
+.graphics-effects[open] summary { border-bottom: 1px solid var(--rl-border-soft); }
+.effects-body { padding: 5px 11px 11px; }
+.effects-body .control-row { gap: 10px; }
+.effects-body .control-row select { min-width: 98px; }
+.effects-body .control-row label { font-size: 10px; }
+.graphics-effects .effect-switch {
+  display: flex; align-items: center; gap: 9px; padding: 5px 0;
+  margin: 0; cursor: pointer; font-size: 11px; line-height: 1.4;
+  color: var(--rl-ink-soft);
+}
+.graphics-effects .effect-switch input {
+  width: 15px; height: 15px; flex: none; margin: 0;
+  accent-color: var(--rl-secondary);
+}
+.graphics-effects .effect-switch small {
+  font-size: 9px; color: var(--rl-muted); margin-left: auto;
+}
+.graphics-effects .effect-switch:has(input:disabled) { opacity: .54; cursor: not-allowed; }
+.graphics-effects .effects-hint {
+  font-size: 10px; line-height: 1.45; margin: 8px 0 0;
+  color: var(--rl-muted);
+}
 .legend {
   border-top: 1px solid var(--rl-border-soft);
   margin-top: 18px; padding-top: 12px;

@@ -11,7 +11,21 @@
   <label for="route">Route strategy</label><select id="route"><option value="detour">Detour · reach destination</option><option value="blocked">Blocked · regression</option></select>
   <div class="button-row"><button id="play">Pause</button><button id="replay" class="secondary">Replay</button></div>
   <div class="control-row"><label for="speed">Playback speed</label><select id="speed"><option value="1">1×</option><option value="2">2×</option><option value="4" selected>4×</option><option value="8">8×</option></select></div>
-  <div class="control-row"><label for="visual-quality">Graphics</label><select id="visual-quality"><option value="auto" selected>Auto</option><option value="high">High PBR</option><option value="balanced">Balanced</option><option value="performance">Performance</option></select></div>
+  <div class="control-row"><label for="visual-quality">Graphics</label><select id="visual-quality"><option value="auto" selected>Auto</option><option value="high">Realistic</option><option value="balanced">Balanced</option><option value="performance">Performance</option><option value="custom">Custom</option></select></div>
+  <details id="graphics-effects" class="graphics-effects">
+    <summary>Customize effects <span id="graphics-effects-count">—</span></summary>
+    <div class="effects-body">
+      <div class="control-row"><label for="graphics-detail">Scene detail / resolution</label><select id="graphics-detail"><option value="high">High</option><option value="balanced">Balanced</option><option value="performance">Low</option></select></div>
+      <label class="effect-switch"><input id="fx-lighting" data-effect="lighting" type="checkbox">Lamp illumination</label>
+      <label class="effect-switch"><input id="fx-glare" data-effect="glare" type="checkbox">Lamp glare / glow</label>
+      <label class="effect-switch"><input id="fx-contactShadows" data-effect="contactShadows" type="checkbox">Contact / crevice shadows</label>
+      <label class="effect-switch"><input id="fx-ambientOcclusion" data-effect="ambientOcclusion" type="checkbox">Screen-space AO <small>GPU only</small></label>
+      <label class="effect-switch"><input id="fx-reflections" data-effect="reflections" type="checkbox">Environment reflections</label>
+      <label class="effect-switch"><input id="fx-surfaceDetail" data-effect="surfaceDetail" type="checkbox">Normal / roughness maps</label>
+      <label class="effect-switch"><input id="fx-castShadows" data-effect="castShadows" type="checkbox">Dynamic shadow map</label>
+      <p id="graphics-effects-hint" class="effects-hint">Changes affect visualization only, not the simulation.</p>
+    </div>
+  </details>
   <div class="control-row camera-controls"><span>Camera</span><button id="camera" class="mini">Top view</button><button id="aisle-camera" class="mini">Aisle view</button></div>
   <div class="legend"><div><span class="swatch trail"></span>Cleaning footprint proxy</div><div><span class="swatch path"></span>Recorded robot path</div><div><span class="swatch blocked"></span>Blocking fixture</div></div>
 </aside>

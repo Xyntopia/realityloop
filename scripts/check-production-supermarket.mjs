@@ -35,7 +35,37 @@ try{
   const response=await page.goto(new URL('/realityloop/examples/supermarket.html',origin).href,
     {waitUntil:'domcontentloaded',timeout:60000})
   assert.equal(response?.status(),200,'Built supermarket HTML must load at /realityloop/')
+  await page.locator('#graphics-effects summary').click()
+  await page.selectOption('#visual-quality','high')
+  assert.equal(await page.locator('#graphics-detail').inputValue(),'high')
+  assert.equal(await page.locator('#fx-reflections').isChecked(),true)
+  assert.equal(await page.locator('#fx-lighting').isChecked(),true)
+  if(await page.locator('body').evaluate(el=>el.classList.contains('software-renderer'))){
+    assert.equal(await page.locator('#fx-ambientOcclusion').isDisabled(),true,
+      'SSAO must not run under software Chromium')
+  }
+  await page.selectOption('#visual-quality','balanced')
+  assert.equal(await page.locator('#fx-ambientOcclusion').isChecked(),false)
+  await page.locator('#fx-lighting').uncheck()
+  assert.equal(await page.locator('#visual-quality').inputValue(),'custom')
+  assert.equal(await page.locator('#fx-glare').isChecked(),false)
+  assert.equal(await page.locator('#fx-glare').isDisabled(),true)
+  await page.locator('#fx-lighting').check()
+  await page.locator('#fx-glare').check()
+  await page.locator('#fx-reflections').uncheck()
+  assert.equal(await page.locator('#fx-reflections').isChecked(),false)
+  assert.equal(await page.locator('#fx-contactShadows').isChecked(),true,
+    'Independent Custom effects must not reset each other')
+  await page.selectOption('#graphics-detail','performance')
+  assert.equal(await page.locator('#visual-quality').inputValue(),'custom')
+  assert.equal(await page.locator('#fx-lighting').isChecked(),true,
+    'Custom detail tier must not discard effect overrides')
   await page.selectOption('#visual-quality','performance')
+  assert.equal(await page.locator('#fx-reflections').isChecked(),false)
+  assert.equal(await page.locator('#fx-lighting').isChecked(),false)
+  assert.equal(await page.locator('#graphics-effects-count').textContent(),'0/7 on')
+  await page.locator('#graphics-effects summary').click()
+  console.log('Graphics preset and custom-effect switching: PASS')
   await page.selectOption('#speed','8')
   await page.waitForFunction(()=>
     document.getElementById('slam-method')?.textContent?.includes('PCL WASM · ICP'),

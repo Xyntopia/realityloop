@@ -5,6 +5,11 @@ import { createSupermarketPostFX } from './supermarket-postfx.ts'
 import { createReplayTrail } from './replay-trail.ts'
 import { createRobotContactShadow } from './contact-shading.ts'
 import {
+  enabledEffectCount,graphicsEffects,presetGraphicsEffects,
+  resolveGraphicsEffects,type GraphicsEffect,type GraphicsEffects,
+  type GraphicsPreset,
+} from './graphics-settings.ts'
+import {
   shouldCaptureSensorPreview,updateAutoQuality,
   type VisualQuality,type AutoQualityState,
 } from './render-policy.ts'
@@ -41,6 +46,7 @@ controls.update()
 // The visual scene is intentionally not part of Modelica's obstacle/physics DAG.
 const interior = createSupermarketInterior(scene,renderer)
 const graphicsSelect=elem('visual-quality') as HTMLSelectElement
+const graphicsDetailSelect=elem('graphics-detail') as HTMLSelectElement
 const gl=renderer.getContext()
 const rendererInfo=gl.getExtension('WEBGL_debug_renderer_info')
 const rendererName=String(gl.getParameter(
@@ -52,19 +58,37 @@ const robot=createTennantT7AMR()
 const contactShadow=createRobotContactShadow()
 robot.add(contactShadow.mesh)
 scene.add(robot)
-let graphicsQuality:VisualQuality='high'
-const applyQuality=(quality:VisualQuality)=>{
-  if(quality===graphicsQuality && renderer.getPixelRatio()===
-      Math.min(devicePixelRatio,quality==='high'?1.5:quality==='balanced'?1:.48))return
+const canUseAO=!softwareRenderer&&renderer.capabilities.isWebGL2
+let graphicsQuality:VisualQuality='balanced'
+let currentEffects:GraphicsEffects=presetGraphicsEffects(graphicsQuality)
+const effectInput=(key:GraphicsEffect)=>
+  elem('fx-'+key) as HTMLInputElement
+const applyQuality=(
+  quality:VisualQuality,requestedEffects:GraphicsEffects=presetGraphicsEffects(quality),
+)=>{
   graphicsQuality=quality
-  renderer.setPixelRatio(Math.min(devicePixelRatio,
-    quality==='high'?1.5:quality==='balanced'?1:.48))
-  renderer.shadowMap.enabled=quality!=='performance'
+  currentEffects=resolveGraphicsEffects(requestedEffects,canUseAO)
+  const pixelRatio=Math.min(devicePixelRatio,
+    quality==='high'?1.5:quality==='balanced'?1:.48)
+  if(renderer.getPixelRatio()!==pixelRatio)renderer.setPixelRatio(pixelRatio)
+  renderer.shadowMap.enabled=currentEffects.castShadows
   renderer.shadowMap.needsUpdate=true
-  interior.setVisualQuality(quality)
-  postFX.setQuality(quality,innerWidth,innerHeight)
-  contactShadow.setQuality(quality)
+  interior.setVisualQuality(quality,currentEffects)
+  postFX.setQuality(currentEffects.ambientOcclusion,innerWidth,innerHeight)
+  contactShadow.setQuality(quality,currentEffects.contactShadows)
+  graphicsDetailSelect.value=quality
+  for(const key of graphicsEffects){
+    const input=effectInput(key)
+    input.checked=currentEffects[key]
+    input.disabled=(key==='ambientOcclusion'&&!canUseAO)||
+      (key==='glare'&&!currentEffects.lighting)
+  }
+  elem('graphics-effects-count').textContent=
+    enabledEffectCount(currentEffects)+'/'+graphicsEffects.length+' on'
 }
+elem('graphics-effects-hint').textContent=canUseAO
+  ? 'SSAO requires extra GPU work. Changes affect visualization only.'
+  : 'SSAO unavailable on this software/legacy renderer. Effects do not change physics.'
 applyQuality(softwareRenderer?'performance':'balanced')
 const goal = new THREE.Mesh(new THREE.RingGeometry(0.43,0.51,48),new THREE.MeshBasicMaterial({color:0xf78f3b,side:THREE.DoubleSide}))
 goal.rotation.x=-Math.PI/2;goal.position.set(7.5,0.016,0);scene.add(goal)
@@ -209,7 +233,8 @@ const render=(now:number)=>{
       if(autoQuality.quality!==graphicsQuality)applyQuality(autoQuality.quality)
     }
     elem('render-stats').textContent=fps+' FPS · '+renderer.info.render.calls+
-      ' DRAWS · '+interior.decorativeProductCount+' PRODUCTS · '+graphicsQuality.toUpperCase()
+      ' DRAWS · '+interior.decorativeProductCount+' PRODUCTS · '+graphicsQuality.toUpperCase()+
+      (graphicsSelect.value==='custom'?' CUSTOM':'')
     fpsFrames=0
     fpsWindowStart=now
   }
@@ -233,12 +258,23 @@ elem('engine').addEventListener('change',()=>void run((elem('route') as HTMLSele
 elem('route').addEventListener('change',()=>void run((elem('route') as HTMLSelectElement).value as 'blocked'|'detour'))
 elem('lidar-toggle').addEventListener('click',()=>{const visible=slamView.toggleRays();elem('lidar-toggle').textContent=visible?'Hide rays':'Show rays'})
 graphicsSelect.addEventListener('change',()=>{
-  const selected=graphicsSelect.value
+  const selected=graphicsSelect.value as GraphicsPreset
   if(selected==='auto')applyQuality(softwareRenderer?'performance':'balanced')
-  else if(selected==='high'||selected==='balanced'||selected==='performance')
-    applyQuality(selected)
+  else if(selected==='custom')
+    applyQuality(graphicsDetailSelect.value as VisualQuality,currentEffects)
+  else applyQuality(selected)
   autoQuality={quality:graphicsQuality,slowWindows:0,fastWindows:0}
 })
+graphicsDetailSelect.addEventListener('change',()=>{
+  graphicsSelect.value='custom'
+  applyQuality(graphicsDetailSelect.value as VisualQuality,currentEffects)
+})
+for(const key of graphicsEffects){
+  effectInput(key).addEventListener('change',()=>{
+    graphicsSelect.value='custom'
+    applyQuality(graphicsQuality,{...currentEffects,[key]:effectInput(key).checked})
+  })
+}
 type CameraMode='orbit'|'top'|'aisle'
 let cameraMode:CameraMode='orbit'
 const syncPresentationGeometry=()=>{

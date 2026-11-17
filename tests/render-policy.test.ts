@@ -20,13 +20,11 @@ test('sensor camera preview stays rate-limited at every graphics quality',()=>{
   }
 })
 
-test('screen-space AO is high quality and hardware-only; fast tiers use contact shading',()=>{
-  for(const quality of ['performance','balanced'] as const){
-    assert.equal(useScreenSpaceAO(quality,false,true),false)
-  }
-  assert.equal(useScreenSpaceAO('high',false,true),true)
-  assert.equal(useScreenSpaceAO('high',true,true),false)
-  assert.equal(useScreenSpaceAO('high',false,false),false)
+test('screen-space AO follows its toggle and is hardware WebGL2 only',()=>{
+  assert.equal(useScreenSpaceAO(false,false,true),false)
+  assert.equal(useScreenSpaceAO(true,false,true),true)
+  assert.equal(useScreenSpaceAO(true,true,true),false)
+  assert.equal(useScreenSpaceAO(true,false,false),false)
 })
 
 test('auto graphics degrades quickly but upgrades only after sustained headroom',()=>{

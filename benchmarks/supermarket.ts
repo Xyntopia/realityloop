@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import {createSupermarketInterior} from '../viewer/supermarket-interior.ts'
+import {presetGraphicsEffects} from '../viewer/graphics-settings.ts'
 
 type Quality='high'|'balanced'|'performance'
 type Configuration=Readonly<{
@@ -75,7 +76,7 @@ const gpu={
 /** Called by Playwright. RAF measures full frame pacing; render() timings
  * separately measure JS submission, not GPU rasterization or presentation. */
 const measure=async(options:Configuration,durationMs=4000)=>{
-  interior.setVisualQuality(options.quality)
+  interior.setVisualQuality(options.quality,presetGraphicsEffects(options.quality))
   renderer.setPixelRatio(options.pixelRatio)
   renderer.shadowMap.enabled=options.shadows ?? options.quality!=='performance'
   renderer.shadowMap.needsUpdate=true

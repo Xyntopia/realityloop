@@ -29,8 +29,8 @@ export const createRobotContactShadow=()=>{
   mesh.renderOrder=1
   return {
     mesh,
-    setQuality:(quality:'high'|'balanced'|'performance')=>{
-      mesh.visible=quality!=='performance'
+    setQuality:(quality:'high'|'balanced'|'performance',enabled=true)=>{
+      mesh.visible=enabled
       material.opacity=quality==='high' ? .92 : .7
     },
     dispose:()=>{
@@ -82,8 +82,8 @@ export const createWallSeamShading=()=>{
   root.add(geometry)
   return {
     root,
-    setQuality:(quality:'high'|'balanced'|'performance')=>{
-      root.visible=quality!=='performance'
+    setQuality:(quality:'high'|'balanced'|'performance',enabled=true)=>{
+      root.visible=enabled
       material.opacity=quality==='high'?1:.7
     },
     dispose:()=>{
