@@ -1,6 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title">
   <title id="title">RealityLoop — flask and caliper in an iteration loop</title>
-  <rect width="128" height="128" rx="25" fill="#ffffff"/>
   <!-- Design / test iteration: one clear navy-to-orange loop. -->
   <path d="M19 80C10 58 20 35 38 23 55 11 79 13 96 27" fill="none" stroke="#2a3548" stroke-width="7" stroke-linecap="round"/>
   <path d="m88 18 16 11-17 3" fill="none" stroke="#2a3548" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>

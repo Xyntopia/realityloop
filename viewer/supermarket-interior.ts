@@ -2,6 +2,7 @@ import * as THREE from 'three'
 import { supermarketObstacles } from '../src/geometry.ts'
 import {createSupermarketStock} from './supermarket-products.ts'
 import {createSupermarketDecor} from './supermarket-decor.ts'
+import {createWallSeamShading} from './contact-shading.ts'
 import terrazzoDiffuse from '../assets/materials/terrazzo_tiles_diff_1k.jpg?url'
 import terrazzoRough from '../assets/materials/terrazzo_tiles_rough_1k.jpg?url'
 import terrazzoNormal from '../assets/materials/terrazzo_tiles_nor_gl_1k.jpg?url'
@@ -16,6 +17,40 @@ import terrazzoNormal from '../assets/materials/terrazzo_tiles_nor_gl_1k.jpg?url
  */
 const baseMaterial=(color:number,roughness=.58,metalness=.04)=>
   new THREE.MeshStandardMaterial({color,roughness,metalness})
+
+/** Tiny deterministic brushed-steel normals/roughness: no external textures,
+ * no new mesh geometry, reused by all shelf/fixture material instances. */
+const createBrushedSteelMaps=()=>{
+  const normalCanvas=document.createElement('canvas')
+  const roughCanvas=document.createElement('canvas')
+  normalCanvas.width=roughCanvas.width=64
+  normalCanvas.height=roughCanvas.height=64
+  const normalCtx=normalCanvas.getContext('2d')
+  const roughCtx=roughCanvas.getContext('2d')
+  if(!normalCtx||!roughCtx)throw Error('Brushed steel texture canvas unavailable')
+  const normals=normalCtx.createImageData(64,64)
+  const roughness=roughCtx.createImageData(64,64)
+  for(let y=0;y<64;y++){
+    const streak=Math.sin(y*.38)*.56+Math.sin(y*1.39)*.27
+    for(let x=0;x<64;x++){
+      const variation=Math.sin(x*1.97+y*.71)*.17
+      const i=(y*64+x)*4
+      normals.data.set([128,Math.round(128+14*(streak+variation)),252,255],i)
+      const shade=Math.round(210+24*streak+11*variation)
+      roughness.data.set([shade,shade,shade,255],i)
+    }
+  }
+  normalCtx.putImageData(normals,0,0)
+  roughCtx.putImageData(roughness,0,0)
+  const normal=new THREE.CanvasTexture(normalCanvas)
+  const rough=new THREE.CanvasTexture(roughCanvas)
+  for(const map of [normal,rough]){
+    map.wrapS=THREE.RepeatWrapping
+    map.wrapT=THREE.RepeatWrapping
+    map.repeat.set(2,2)
+  }
+  return {normal,rough,dispose:()=>{normal.dispose();rough.dispose()}}
+}
 /** CC0 photo-scanned material by Amal Kumar, Poly Haven: terrazzo_tiles.
  * All three 1K maps are vendored; no runtime texture CDN/network dependency. */
 const makeFloorMaps=(renderer:THREE.WebGLRenderer)=>{
@@ -84,25 +119,35 @@ const createStaticBoxBatcher=()=>{
   return {addBox,flushStaticBoxes}
 }
 /**
- * Tiny synthetic reflection panorama. Three.js prefilters this 128x64 texture
- * once, substantially cheaper than PMREM.fromScene (six camera renders).
- * Bright strips are environment highlights, not mirrored physics geometry.
+ * A tiny procedural panorama of ceiling panels and shelving highlights.
+ * Three.js PMREM-prefilters this equirectangular texture once, rather than
+ * rendering six cube cameras each frame. Bright strips approximate the room's
+ * specular environment; they are not true mirrored scene reflections.
  */
 const createStudioReflection=():THREE.Texture=>{
   const canvas=document.createElement('canvas')
-  canvas.width=128
-  canvas.height=64
+  canvas.width=256
+  canvas.height=128
   const ctx=canvas.getContext('2d')
   if(!ctx)throw Error('Canvas environment unavailable')
-  const gradient=ctx.createLinearGradient(0,0,0,64)
-  gradient.addColorStop(0,'#eef7f6')
-  gradient.addColorStop(.36,'#9bb7b8')
-  gradient.addColorStop(.68,'#718b90')
-  gradient.addColorStop(1,'#bac9c3')
+  const gradient=ctx.createLinearGradient(0,0,0,128)
+  gradient.addColorStop(0,'#f8f2e6')
+  gradient.addColorStop(.34,'#c3d0d0')
+  gradient.addColorStop(.59,'#73878b')
+  gradient.addColorStop(.83,'#52646c')
+  gradient.addColorStop(1,'#8d9b98')
   ctx.fillStyle=gradient
-  ctx.fillRect(0,0,128,64)
-  ctx.fillStyle='#f8ffff'
-  for(const x of [12,42,76,107])ctx.fillRect(x,7,7,20)
+  ctx.fillRect(0,0,256,128)
+  // Large ceiling panels and linear fluorescent strips make the physically
+  // plausible specular highlights visible even on brushed, rough materials.
+  for(const x of [10,45,79,115,150,190,225]){
+    ctx.fillStyle='#fffefa'
+    ctx.fillRect(x,10,12,29)
+    ctx.fillStyle='#fcead0'
+    ctx.fillRect(x+1,40,10,5)
+  }
+  ctx.fillStyle='#364953'
+  for(const x of [20,70,126,180,238])ctx.fillRect(x,79,5,25)
   const texture=new THREE.CanvasTexture(canvas)
   texture.mapping=THREE.EquirectangularReflectionMapping
   texture.colorSpace=THREE.SRGBColorSpace
@@ -131,20 +176,27 @@ export const createSupermarketInterior=(
   const {addBox,flushStaticBoxes}=createStaticBoxBatcher()
   const floorMaps=makeFloorMaps(renderer)
   const unit=new THREE.BoxGeometry(1,1,1)
-  const shopWhite=baseMaterial(0xdce6df,.44,.2)
-  const steel=baseMaterial(0x6c7f87,.27,.77)
-  const trim=baseMaterial(0xbecac8,.35,.37)
+  const shopWhite=baseMaterial(0xdce6df,.38,.18)
+  const brushedSteel=createBrushedSteelMaps()
+  const steel=baseMaterial(0x6c7f87,.33,.79)
+  const trim=baseMaterial(0xbecac8,.38,.45)
+  for(const metal of [steel,trim]){
+    metal.normalMap=brushedSteel.normal
+    metal.normalScale.set(.22,.22)
+    metal.roughnessMap=brushedSteel.rough
+  }
   const billboard=baseMaterial(0x3c6967,.4,.15)
   const floorHigh=new THREE.MeshPhysicalMaterial({
     map:floorMaps.diffuse,roughnessMap:floorMaps.roughness,
-    normalMap:floorMaps.normal,normalScale:new THREE.Vector2(.38,.38),
-    color:0xf1f4ed,roughness:.56,metalness:.015,
-    clearcoat:.29,clearcoatRoughness:.32,envMapIntensity:.65,
+    normalMap:floorMaps.normal,normalScale:new THREE.Vector2(.49,.49),
+    color:0xf1f4ed,roughness:.44,metalness:.02,
+    clearcoat:.48,clearcoatRoughness:.20,envMapIntensity:1.3,
   })
   const floorBalanced=new THREE.MeshStandardMaterial({
     map:floorMaps.diffuse,normalMap:floorMaps.normal,
-    normalScale:new THREE.Vector2(.25,.25),color:0xf1f4ed,
-    roughness:.67,metalness:0,
+    roughnessMap:floorMaps.roughness,
+    normalScale:new THREE.Vector2(.32,.32),color:0xf1f4ed,
+    roughness:.53,metalness:.015,envMapIntensity:.85,
   })
   const floorPerformance=new THREE.MeshBasicMaterial({
     map:floorMaps.diffuse,color:0xdadfd9,
@@ -165,15 +217,15 @@ export const createSupermarketInterior=(
   const shadowCtx=shadowCanvas.getContext('2d')
   if(!shadowCtx)throw Error('Contact shadow canvas unavailable')
   const gradient=shadowCtx.createRadialGradient(32,32,8,32,32,32)
-  gradient.addColorStop(0,'rgba(17,24,24,.53)')
-  gradient.addColorStop(.62,'rgba(17,24,24,.28)')
+  gradient.addColorStop(0,'rgba(17,24,24,.80)')
+  gradient.addColorStop(.62,'rgba(17,24,24,.38)')
   gradient.addColorStop(1,'rgba(17,24,24,0)')
   shadowCtx.fillStyle=gradient
   shadowCtx.fillRect(0,0,64,64)
   const shadowTexture=new THREE.CanvasTexture(shadowCanvas)
   const shadowMaterial=new THREE.MeshBasicMaterial({
     map:shadowTexture,transparent:true,depthWrite:false,
-    opacity:.58,polygonOffset:true,polygonOffsetFactor:-1,
+    opacity:.85,polygonOffset:true,polygonOffsetFactor:-1,
   })
   const shadows=new THREE.InstancedMesh(
     new THREE.PlaneGeometry(1,1),shadowMaterial,supermarketObstacles.length,
@@ -189,6 +241,8 @@ export const createSupermarketInterior=(
   shadows.instanceMatrix.needsUpdate=true
   shadows.name='Visual-only fixture contact shading'
   room.add(shadows)
+  const seams=createWallSeamShading()
+  room.add(seams.root)
 
   const wall=baseMaterial(0xc2d0cf,.94,.015)
   const lowerWall=baseMaterial(0x6a827e,.8,.04)
@@ -225,21 +279,67 @@ export const createSupermarketInterior=(
   for(let z=-7.5;z<=7.5;z+=1.1){
     addBox(ceiling,unit,20,.025,.014,4.2,4.698,z,extrusion)
   }
-  const fixture=baseMaterial(0xcdd8d8,.27,.64)
-  const led=new THREE.MeshBasicMaterial({color:0xffffff,side:THREE.DoubleSide})
+  const fixture=baseMaterial(0xcdd8d8,.34,.64)
+  fixture.normalMap=brushedSteel.normal
+  fixture.normalScale.set(.16,.16)
+  fixture.roughnessMap=brushedSteel.rough
+  // Every strip is a physically emissive material; 4 clustered point emitters
+  // approximate the shared illumination field without 35 extra shadow maps.
+  const led=new THREE.MeshStandardMaterial({
+    color:0xfffbf1,emissive:0xfff0d2,emissiveIntensity:2.4,
+    roughness:.44,side:THREE.DoubleSide,
+  })
+  const xFixtures=[-3.5,-1.0,1.5,4.0,6.5,9.0,11.5]
+  const zFixtures=[-4.9,-2.1,.65,3.15,5.6]
   let lamps=0
-  for(const x of [-3.5,-1.0,1.5,4.0,6.5,9.0,11.5]){
-    for(const z of [-4.9,-2.1,.65,3.15,5.6]){
+  for(const x of xFixtures){
+    for(const z of zFixtures){
       addBox(ceiling,unit,1.74,.067,.115,x,4.55,z,fixture)
       addBox(ceiling,unit,1.65,.012,.083,x,4.508,z,led)
       lamps++
     }
   }
+  // Soft additive emission halos deliberately replace a full-screen bloom
+  // chain on Balanced: one batched draw, independent of screen resolution.
+  const glareCanvas=document.createElement('canvas')
+  glareCanvas.width=128;glareCanvas.height=64
+  const glareCtx=glareCanvas.getContext('2d')
+  if(!glareCtx)throw Error('Lamp glow canvas unavailable')
+  const glow=glareCtx.createRadialGradient(64,32,3,64,32,31)
+  glow.addColorStop(0,'rgba(255,250,235,.75)')
+  glow.addColorStop(.38,'rgba(255,244,221,.26)')
+  glow.addColorStop(1,'rgba(255,244,221,0)')
+  glareCtx.fillStyle=glow
+  glareCtx.fillRect(0,0,128,64)
+  const glareTexture=new THREE.CanvasTexture(glareCanvas)
+  const glareMaterial=new THREE.MeshBasicMaterial({
+    map:glareTexture,transparent:true,depthWrite:false,
+    blending:THREE.AdditiveBlending,side:THREE.DoubleSide,
+    color:0xffedd2,toneMapped:false,
+  })
+  const glareGeometry=new THREE.PlaneGeometry(1,1)
+  const glare=new THREE.InstancedMesh(glareGeometry,glareMaterial,lamps)
+  const glareTransform=new THREE.Object3D()
+  let glareIndex=0
+  for(const x of xFixtures){
+    for(const z of zFixtures){
+      glareTransform.position.set(x,4.481,z)
+      glareTransform.rotation.set(-Math.PI/2,0,0)
+      glareTransform.scale.set(2.15,.43,1)
+      glareTransform.updateMatrix()
+      glare.setMatrixAt(glareIndex++,glareTransform.matrix)
+    }
+  }
+  glare.instanceMatrix.needsUpdate=true
+  glare.name='Batched luminous fixture glare'
+  glare.renderOrder=2
+  ceiling.add(glare)
 
-  // Ambient + one clean directional shadow map, plus non-shadow fill spots.
-  const ambient=new THREE.HemisphereLight(0xf6ffff,0x87908e,2.55)
+  // Ambient + one clean directional shadow map plus clustered non-shadow
+  // lighting. The ceiling fixtures are visual-only; physics stays unchanged.
+  const ambient=new THREE.HemisphereLight(0xf6ffff,0x87908e,1.65)
   interior.add(ambient)
-  const key=new THREE.DirectionalLight(0xfff5e9,2.5)
+  const key=new THREE.DirectionalLight(0xfff5e9,2.15)
   key.position.set(3.8,9,5)
   key.castShadow=true
   key.shadow.mapSize.set(1024,1024)
@@ -248,12 +348,15 @@ export const createSupermarketInterior=(
   key.shadow.bias=-.00035
   key.shadow.normalBias=.018
   interior.add(key)
-  const softLight=new THREE.PointLight(0xe9f9fc,28,21,2)
-  softLight.position.set(7,4.15,-2.4)
-  interior.add(softLight)
-  const softWarm=new THREE.PointLight(0xffedce,19,18,2)
-  softWarm.position.set(.6,4.15,2.7)
-  interior.add(softWarm)
+  const lightClusters=([
+    [-1.25,-3.5],[7,-3.5],[-1.25,3.15],[7,3.15],
+  ] as const).map(([x,z])=>{
+    const light=new THREE.PointLight(0xfff2e1,27,10,2)
+    light.position.set(x,4.25,z)
+    light.castShadow=false
+    interior.add(light)
+    return light
+  })
 
   const rack=new THREE.Group()
   rack.name='PBR shelving and merchandise'
@@ -359,11 +462,18 @@ export const createSupermarketInterior=(
     const low=quality==='performance'
     stock.setQuality(quality)
     shadows.visible=!low
+    seams.setQuality(quality)
+    shadowMaterial.opacity=quality==='high' ? .89 : .74
     for(const {mesh,original,fast} of architecture)
       mesh.material=low?fast:original
     scene.environment=low?null:environment
-    softLight.visible=quality==='high'
-    softWarm.visible=quality==='high'
+    led.emissiveIntensity=quality==='high' ? 3.1 : low ? .75 : 1.9
+    glare.visible=!low
+    glareMaterial.opacity=quality==='high' ? .72 : .37
+    ambient.intensity=quality==='high'?1.5:low?1.95:1.65
+    for(const [index,light] of lightClusters.entries()){
+      light.visible=!low&&(quality==='high'||index===0||index===3)
+    }
     // One shadow-casting key, no dynamic reflection captures.
     key.castShadow=!low
     floor.material=quality==='high'?floorHigh:
@@ -377,6 +487,7 @@ export const createSupermarketInterior=(
       stock.dispose()
       decor.dispose()
       floorMaps.dispose()
+      brushedSteel.dispose()
       scene.remove(interior)
       interior.traverse(object=>{
         if(object instanceof THREE.Mesh){
@@ -389,6 +500,10 @@ export const createSupermarketInterior=(
       for(const material of [floorHigh,floorBalanced,floorPerformance])material.dispose()
       for(const {original,fast} of architecture){original.dispose();fast.dispose()}
       shadowTexture.dispose()
+      seams.dispose()
+      glareGeometry.dispose()
+      glareMaterial.dispose()
+      glareTexture.dispose()
       environment.dispose()
     },
   }

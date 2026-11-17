@@ -27,6 +27,7 @@ test('every page ships the RealityLoop flask/caliper icon and Taskyon palette', 
   assert.match(icon, /#2a3548/)
   assert.match(icon, /#f78f3b/)
   assert.match(icon, /flask and caliper in an iteration loop/)
+  assert.doesNotMatch(icon, /<rect[^>]*fill="#fff(?:fff)?"/, 'App icon background must be transparent')
   assert.doesNotMatch(icon, /#7fa042|#8bb4ed|design node/)
   for (const page of pages) {
     const html = await readFile(new URL(page, site), 'utf8')

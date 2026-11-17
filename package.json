@@ -30,6 +30,7 @@
     "build:web": "vite build --outDir dist-web",
     "bench:render": "node scripts/benchmark-supermarket.mjs",
     "capture:readme": "node scripts/capture-readme.mjs",
+    "check:visual": "node scripts/check-browser-lighting.mjs",
     "build:dag-runtime": "node tools/build-comp-dag-runtime.mjs",
     "dev": "vite --host 127.0.0.1",
     "check": "tsc --noEmit",

@@ -1,6 +1,7 @@
 import {strict as assert} from 'node:assert'
 import {test} from 'node:test'
 import {shouldCaptureSensorPreview,updateAutoQuality,type AutoQualityState} from '../viewer/render-policy.ts'
+import {useScreenSpaceAO} from '../viewer/supermarket-postfx.ts'
 
 test('secondary RGB render is skipped whenever its panel cannot be seen',()=>{
   const base={now:1200,lastCapture:500,quality:'high' as const}
@@ -17,6 +18,15 @@ test('sensor camera preview stays rate-limited at every graphics quality',()=>{
     assert.equal(shouldCaptureSensorPreview(base),true)
     assert.equal(shouldCaptureSensorPreview({...base,now:1499}),false)
   }
+})
+
+test('screen-space AO is high quality and hardware-only; fast tiers use contact shading',()=>{
+  for(const quality of ['performance','balanced'] as const){
+    assert.equal(useScreenSpaceAO(quality,false,true),false)
+  }
+  assert.equal(useScreenSpaceAO('high',false,true),true)
+  assert.equal(useScreenSpaceAO('high',true,true),false)
+  assert.equal(useScreenSpaceAO('high',false,false),false)
 })
 
 test('auto graphics degrades quickly but upgrades only after sustained headroom',()=>{

@@ -1,6 +1,8 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { createSupermarketInterior } from './supermarket-interior.ts'
+import { createSupermarketPostFX } from './supermarket-postfx.ts'
+import { createRobotContactShadow } from './contact-shading.ts'
 import {
   shouldCaptureSensorPreview,updateAutoQuality,
   type VisualQuality,type AutoQualityState,
@@ -44,6 +46,11 @@ const rendererName=String(gl.getParameter(
   rendererInfo?rendererInfo.UNMASKED_RENDERER_WEBGL:gl.RENDERER))
 const softwareRenderer=/swiftshader|llvmpipe|softpipe|software|lavapipe/i.test(rendererName)
 document.body.classList.toggle('software-renderer',softwareRenderer)
+const postFX=createSupermarketPostFX(renderer,scene,camera,softwareRenderer)
+const robot=createTennantT7AMR()
+const contactShadow=createRobotContactShadow()
+robot.add(contactShadow.mesh)
+scene.add(robot)
 let graphicsQuality:VisualQuality='high'
 const applyQuality=(quality:VisualQuality)=>{
   if(quality===graphicsQuality && renderer.getPixelRatio()===
@@ -54,12 +61,12 @@ const applyQuality=(quality:VisualQuality)=>{
   renderer.shadowMap.enabled=quality!=='performance'
   renderer.shadowMap.needsUpdate=true
   interior.setVisualQuality(quality)
+  postFX.setQuality(quality,innerWidth,innerHeight)
+  contactShadow.setQuality(quality)
 }
 applyQuality(softwareRenderer?'performance':'balanced')
 const goal = new THREE.Mesh(new THREE.RingGeometry(0.43,0.51,48),new THREE.MeshBasicMaterial({color:0xf78f3b,side:THREE.DoubleSide}))
 goal.rotation.x=-Math.PI/2;goal.position.set(7.5,0.016,0);scene.add(goal)
-const robot=createTennantT7AMR()
-scene.add(robot)
 const slamView=new SlamView(elem('slam-map') as HTMLCanvasElement,scene)
 const trailGeometry=new THREE.BufferGeometry()
 const trailMaterial=new THREE.LineBasicMaterial({color:0xd6deea,transparent:true,opacity:0.95})
@@ -188,7 +195,7 @@ const render=(now:number)=>{
     }
   }
   controls.update()
-  renderer.render(scene,camera)
+  postFX.render()
   fpsFrames++
   if(now-fpsWindowStart>=1000){
     const fps=Math.round(fpsFrames*1000/(now-fpsWindowStart))
@@ -273,6 +280,7 @@ addEventListener('resize',()=>{
   camera.aspect=innerWidth/innerHeight
   camera.updateProjectionMatrix()
   renderer.setSize(innerWidth,innerHeight)
+  postFX.resize(innerWidth,innerHeight)
 })
 void slamView.enablePclIcp()
 void run('detour')
