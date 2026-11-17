@@ -21,11 +21,13 @@ for (const page of pages) {
   })
 }
 
-test('every page ships the original RealityLoop icon and shared Taskyon palette', async () => {
+test('every page ships the RealityLoop flask/caliper icon and Taskyon palette', async () => {
   const icon = await readFile(new URL('realityloop-icon.svg', site), 'utf8')
   assert.match(icon, /viewBox="0 0 128 128"/)
   assert.match(icon, /#2a3548/)
   assert.match(icon, /#f78f3b/)
+  assert.match(icon, /flask and caliper in an iteration loop/)
+  assert.doesNotMatch(icon, /#7fa042|#8bb4ed|design node/)
   for (const page of pages) {
     const html = await readFile(new URL(page, site), 'utf8')
     assert.ok(html.includes(`href="${prefix}realityloop-icon.svg"`), `Missing favicon: ${page}`)
@@ -54,6 +56,7 @@ test('README documents real browser-rendered operator and shopper screenshots', 
     readme.indexOf('docs/realityloop-supermarket-shopper-view.png') < readme.indexOf('## Run'),
     'The customer-eye-level capture must be the leading README image',
   )
+  assert.doesNotMatch(readme, /This is the simulated environment.not an external photograph or a calibrated digital twin|not a reference photograph or AI-generated image/i)
   for (const filename of ['realityloop-supermarket-ui.png', 'realityloop-supermarket-shopper-view.png']) {
     assert.ok(readme.includes(`docs/${filename}`), `README missing ${filename}`)
     const png = await readFile(new URL(`../docs/${filename}`, import.meta.url))

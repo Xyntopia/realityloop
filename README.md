@@ -4,7 +4,7 @@
 
 ![Actual RealityLoop supermarket simulation from a customer's eye-level perspective](docs/realityloop-supermarket-shopper-view.png)
 
-*Actual screenshot from RealityLoop's browser renderer, using its 1.68 m aisle camera; not a reference photograph or AI-generated image.*
+*Customer's eye-level view of the supermarket simulation (1.68 m camera).*
 
 ## Run
 
@@ -22,7 +22,7 @@ The root page lists independent examples: supermarket cleaning and wheel tractio
 
 ## Taskyon-family visual identity
 
-The standalone gallery, supermarket controls and traction lab share `viewer/theme.css`, using **primary slate `#2A3548` and secondary orange `#F78F3B`**. The optional Taskyon olive accent is intentionally not part of the everyday RealityLoop interface. Diagnostic overlays use orange and neutral white/slate for distinct data series. The current `public/realityloop-icon.svg` remains the provisional favicon and page mark until the final physical-world identity is selected. Scene materials, robot paint, products and sensor calculations do **not** inherit brand colors.
+The standalone gallery, supermarket controls and traction lab share `viewer/theme.css`, using **primary slate `#2A3548` and secondary orange `#F78F3B`**. The optional Taskyon olive accent is intentionally not part of the everyday RealityLoop interface. Diagnostic overlays use orange and neutral white/slate for distinct data series. The `public/realityloop-icon.svg` logo uses an Erlenmeyer flask, a vernier caliper and a simple iteration loop; it is shared by the gallery, viewers and browser favicons. Scene materials, robot paint, products and sensor calculations do **not** inherit brand colors.
 
 ## GitHub Pages deployment (static demos)
 
