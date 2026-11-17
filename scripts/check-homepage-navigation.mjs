@@ -48,6 +48,12 @@ try {
       'Horizontal overflow: '+JSON.stringify(position))
     const supermarket=page.locator('#supermarket')
     assert.equal(await supermarket.evaluate(e=>e.matches(':target')),true)
+    await page.locator('a[href="#intro"]').first().click()
+    await page.waitForFunction(()=>location.hash==='#intro')
+    const introPosition=await targetPosition('intro')
+    assert(introPosition.top>=introPosition.headerHeight-5,
+      'Intro hidden by header: '+JSON.stringify(introPosition))
+    assert(introPosition.top<height*.7)
     await page.locator('a[href="#how-it-works"]').first().click()
     await page.waitForFunction(()=>location.hash==='#how-it-works')
     const notePosition=await targetPosition('how-it-works')
@@ -67,11 +73,14 @@ try {
       anchors.map(a=>({href:a.href,text:a.textContent?.trim()})))
     assert.equal(docs.length,4)
     assert(docs.every(d=>d.href.startsWith('https://taskyon.space/docs/taskyon/')))
+    const partnerLinks=await page.locator('.site-links .partner-link').count()
+    assert.equal(partnerLinks,3)
+    assert.equal(await page.locator('.site-links .partner-logo').count(),3)
     assert.equal(await page.locator('.site-links a[href="https://xyntopia.com/"]').count(),1)
     assert.equal(await page.locator('footer a[href="https://xyntopia.com/"]').count(),1)
     assert.deepEqual(errors,[])
     console.log(JSON.stringify({width,status:'PASS',cards:cards?6:0,
-      directLink:'#supermarket',navigation:'#how-it-works -> #mars -> back',
+      directLink:'#supermarket',navigation:'#intro -> #how-it-works -> #mars -> back',
       docs:docs.length,errors}))
     await page.close()
   }

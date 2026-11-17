@@ -25,14 +25,14 @@ for (const page of pages) {
 test('homepage navigation links to sections, developer and related projects', async () => {
   const html = await readFile(new URL('index.html', site), 'utf8')
   assert.match(html, /<nav class="site-links" aria-label="Page sections and related projects">/)
-  for (const fragment of ['examples','other-experiments','how-it-works'])
+  for (const fragment of ['intro','examples','other-experiments','how-it-works'])
     assert.ok(html.includes(`href="#${fragment}"`),`Missing navigation link #${fragment}`)
-  for (const fragment of ['examples','other-experiments','how-it-works'])
+  for (const fragment of ['intro','examples','other-experiments','how-it-works'])
     assert.ok(html.includes(`id="${fragment}"`),`Missing target #${fragment}`)
-  assert.match(html, /href="https:\/\/xyntopia\.com\/"[^>]*>Xyntopia<\/a>/)
+  assert.match(html, /href="https:\/\/xyntopia\.com\/"[^>]*>\s*<img class="partner-logo" src="https:\/\/www\.xyntopia\.com\/assets\/xyntopia_dark_bg\.png"[^>]*\/>Xyntopia<\/a>/)
   assert.match(html, /Developed by <a href="https:\/\/xyntopia\.com\/">Xyntopia<\/a>/)
-  assert.match(html, /href="https:\/\/taskyon\.space\/"[^>]*>Taskyon<\/a>/)
-  assert.match(html, /href="https:\/\/github\.com\/CogniPilot\/rumoca"/)
+  assert.match(html, /href="https:\/\/taskyon\.space\/"[^>]*>\s*<img class="partner-logo" src="https:\/\/taskyon\.space\/icons\/favicon-128x128\.png"[^>]*\/>Taskyon<\/a>/)
+  assert.match(html, /href="https:\/\/rumoca\.cognipilot\.org\/"[^>]*>\s*<img class="partner-logo" src="https:\/\/rumoca\.cognipilot\.org\/images\/rumoca\.svg"[^>]*\/>Rumoca \/ Modelica<\/a>/)
 })
 
 test('Taskyon documentation links target project, graph, workflow and Modelica docs',async()=>{

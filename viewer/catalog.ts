@@ -74,6 +74,18 @@ for (const example of realityLoopExamples) {
 // Browser hash navigation runs before the JavaScript-rendered cards exist.
 // Correct the initial position once the catalog is mounted, and support
 // later hash changes (including back/forward) without reloading the page.
+const stickyHeader = document.querySelector<HTMLElement>('.site-header')
+if(stickyHeader){
+  const updateScrollOffset = () => {
+    document.documentElement.style.setProperty(
+      '--rl-header-scroll-offset',
+      Math.ceil(stickyHeader.getBoundingClientRect().height + 16)+'px',
+    )
+  }
+  updateScrollOffset()
+  new ResizeObserver(updateScrollOffset).observe(stickyHeader)
+}
+
 const scrollToHashTarget = () => {
   // Anchors are intentionally stable ASCII slugs; no decoding of untrusted
   // fragments is necessary (or able to throw on malformed percent sequences).

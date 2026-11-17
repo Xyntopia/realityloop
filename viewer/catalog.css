@@ -24,13 +24,21 @@ main { max-width: 1250px; margin: auto; padding: 30px 38px 80px; }
 .site-links a:hover { color: var(--rl-ink); }
 .site-links .section-link { color: var(--rl-ink-soft); font-weight: 650; }
 .site-links .section-link:hover { color: var(--rl-orange-light); }
+.site-links .partner-link {
+  display: inline-flex; align-items: center; gap: 7px;
+  min-height: 30px; white-space: nowrap;
+}
+.partner-logo {
+  display: block; width: 26px; height: 26px; flex: none;
+  object-fit: contain; border-radius: 4px;
+}
 .nav-divider { width: 1px; height: 16px; background: var(--rl-border); }
 .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; flex: none; }
 .site-header a:focus-visible, .card-permalink:focus-visible {
   outline: 2px solid var(--rl-orange-light); outline-offset: 4px;
 }
-:where(#top, #examples, #other-experiments, #how-it-works, .example-card) {
-  scroll-margin-top: 105px;
+:where(#top, #intro, #examples, #other-experiments, #how-it-works, .example-card) {
+  scroll-margin-top: var(--rl-header-scroll-offset, 105px);
 }
 .logo {
   width: 43px; height: 43px; display: block; flex: none;
@@ -185,10 +193,12 @@ footer a:hover { color: var(--rl-ink); }
   .hero { padding: 50px 0; }
   .site-header, main { padding-left: 20px; padding-right: 20px; }
   .site-header { flex-wrap: wrap; gap: 12px; padding-top: 12px; padding-bottom: 12px; }
-  .site-links { justify-content: flex-start; gap: 10px 16px; }
-  :where(#top, #examples, #other-experiments, #how-it-works, .example-card) {
-    scroll-margin-top: 155px;
+  .site-links { justify-content: flex-start; gap: 6px 12px; }
+  .site-links .partner-link {
+    font-size: 0; gap: 0; min-width: 36px; min-height: 36px;
+    justify-content: center;
   }
+  .site-links .partner-logo { width: 25px; height: 25px; }
   .count { display: none; }
   .hero > p:first-of-type { font-size: 14px; }
   .ownership-principle { padding: 22px 20px; }
