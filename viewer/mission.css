@@ -21,6 +21,16 @@ a:hover { text-decoration:underline }
   pointer-events:none;text-shadow:0 1px 6px #0009}
 .scene-caption span:first-child{font-size:10px;font-weight:800;color:var(--rl-orange-light);letter-spacing:.16em}
 .scene-caption span:last-child{font-size:18px;font-weight:700}
+.inspection-panel {
+  position:absolute;right:17px;bottom:92px;width:285px;
+  padding:11px 13px;background:#07131cea;border:1px solid #3a6781;
+  border-radius:10px;z-index:3;box-shadow:0 8px 28px #01060b88;
+  pointer-events:none;
+}
+.inspection-panel[hidden]{display:none}
+.inspection-heading{font-size:10px;color:#66d6f0;letter-spacing:.12em;font-weight:750;margin-bottom:8px}
+.inspection-panel canvas{display:block;width:100%;height:auto;border:1px solid #25465a;border-radius:5px}
+.inspection-panel p{font-size:10px;color:#c7d9e2;line-height:1.55;margin:7px 0 0}
 .stage-timeline { display:flex;align-items:center;gap:13px;padding:15px 19px;
   background:#152235;border-top:1px solid #405061;color:#ccd5dd;font-size:12px }
 .stage-timeline input {flex:1;min-width:25px;accent-color:var(--rl-secondary)}
@@ -30,7 +40,16 @@ a:hover { text-decoration:underline }
 h1 {font-size:clamp(25px,3vw,35px);letter-spacing:-.045em;line-height:1.13;margin:13px 0}
 #mission-description {line-height:1.6;font-size:13px;color:var(--rl-muted)}
 label {display:block;margin:19px 0 8px;font-size:11px;font-weight:700;color:var(--rl-ink-soft)}
-select,button,input[type=range] {font:inherit}
+select,button,input[type=range],input[type=number] {font:inherit}
+.orbital-controls{margin-top:17px;border:1px solid #47586b;border-radius:7px;padding:12px}
+.orbital-controls[hidden]{display:none}
+.orbital-controls summary{cursor:pointer;font-size:12px;color:var(--rl-ink-soft);font-weight:700}
+.orbital-controls .orbital-help{color:var(--rl-muted);line-height:1.5;font-size:11px}
+.orbital-controls label{margin:12px 0 4px}
+.orbital-controls input[type=number]{
+  display:block;width:100%;background:#222e40;color:var(--rl-ink);
+  border:1px solid #47586b;border-radius:6px;padding:7px 9px;font-size:12px
+}
 select {width:100%;color:var(--rl-ink);border:1px solid #47586b;border-radius:7px;
   padding:11px;background:#222e40;font-size:12px}
 button {border:1px solid #6e8290;border-radius:7px;background:#33445b;color:#fff;padding:10px 15px;cursor:pointer;font-size:12px}
@@ -60,5 +79,6 @@ h2 {font-size:14px;margin:28px 0 12px}
   .mission-header{padding:13px 17px}.mission-header nav{gap:10px}
   .brand strong{font-size:17px}.brand small{display:none}
   .stage-timeline{gap:7px;padding:12px}.stage-timeline select{width:66px}
+  .inspection-panel{right:9px;bottom:80px;width:min(220px,58vw);padding:8px}
   .panel{padding:22px 17px}
 }

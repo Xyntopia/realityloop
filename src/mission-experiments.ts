@@ -1,4 +1,5 @@
 import {z} from 'zod'
+import {orbitalElementsSchema} from './orbital-elements.ts'
 
 /** Geometry and examples are independently authored, not imported artwork.
  * Every solver below is deterministic and scoped to rigid-body attitude or
@@ -10,6 +11,8 @@ export const satelliteScenarioSchema=z.object({
   durationSeconds:z.number().positive().max(160),
   intervalSeconds:z.number().min(.01).max(.15),
   torqueLimitNm:z.number().positive().max(2),
+  orbitalModel:z.literal('KeplerFormation').default('KeplerFormation'),
+  orbitalElements:orbitalElementsSchema.optional(),
 }).strict()
 export const terrainScenarioSchema=z.object({
   kind:z.literal('terrain-traverse'),

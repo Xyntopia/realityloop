@@ -312,10 +312,82 @@ const createDistantRover=(scene:THREE.Scene)=>{
   }
 }
 
+const marsContactTexture=()=>{
+  // DataTexture is deterministic and can also be built in headless Node tests.
+  const size=128,pixels=new Uint8Array(size*size*4)
+  for(let y=0;y<size;y++)for(let x=0;x<size;x++){
+    const radius=Math.hypot(x-64,y-64)/60
+    const opacity=radius>=1 ? 0 : radius<.4
+      ? .57-.23*radius/.4 : .34*(1-radius)/.6
+    const i=(y*size+x)*4
+    pixels[i]=30;pixels[i+1]=15;pixels[i+2]=12
+    pixels[i+3]=Math.round(255*opacity)
+  }
+  const texture=new THREE.DataTexture(pixels,size,size,THREE.RGBAFormat)
+  texture.minFilter=THREE.LinearFilter;texture.magFilter=THREE.LinearFilter
+  texture.needsUpdate=true
+  return texture
+}
+/** Static local AO/contact footprint, also available on software renderers.
+ * No simulated regolith deformation or true global illumination. */
+const contact=(root:THREE.Object3D,texture:THREE.Texture,
+  width:number,depth:number,x:number,y:number,z:number)=>{
+  const plane=new THREE.Mesh(new THREE.PlaneGeometry(width,depth),
+    new THREE.MeshBasicMaterial({
+      map:texture,transparent:true,depthWrite:false,opacity:.62,
+      polygonOffset:true,polygonOffsetFactor:-1,
+    }))
+  plane.rotation.x=-Math.PI/2
+  plane.position.set(x,y,z)
+  plane.renderOrder=1
+  plane.name='Mars procedural ambient contact footprint'
+  root.add(plane)
+  return plane
+}
+export const addMarsRoverContactShadow=(rover:THREE.Group)=>{
+  const texture=marsContactTexture()
+  contact(rover,texture,2.4,1.8,0,.034,0)
+}
+
+const addMarsRockFragments=(scene:THREE.Scene)=>{
+  const rocks=new THREE.InstancedMesh(
+    new THREE.IcosahedronGeometry(1,1),
+    new THREE.MeshStandardMaterial({
+      color:0xffffff,roughness:.97,flatShading:true,metalness:0,
+    }),225,
+  )
+  rocks.name='Layered basalt and sediment fragments (visual only)'
+  const colors=[0x68554c,0x97705b,0xaf805f,0x6f5045,0xb89374,0x7a6155]
+  const holder=new THREE.Object3D(),tone=new THREE.Color()
+  const random=(i:number)=>{const n=Math.sin(i*91.93+19.67)*17963.11;return n-Math.floor(n)}
+  for(let i=0;i<rocks.count;i++){
+    const x=-12+random(i*7)*24,z=-8+random(i*7+1)*16
+    const size=.045+random(i*7+2)*.19
+    holder.position.set(x,terr(x,z)+size*.29,z)
+    holder.rotation.set(random(i*7+3)*.34,random(i*7+4)*6.2,
+      random(i*7+5)*.3)
+    holder.scale.set(size*(1.2+random(i*7+6)),size*.44,size*.87)
+    holder.updateMatrix()
+    rocks.setMatrixAt(i,holder.matrix)
+    tone.set(colors[i%colors.length])
+    rocks.setColorAt(i,tone)
+  }
+  rocks.instanceMatrix.needsUpdate=true
+  if(rocks.instanceColor)rocks.instanceColor.needsUpdate=true
+  rocks.castShadow=true;rocks.receiveShadow=true;rocks.frustumCulled=false
+  scene.add(rocks)
+}
+
+
 export const addMarsHabitat=(scene:THREE.Scene)=>{
   scene.background=new THREE.Color(0xf0bd9c)
-  scene.fog=new THREE.FogExp2(0xdca787,.012)
+  scene.fog=new THREE.FogExp2(0xdca787,.009)
   addHorizon(scene)
+  const footprints=marsContactTexture()
+  contact(scene,footprints,6.8,4.8,2.85,terr(2.85,3.15)+.045,3.15)
+  contact(scene,footprints,2.7,2.0,-1.75,terr(-1.75,-2.3)+.04,-2.3)
+  contact(scene,footprints,1.6,1.5,.25,terr(.25,2.4)+.04,2.4)
+  addMarsRockFragments(scene)
   createStack(scene)
   const leftArm=addManipulator(scene,vector(1.8,terr(1.8,2.1)+1.13,2.1),.8)
   const rightArm=addManipulator(scene,vector(4.4,terr(4.4,2.0)+1.12,2.0),2.4)

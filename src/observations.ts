@@ -2,6 +2,7 @@ import {
   sampleRobotSensors, scanLidar3D, type SensorFrame, type PointCloud3D,
 } from './sensors.ts'
 import type { Pose2D } from './slam.ts'
+import type {InspectionSnapshot} from './orbital-inspection.ts'
 
 type PoseSample=Pose2D & {speed:number;timeSeconds:number}
 const isPoseSample=(sample:unknown):sample is PoseSample=>{
@@ -18,6 +19,12 @@ export type RealityLoopObservations = {
   lidar:readonly {timeSeconds:number;clouds:readonly PointCloud3D[]}[]
   source:'simulation-trajectory'
   lidarPeriodSeconds:number
+  /** Only the satellite formation has these explicit independent scans. */
+  orbitalInspection?:{
+    kind:'synthetic-planar-range-icp'
+    scans:readonly {timeSeconds:number;snapshot:InspectionSnapshot}[]
+    initialPosePrior:'coarse'
+  }
 }
 
 /** Deterministic post-processing of the DAG simulation artifact.
@@ -36,7 +43,26 @@ export const createSensorObservations=(
   // Never silently export supermarket scans for Mars or a construction site.
   const scenario=result.scenario
   if(scenario&&typeof scenario==='object'&&'kind' in scenario&&
-    ['satellite-adcs','terrain-traverse'].includes(String(scenario.kind))){
+    scenario.kind==='satellite-adcs'){
+    const scans=result.observations.flatMap(sample=>{
+      if(!sample||typeof sample!=='object'||!('orbit' in sample))return []
+      const orbit=sample.orbit as {inspection?:InspectionSnapshot}|undefined
+      if(!orbit?.inspection)return []
+      const stamp=(sample as {timeSeconds?:unknown}).timeSeconds
+      return typeof stamp==='number'&&Number.isFinite(stamp)
+        ?[{timeSeconds:stamp,snapshot:orbit.inspection}]:[]
+    })
+    return {
+      schema:'realityloop.sensor-observations/v1',available:scans.length>0,
+      frames:[],lidar:[],source:'simulation-trajectory',lidarPeriodSeconds,
+      ...(scans.length?{orbitalInspection:{
+        kind:'synthetic-planar-range-icp' as const,scans,
+        initialPosePrior:'coarse' as const,
+      }}:{}),
+    }
+  }
+  if(scenario&&typeof scenario==='object'&&'kind' in scenario&&
+    scenario.kind==='terrain-traverse'){
     return {schema:'realityloop.sensor-observations/v1',available:false,
       frames:[],lidar:[],source:'simulation-trajectory',lidarPeriodSeconds}
   }

@@ -18,7 +18,22 @@ export const runExperiment = async (
 ): Promise<ExperimentResult> => {
   const object = typeof raw === 'object' && raw !== null ? raw : {}
   if ('kind' in object && object.kind === 'solar-plant') return runSolarPlantExperiment(raw)
-  if ('kind' in object && ['satellite-adcs','terrain-traverse'].includes(String(object.kind))){
+  if ('kind' in object && object.kind==='satellite-adcs'){
+    const {parseMissionScenario,runSatelliteScenario}=await import('./mission-experiments.ts')
+    const {orbitalModelicaScenario,joinSatelliteWithModelicaOrbit}
+      =await import('./orbital-formation.ts')
+    const {runModelicaScenario}=await import('./modelica/node.ts')
+    const scenario=parseMissionScenario(raw)
+    if(scenario.kind!=='satellite-adcs')throw Error('Expected satellite scenario')
+    const orbital=await runModelicaScenario(
+      orbitalModelicaScenario(
+        scenario.durationSeconds,scenario.intervalSeconds,scenario.orbitalElements,
+      ),
+      projectDirectory,
+    )
+    return joinSatelliteWithModelicaOrbit(runSatelliteScenario(scenario),orbital)
+  }
+  if ('kind' in object && object.kind==='terrain-traverse'){
     return runMissionExperiment(raw)
   }
   if ('kind' in object && object.kind === 'modelica') {

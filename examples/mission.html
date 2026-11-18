@@ -14,6 +14,12 @@
   <section class="stage" aria-label="Live simulated 3D scene">
     <div id="viewport" class="viewport"></div>
     <div class="scene-caption"><span id="scene-tag">SIMULATION</span><span id="scene-name">Loading</span></div>
+    <div id="inspection-panel" class="inspection-panel" hidden aria-label="Servicer planar ICP scan-map overlay">
+      <div class="inspection-heading">SERVICER · PLANAR SCAN ICP</div>
+      <canvas id="inspection-map" width="256" height="176" aria-label="Recorded planar target reconstruction"></canvas>
+      <p id="inspection-status">Awaiting first synthetic scan</p>
+      <p id="orbit-state">Orbit propagation not yet loaded</p>
+    </div>
     <div class="stage-timeline">
       <button id="play" type="button">Pause</button>
       <input id="timeline" type="range" min="0" value="0" max="100" step="1" aria-label="Timeline frame"/>
@@ -42,6 +48,30 @@
         <option value="asymmetric">Asymmetric structure</option>
       </select>
     </div>
+    <div id="orbital-camera-controls" class="control">
+      <label for="orbital-camera">Orbital camera</label>
+      <select id="orbital-camera" aria-label="Orbital camera view">
+        <option value="formation" selected>Formation overview</option>
+        <option value="chief">Chief close-up</option>
+        <option value="servicer">Inspection servicer close-up</option>
+      </select>
+    </div>
+    <details id="orbital-controls" class="control orbital-controls">
+      <summary>Orbital elements · chief + servicer</summary>
+      <p class="orbital-help">Classical Kepler elements at t = 0, in the Earth-centered inertial frame. The servicer uses a small differential eccentricity and along-track phase. Changing these values reruns the Modelica solver.</p>
+      <label for="orbit-a-km">Semi-major axis above Earth reference radius · km</label>
+      <input id="orbit-a-km" type="number" min="322" max="1422" step="1" value="500"/>
+      <label for="orbit-e">Eccentricity · e</label>
+      <input id="orbit-e" type="number" min="0" max="0.012" step="0.0001" value="0.0011"/>
+      <label for="orbit-i-deg">Inclination · degrees</label>
+      <input id="orbit-i-deg" type="number" min="0" max="180" step="0.01" value="51.64"/>
+      <label for="orbit-raan-deg">Ascending node · RAAN · degrees</label>
+      <input id="orbit-raan-deg" type="number" min="0" max="360" step="0.01" value="20.05"/>
+      <label for="orbit-omega-deg">Argument of periapsis · degrees</label>
+      <input id="orbit-omega-deg" type="number" min="0" max="360" step="0.01" value="24.06"/>
+      <label for="orbit-m0-deg">Mean anomaly at epoch · degrees</label>
+      <input id="orbit-m0-deg" type="number" min="0" max="360" step="0.01" value="5.73"/>
+    </details>
     <div id="rover-candidate-controls" class="control">
       <label for="rover-candidate">Mars rover design candidate</label>
       <select id="rover-candidate">

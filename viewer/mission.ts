@@ -1,9 +1,15 @@
 import * as THREE from 'three'
 import {
-  runMissionExperiment,type MissionResult,type MissionScenario,
+  runMissionExperiment,runSatelliteScenario,parseMissionScenario,
+  type MissionResult,type MissionScenario,
 } from '../src/mission-experiments.ts'
+import {joinSatelliteWithModelicaOrbit} from '../src/orbital-formation.ts'
+import {createOrbitalMissionRunner} from './modelica-orbit.ts'
+import {createSupermarketPostFX} from './supermarket-postfx.ts'
+import type {InspectionSnapshot} from '../src/orbital-inspection.ts'
+import {orbitalElementsSchema} from '../src/orbital-elements.ts'
 import {runBrowserDag} from '../src/dag-browser.ts'
-import {createMissionWorld,type MissionScene} from './mission-scene.ts'
+import {createMissionWorld,type MissionScene,type OrbitalCameraMode} from './mission-scene.ts'
 import {isSoftwareRenderer} from './renderer-capabilities.ts'
 
 const $=<T extends HTMLElement>(id:string)=>document.getElementById(id) as T
@@ -16,8 +22,8 @@ const metadata:Record<MissionScene,{
 }>={
   satellite:{
     name:'Modular satellite attitude control',
-    description:'Reconfigure seven 40 cm modules and watch how the inertia tensor changes a reaction-wheel attitude manoeuvre.',
-    limit:'3-axis rigid-body Euler dynamics, a bounded PD reaction-wheel controller and a recomputed full inertia tensor. No orbit propagation, flexible modes, disturbance calibration or flight-qualified ADCS.',
+    description:'A Modelica-generated Keplerian low-Earth formation carries a modular spacecraft and a second inspection servicer. Its active synthetic planar range scans undergo ICP registration while reaction-wheel ADCS controls the target.',
+    limit:'Orbit: exact two-body Keplerian elements solved by Rumoca/Modelica at the recorded physical time, ECI metres (no J2, drag, SRP, or thrust). Inspection: idealized 2D body-plane range scans with a coarse initial pose prior and iterative closest-point registration; not 3D spacecraft SLAM, calibrated sensors or docking guidance. ADCS remains a simplified Euler/reaction-wheel model; Earth and spacecraft visual sizes are compressed independently.',
     tag:'RECONFIGURABLE SPACECRAFT',
   },
   mars:{
@@ -39,6 +45,15 @@ const scenarioFor=():MissionScenario=>{
     kind:'satellite-adcs',name:'modular-attitude-pointing',
     layout:$<HTMLSelectElement>('module-layout').value as 'compact'|'distributed'|'asymmetric',
     durationSeconds:100,intervalSeconds:.05,torqueLimitNm:.3,
+    orbitalModel:'KeplerFormation',
+    orbitalElements:orbitalElementsSchema.parse({
+      semiMajorAxis:6378137+1000*Number($<HTMLInputElement>('orbit-a-km').value),
+      eccentricity:Number($<HTMLInputElement>('orbit-e').value),
+      inclination:Number($<HTMLInputElement>('orbit-i-deg').value)*Math.PI/180,
+      raan:Number($<HTMLInputElement>('orbit-raan-deg').value)*Math.PI/180,
+      argumentOfPeriapsis:Number($<HTMLInputElement>('orbit-omega-deg').value)*Math.PI/180,
+      meanAnomalyAtEpoch:Number($<HTMLInputElement>('orbit-m0-deg').value)*Math.PI/180,
+    }),
   }
   return {
     kind:'terrain-traverse',
@@ -61,7 +76,10 @@ renderer.shadowMap.enabled=!isSoftwareRenderer(renderer)
 renderer.shadowMap.type=THREE.PCFSoftShadowMap
 renderer.setPixelRatio(Math.min(devicePixelRatio,1.35))
 $<HTMLDivElement>('viewport').append(renderer.domElement)
-let model:MissionResult|undefined
+let postFX=createSupermarketPostFX(
+  renderer,world.scene,world.camera,isSoftwareRenderer(renderer),
+)
+let model:MissionResult|ReturnType<typeof joinSatelliteWithModelicaOrbit>|undefined
 let frames:Record<string,any>[]=[]
 let currentIndex=0
 let playing=true
@@ -74,6 +92,7 @@ const fit=()=>{
   renderer.setSize(width,height,false)
   world.camera.aspect=width/height
   world.camera.updateProjectionMatrix()
+  postFX.setQuality(kind==='satellite'||kind==='mars',width,height,'ssao')
 }
 window.addEventListener('resize',fit)
 new ResizeObserver(fit).observe($('viewport'))
@@ -124,16 +143,58 @@ const chart=()=>{
   ctx.strokeStyle='#e7eff8';ctx.lineWidth=1
   ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke()
 }
+const displayInspection=(snapshot:InspectionSnapshot|undefined)=>{
+  const canvas=$<HTMLCanvasElement>('inspection-map')
+  const ctx=canvas.getContext('2d')
+  if(!ctx)return
+  const w=canvas.width,h=canvas.height
+  ctx.fillStyle='#07131c';ctx.fillRect(0,0,w,h)
+  ctx.strokeStyle='#35546a';ctx.lineWidth=1
+  ctx.beginPath();ctx.moveTo(w/2,0);ctx.lineTo(w/2,h)
+  ctx.moveTo(0,h/2);ctx.lineTo(w,h/2);ctx.stroke()
+  const project=(x:number,y:number)=>[w/2+x*29,h/2-y*29]
+  for(const [points,color,radius] of [
+    [snapshot?.mapPoints??[],'#32b7d2',1.4],
+    [snapshot?.scanPoints??[],'#f0b35b',2],
+  ] as const){
+    ctx.fillStyle=color
+    for(const p of points){
+      const [x,y]=project(p.x,p.y)
+      ctx.fillRect(x-radius,y-radius,radius*2,radius*2)
+    }
+  }
+  $('inspection-status').textContent=snapshot
+    ? `ICP ${snapshot.matches} matches · map ${snapshot.mapPoints.length} points · ${snapshot.rmsMetres?.toFixed(3)??'initial'} m residual`
+    : 'Awaiting first synthetic scan'
+}
 const showFrame=(index:number)=>{
   if(!frames.length)return
   currentIndex=Math.max(0,Math.min(index,frames.length-1))
   const frame=frames[currentIndex]
-  world.move(frame)
+  let scan:InspectionSnapshot|undefined
+  if(kind==='satellite'){
+    for(let i=currentIndex;i>=0;i--){
+      if(frames[i]?.orbit?.inspection){
+        scan=frames[i].orbit.inspection as InspectionSnapshot
+        break
+      }
+    }
+  }
+  world.move({...frame,inspection:scan})
+  if(frame.orbit){
+    const orbit=frame.orbit
+    $('orbit-state').textContent=
+      `Altitude ${((orbit.chiefRadiusMetres-6378137)/1000).toFixed(1)} km · `+
+      `servicer ${orbit.separationMetres.toFixed(2)} m · period `+
+      `${(orbit.periodSeconds/60).toFixed(1)} min`
+  }
+  if(kind==='satellite')displayInspection(scan)
   $<HTMLInputElement>('timeline').value=String(currentIndex)
   $('timeline-time').textContent=frame.timeSeconds.toFixed(1)+' s'
   chart()
 }
 const resetWorld=()=>{
+  postFX.dispose()
   // Mission switching creates different geometry and textures; dispose
   // redundant GPU allocations before building the next immutable scene.
   const geometries=new Set<THREE.BufferGeometry>()
@@ -157,6 +218,12 @@ const resetWorld=()=>{
   for(const texture of textures)texture.dispose()
   world=createMissionWorld(kind,
     $<HTMLSelectElement>('module-layout').value as 'compact'|'distributed'|'asymmetric')
+  postFX=createSupermarketPostFX(
+    renderer,world.scene,world.camera,isSoftwareRenderer(renderer),
+  )
+  if(kind==='satellite')world.setOrbitalCameraMode(
+    $<HTMLSelectElement>('orbital-camera').value as OrbitalCameraMode,
+  )
   fit()
 }
 const run=async()=>{
@@ -167,9 +234,23 @@ const run=async()=>{
   try{
     const scenario=scenarioFor()
     resetWorld()
+    const orbitalRunner=kind==='satellite'
+      ?await createOrbitalMissionRunner():undefined
     const executed=await runBrowserDag(scenario,
-      {model:'mission-physics/v1',scene:kind},
-      input=>runMissionExperiment(input))
+      {model:'mission-physics/v2',scene:kind,...orbitalRunner?.sourceLock},
+      input=>{
+        const parsed=parseMissionScenario(input)
+        if(parsed.kind==='satellite-adcs'){
+          if(!orbitalRunner)throw Error('No orbital Modelica runner')
+          return joinSatelliteWithModelicaOrbit(
+            runSatelliteScenario(parsed),
+            orbitalRunner.simulate(
+              parsed.durationSeconds,parsed.intervalSeconds,parsed.orbitalElements,
+            ),
+          )
+        }
+        return runMissionExperiment(parsed)
+      })
     if(generation!==requestGeneration)return
     model=executed.result
     frames=[...model.observations] as Record<string,any>[]
@@ -200,10 +281,13 @@ const setScene=(next:MissionScene)=>{
   $('mission-description').textContent=m.description
   $('model-limit').textContent=m.limit
   $('earth-credit').hidden=kind!=='satellite'
+  $('inspection-panel').hidden=kind!=='satellite'
   $('scene-tag').textContent=m.tag
   $('scene-name').textContent=m.name
   $<HTMLSelectElement>('mission-select').value=kind
   $('layout-controls').hidden=kind!=='satellite'
+  $('orbital-controls').hidden=kind!=='satellite'
+  $('orbital-camera-controls').hidden=kind!=='satellite'
   $('terrain-controls').hidden=kind!=='mars'&&kind!=='construction'
   $('rover-candidate-controls').hidden=kind!=='mars'
   $<HTMLInputElement>('friction').value=kind==='mars'?'.78':'.66'
@@ -215,6 +299,11 @@ $<HTMLSelectElement>('mission-select').addEventListener('change',event=>{
   setScene(next);void run()
 })
 $<HTMLSelectElement>('module-layout').addEventListener('change',()=>void run())
+$<HTMLSelectElement>('orbital-camera').addEventListener('change',event=>{
+  world.setOrbitalCameraMode(
+    (event.target as HTMLSelectElement).value as OrbitalCameraMode,
+  )
+})
 $<HTMLSelectElement>('rover-candidate').addEventListener('change',()=>void run())
 $<HTMLInputElement>('friction').addEventListener('input',()=>{
   $('friction-value').textContent=$<HTMLInputElement>('friction').value
@@ -245,7 +334,7 @@ const draw=(now:number)=>{
       playing=false;$('play').textContent='Play'
     }
   }
-  renderer.render(world.scene,world.camera)
+  postFX.render()
   requestAnimationFrame(draw)
 }
 setScene(kind)

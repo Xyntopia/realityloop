@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import blueMarbleUrl from '../assets/textures/blue-marble-july-2048.jpg?url'
+import {earthCloudAlpha} from '../src/earth-clouds.ts'
 
 /**
  * A display-only Earth backdrop, not propagated orbital state or a calibrated
@@ -7,51 +8,36 @@ import blueMarbleUrl from '../assets/textures/blue-marble-july-2048.jpg?url'
  * Next Generation global composite from NASA Earth Observatory.
  * Asset provenance and NASA usage terms: assets/textures/README.md.
  */
-const rand=(x:number,y:number)=>{
-  const n=Math.sin(x*127.1+y*311.7)*43758.5453
-  return n-Math.floor(n)
-}
-const noise=(x:number,y:number)=>{
-  const ix=Math.floor(x),iy=Math.floor(y)
-  const tx=x-ix,ty=y-iy
-  const sx=tx*tx*(3-2*tx),sy=ty*ty*(3-2*ty)
-  const v00=rand(ix,iy),v10=rand(ix+1,iy)
-  const v01=rand(ix,iy+1),v11=rand(ix+1,iy+1)
-  return ((1-sx)*v00+sx*v10)*(1-sy)+((1-sx)*v01+sx*v11)*sy
-}
-/** Intentionally subtle clouds: the Blue Marble base map is cloud-free.
- * Keeping this layer procedurally generated avoids a second image download. */
-const makeCloudMap=()=>{
-  const width=512,height=256
+/** Longitude-periodic, multi-scale cloud bands with two atmospheric
+ * decks. Procedural: this is not observed meteorology or a weather forecast. */
+const makeCloudMap=(layer:number)=>{
+  const width=layer===0?1024:512,height=layer===0?512:256
   const canvas=document.createElement('canvas')
   canvas.width=width;canvas.height=height
   const ctx=canvas.getContext('2d')
   if(!ctx)throw Error('Earth cloud layer requires Canvas2D')
   const pixels=ctx.createImageData(width,height)
   for(let y=0;y<height;y++){
-    const v=y/height
+    const v=y/(height-1)
     for(let x=0;x<width;x++){
-      const u=x/width
-      const n=.55*noise(u*16,v*8)
-        +.27*noise(u*38,v*19)
-        +.18*noise(u*91,v*45)
-      const belts=.065*Math.sin(v*48+3*Math.sin(u*13))
-      const alpha=Math.min(175,Math.max(0,(n+belts-.58)*850))
+      const u=x/(width-1)
+      const alpha=earthCloudAlpha(u,v,layer)
       const offset=(y*width+x)*4
-      pixels.data[offset]=237
-      pixels.data[offset+1]=243
-      pixels.data[offset+2]=247
+      pixels.data[offset]=layer===0?241:224
+      pixels.data[offset+1]=layer===0?246:236
+      pixels.data[offset+2]=250
       pixels.data[offset+3]=alpha
     }
   }
   ctx.putImageData(pixels,0,0)
   const tex=new THREE.CanvasTexture(canvas)
   tex.colorSpace=THREE.SRGBColorSpace
-  tex.anisotropy=2
+  tex.anisotropy=4
   return tex
 }
 
-/** The static backdrop has no effect on ADCS, contacts or sensors. */
+/** Display-only globe: positioned from the chief's recorded ECI radial
+ * direction but compressed in size/distance; no orbital force or sensors. */
 export const addOrbitalEarth=(scene:THREE.Scene)=>{
   const globe=new THREE.Group()
   globe.name='NASA Blue Marble Earth backdrop'
@@ -69,13 +55,22 @@ export const addOrbitalEarth=(scene:THREE.Scene)=>{
     }))
   ground.name='Earth globe'
   globe.add(ground)
-  const clouds=new THREE.Mesh(
-    new THREE.SphereGeometry(radius*1.009,72,48),
-    new THREE.MeshStandardMaterial({
-      map:makeCloudMap(),transparent:true,depthWrite:false,roughness:1,
-      opacity:.65,metalness:0,
-    }))
-  clouds.name='Subtle synthetic cloud layer'
+  const clouds=new THREE.Group()
+  clouds.name='Procedural atmospheric clouds'
+  const decks=[
+    {radius:radius*1.010,opacity:.94,layer:0},
+    {radius:radius*1.018,opacity:.33,layer:1},
+  ]
+  for(const deck of decks){
+    const cloud=new THREE.Mesh(new THREE.SphereGeometry(deck.radius,96,64),
+      new THREE.MeshStandardMaterial({
+        map:makeCloudMap(deck.layer),transparent:true,
+        depthWrite:false,roughness:1,opacity:deck.opacity,metalness:0,
+        side:THREE.FrontSide,
+      }))
+    cloud.name=deck.layer===0?'Lower atmospheric cloud deck':'High wispy clouds'
+    clouds.add(cloud)
+  }
   globe.add(clouds)
   const atmosphere=new THREE.Mesh(new THREE.SphereGeometry(radius*1.025,80,48),
     new THREE.ShaderMaterial({

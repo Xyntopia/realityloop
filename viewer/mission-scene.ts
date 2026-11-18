@@ -1,9 +1,14 @@
 import * as THREE from 'three'
-import {addMarsHabitat,proceduralSandNormal} from './mars-habitat.ts'
+import {addMarsHabitat,addMarsRoverContactShadow} from './mars-habitat.ts'
+import {proceduralMarsGroundMaps} from './mars-materials.ts'
 import {addOrbitalEarth} from './orbital-earth.ts'
+import {addOrbitalServicer} from './orbital-servicer.ts'
+import type {OrbitalState} from '../src/orbital-formation.ts'
+import type {InspectionSnapshot} from '../src/orbital-inspection.ts'
+import {solarWingDimensions} from '../src/satellite-scan-geometry.ts'
 import {
   addConstructionSite,addConstructionContactShadow,
-  proceduralConstructionGroundNormal,
+  proceduralConstructionGroundMaps,
 } from './construction-site.ts'
 import {
   calculateSatelliteInertia,satelliteModules,terrainElevation,terrainHazards,
@@ -11,6 +16,7 @@ import {
 } from '../src/mission-experiments.ts'
 
 export type MissionScene='satellite'|'mars'|'construction'
+export type OrbitalCameraMode='formation'|'chief'|'servicer'
 export type MissionFrame=Record<string,unknown>
 const gold=new THREE.MeshStandardMaterial({color:0xbda669,metalness:.75,roughness:.4})
 const dark=new THREE.MeshStandardMaterial({color:0x30383f,metalness:.55,roughness:.4})
@@ -58,9 +64,16 @@ const addStarfield=(scene:THREE.Scene)=>{
     color:0xdce8fb,size:.08,sizeAttenuation:true,
   }))
   scene.add(points)
-  scene.add(new THREE.AmbientLight(0xc6d8f2,.85))
-  const sun=new THREE.DirectionalLight(0xfff1d7,3.3)
-  sun.position.set(4,8,6);scene.add(sun)
+  scene.add(new THREE.AmbientLight(0xc6d8f2,.62))
+  const sun=new THREE.DirectionalLight(0xfff5e9,3.15)
+  sun.position.set(7,10,5)
+  sun.castShadow=true
+  sun.shadow.mapSize.set(1024,1024)
+  sun.shadow.camera.left=-18;sun.shadow.camera.right=18
+  sun.shadow.camera.top=18;sun.shadow.camera.bottom=-18
+  sun.shadow.camera.near=.5;sun.shadow.camera.far=50
+  sun.shadow.normalBias=.014
+  scene.add(sun)
 }
 const boxModule=(parent:THREE.Group,m:CubeModule,offset:THREE.Vector3)=>{
   const node=new THREE.Group()
@@ -118,10 +131,8 @@ export const createModularSatellite=(layout:'compact'|'distributed'|'asymmetric'
   const c=new THREE.Vector3(
     inertia.centerOfMass.x,inertia.centerOfMass.y,inertia.centerOfMass.z)
   for(const m of modules)boxModule(spacecraft,m,c)
-  const xmax=Math.max(...modules.map(m=>m.position.x))-c.x
-  const xmin=c.x-Math.min(...modules.map(m=>m.position.x))
-  solarPanel(spacecraft,-1,xmin+.24)
-  solarPanel(spacecraft,1,xmax+.24)
+  for(const wing of solarWingDimensions(modules,inertia.centerOfMass))
+    solarPanel(spacecraft,wing.direction,wing.extent)
   // Stylized high-gain antenna, attached to a top block.
   const ytop=Math.max(...modules.map(m=>m.position.y-c.y))+.3
   const dish=new THREE.Mesh(new THREE.ConeGeometry(.24,.15,32),silver)
@@ -133,8 +144,8 @@ export const createModularSatellite=(layout:'compact'|'distributed'|'asymmetric'
 const createGround=(scene:THREE.Scene,terrain:TerrainKind)=>{
   scene.background=new THREE.Color(terrain==='mars'?0x8d5540:0xa6c9df)
   scene.fog=new THREE.Fog(scene.background,16,45)
-  const sun=new THREE.DirectionalLight(terrain==='mars'?0xffdfb9:0xffedcf,
-    terrain==='mars'?3:3.9)
+  const sun=new THREE.DirectionalLight(terrain==='mars'?0xffd6b0:0xffe9d2,
+    terrain==='mars'?2.8:2.85)
   sun.position.set(terrain==='mars'?-4:-9,
     terrain==='mars'?9:13,terrain==='mars'?-7:5)
   sun.castShadow=true
@@ -146,7 +157,7 @@ const createGround=(scene:THREE.Scene,terrain:TerrainKind)=>{
   scene.add(sun,new THREE.HemisphereLight(
     terrain==='mars'?0xdbe7ee:0xe9f3ff,
     terrain==='mars'?0x746251:0x574d41,
-    terrain==='mars'?1.3:.72))
+    terrain==='mars'?1.05:.97))
   const floor=new THREE.PlaneGeometry(
     terrain==='mars'?28:112,terrain==='mars'?17:96,
     terrain==='mars'?150:150,terrain==='mars'?95:125)
@@ -160,18 +171,22 @@ const createGround=(scene:THREE.Scene,terrain:TerrainKind)=>{
     const weathering=terrain==='mars'
       ?Math.max(0,Math.sin(x*.75)*Math.cos(z*.88)+.27*Math.sin(1.8*z+.33*x)-.20)*.22
       :0
-    color.set(terrain==='mars'?0xce9872:0x91826f)
-    color.multiplyScalar(1+variation-weathering)
+    color.set(terrain==='mars'?0xf7e4d5:0xe7dcd0)
+    const earthVariation=terrain==='construction'
+      ? .035*Math.sin(x*.32+z*.61)+.027*Math.cos(x*.97-z*.47)
+      : 0
+    color.multiplyScalar(1+variation+earthVariation-weathering)
     colors.set(color.toArray(),i*3)
   }
   floor.setAttribute('color',new THREE.BufferAttribute(colors,3))
   floor.computeVertexNormals()
+  const surfaceMaps=terrain==='construction'
+    ? proceduralConstructionGroundMaps() : proceduralMarsGroundMaps()
   const mesh=new THREE.Mesh(floor,new THREE.MeshStandardMaterial({
     vertexColors:true,roughness:1,metalness:0,side:THREE.DoubleSide,
-    ...(terrain==='mars'?{normalMap:proceduralSandNormal(),
-      normalScale:new THREE.Vector2(.14,.14)}:
-      {normalMap:proceduralConstructionGroundNormal(),
-       normalScale:new THREE.Vector2(.23,.23)}),
+    map:surfaceMaps.diffuse,normalMap:surfaceMaps.normal,
+    normalScale:terrain==='mars'
+      ?new THREE.Vector2(.35,.35):new THREE.Vector2(.23,.23),
   }))
   mesh.rotation.x=-Math.PI/2
   mesh.receiveShadow=true;scene.add(mesh)
@@ -197,31 +212,43 @@ const createGround=(scene:THREE.Scene,terrain:TerrainKind)=>{
           hazardGroup.add(cone)
         }
       }else{
-        addBox(hazardGroup,1.1,1.65,.9,0,.83,0,
-          new THREE.MeshStandardMaterial({color:0xe2ac49,metalness:.55}))
-        addBox(hazardGroup,.85,.35,1.2,0,1.7,0,dark)
+        // Visual worksite generator/compressor within the existing canonical
+        // equipment hazard footprint. Its details are not collision bodies.
+        const industrial=new THREE.MeshStandardMaterial({
+          color:0xad863c,metalness:.26,roughness:.82,
+        })
+        const frame=new THREE.MeshStandardMaterial({
+          color:0x464847,metalness:.53,roughness:.67,
+        })
+        const grill=new THREE.MeshStandardMaterial({
+          color:0x24292b,metalness:.58,roughness:.83,
+        })
+        addBox(hazardGroup,1.07,.13,.94,0,.15,0,frame)
+        addBox(hazardGroup,.99,1.14,.80,0,.77,0,industrial)
+        addBox(hazardGroup,1.05,.11,.89,0,1.38,0,frame)
+        for(const x of [-.42,.42]){
+          addBox(hazardGroup,.055,1.16,.045,x,.78,-.423,frame)
+          addBox(hazardGroup,.055,1.16,.045,x,.78,.423,frame)
+        }
+        for(let j=0;j<7;j++){
+          addBox(hazardGroup,.78,.032,.024,0,.52+j*.095,-.435,grill)
+          addBox(hazardGroup,.78,.032,.024,0,.52+j*.095,.435,grill)
+        }
+        // Dark cooling fan inset and exhaust stub communicate equipment,
+        // rather than a featureless yellow shipping box.
+        const fan=new THREE.Mesh(new THREE.CylinderGeometry(.21,.21,.038,16),grill)
+        fan.rotation.x=Math.PI/2
+        fan.position.set(0,.92,.45)
+        hazardGroup.add(fan)
+        const exhaust=addCylinder(hazardGroup,.085,.33,.28,1.58,.17,frame)
+        exhaust.rotation.z=.1
+        for(const x of [-.38,.38])
+          addBox(hazardGroup,.11,.14,.09,x,.075,-.35,grill)
       }
       props.add(hazardGroup)
     }
   }
-  if(terrain==='construction'){
-    // Site cabin, pallets, temporary fence and crane (decorative only).
-    const container=new THREE.Group()
-    container.position.set(-7,terrainElevation(terrain,-7,4.5),4.5)
-    addBox(container,3,2.2,1.5,0,1.1,0,
-      new THREE.MeshStandardMaterial({color:0x456d80,metalness:.48}))
-    for(let i=0;i<9;i++)addBox(container,.02,1.98,1.52,-1.4+i*.35,1.1,0,silver)
-    props.add(container)
-    for(let i=0;i<12;i++){
-      const x=-8+i*1.4,z=6.2
-      const pole=new THREE.Group()
-      pole.position.set(x,terrainElevation(terrain,x,z),z)
-      addBox(pole,.045,1.45,.045,0,.73,0,silver)
-      addBox(pole,1.4,.64,.035,.7,.85,0,
-        new THREE.MeshStandardMaterial({color:0xd2ac55,wireframe:true}))
-      props.add(pole)
-    }
-  }else{
+  if(terrain==='mars'){
     for(let i=0;i<45;i++){
       const x=-12+(i*7.31)%25,z=-7+(i*3.71)%14
       const radius=.08+(i%5)*.055
@@ -282,7 +309,8 @@ const buildRover=(terrain:TerrainKind)=>{
     addBox(vehicle,.7,.12,.9,.8,.37,0,silver)
     addBox(vehicle,.48,.16,.75,1.07,.33,0,hull)
   }
-  if(!isMars)addConstructionContactShadow(vehicle,2.8,1.8,.043)
+  if(isMars)addMarsRoverContactShadow(vehicle)
+  else addConstructionContactShadow(vehicle,2.8,1.8,.043)
   const tire=new THREE.MeshStandardMaterial({color:0x222325,roughness:.95})
   for(const x of isMars?[-.54,0,.54]:[-.45,.55])
     for(const z of [-.59,.59]){
@@ -299,13 +327,34 @@ export const createMissionWorld=(kind:MissionScene,layout:'compact'|'distributed
   const camera=new THREE.PerspectiveCamera(56,16/9,.06,120)
   let moving:THREE.Group
   let marsHabitat:ReturnType<typeof addMarsHabitat>|undefined
+  let earth:THREE.Group|undefined
+  let servicer:ReturnType<typeof addOrbitalServicer>|undefined
+  let cameraMode:OrbitalCameraMode='formation'
+  let currentOrbit:OrbitalState|undefined
+  const setOrbitalCameraMode=(mode:OrbitalCameraMode)=>{
+    cameraMode=mode
+    if(kind!=='satellite')return
+    if(mode==='chief'){
+      camera.position.set(3.4,2.5,7.1)
+      camera.lookAt(0,0,0)
+    }else if(mode==='servicer'){
+      const r=currentOrbit?.relativeRTN??{x:-4.8,y:9.2,z:0}
+      camera.position.set(r.x+3.2,r.y+2.2,r.z+5.5)
+      camera.lookAt(r.x,r.y,r.z)
+    }else{
+      // Formation overview: both spacecraft in the center and Earth limb
+      // behind them. Physical range is unchanged by the camera.
+      camera.position.set(6.2,9.7,18.5)
+      camera.lookAt(-2.3,4.6,0)
+    }
+  }
   if(kind==='satellite'){
     addStarfield(scene)
-    addOrbitalEarth(scene)
+    earth=addOrbitalEarth(scene)
     moving=createModularSatellite(layout)
     root.add(moving)
-    camera.position.set(2.8,2.02,4.5)
-    camera.lookAt(0,0,0)
+    servicer=addOrbitalServicer(scene,moving)
+    setOrbitalCameraMode('formation')
   }else{
     const terrain=kind==='mars'?'mars':'construction'
     createGround(scene,terrain)
@@ -319,14 +368,31 @@ export const createMissionWorld=(kind:MissionScene,layout:'compact'|'distributed
     }else{
       addConstructionSite(scene)
       camera.fov=58;camera.updateProjectionMatrix()
-      camera.position.set(10.8,6.4,12.0)
-      camera.lookAt(-.6,1.3,1.15)
+      // Show the moving vehicle and dirt works in front of the building,
+      // rather than hiding the delivery route behind the concrete frame.
+      camera.position.set(5.3,6.6,-10.2)
+      camera.lookAt(-.2,1.2,1.45)
     }
   }
   const move=(sample:Record<string,any>)=>{
     if(kind==='satellite'){
       const q=sample.quaternion
       if(q)moving.quaternion.set(q.x,q.y,q.z,q.w)
+      const orbit=sample.orbit as OrbitalState|undefined
+      if(orbit){
+        // In the chief RTN frame, the Earth center lies exactly in -R.
+        // The globe is graphically scaled; actual ECI positions and
+        // relative range stay in metres in the observation record.
+        currentOrbit=orbit
+        earth?.position.set(-34,0,0)
+        if(earth){
+          earth.rotation.y=-.45+orbit.timeSeconds*7.292115e-5
+          const clouds=earth.getObjectByName('Procedural atmospheric clouds')
+          if(clouds)clouds.rotation.y=.04+orbit.timeSeconds*.000045
+        }
+        servicer?.update(orbit,sample.inspection as InspectionSnapshot|undefined)
+        if(cameraMode==='servicer')setOrbitalCameraMode(cameraMode)
+      }
     }else{
       moving.position.set(sample.x??-8,(sample.y??0),sample.z??0)
       moving.rotation.y=-(sample.yaw??0)
@@ -335,5 +401,5 @@ export const createMissionWorld=(kind:MissionScene,layout:'compact'|'distributed
     }
   }
   move({})
-  return {scene,camera,move,root}
+  return {scene,camera,move,root,setOrbitalCameraMode}
 }

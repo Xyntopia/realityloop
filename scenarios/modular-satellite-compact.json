@@ -4,5 +4,14 @@
   "layout": "compact",
   "durationSeconds": 100,
   "intervalSeconds": 0.05,
-  "torqueLimitNm": 0.3
+  "torqueLimitNm": 0.3,
+  "orbitalModel": "KeplerFormation",
+  "orbitalElements": {
+    "semiMajorAxis": 6878137,
+    "eccentricity": 0.0011,
+    "inclination": 0.901288,
+    "raan": 0.35,
+    "argumentOfPeriapsis": 0.42,
+    "meanAnomalyAtEpoch": 0.1
+  }
 }

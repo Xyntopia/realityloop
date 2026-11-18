@@ -66,6 +66,18 @@ try{
         'Earth imagery must load from the local Pages build, not a remote server')
       assert.equal(await page.locator('#earth-credit').isVisible(),true,
         'NASA Earth Observatory credit must appear in the satellite UI')
+      assert.equal(await page.locator('#inspection-panel').isVisible(),true,
+        'The servicer scan map should be visible only on the orbital mission')
+      assert.match(await page.locator('#mission-engine').innerText(),/rumoca-wasm.*KeplerFormation/,
+        'Orbit must be produced by actual Modelica, not rendered with a synthetic animation')
+      await page.locator('#timeline').evaluate(slider=>{
+        slider.value=String(Math.round(Number(slider.max)*.62))
+        slider.dispatchEvent(new Event('input',{bubbles:true}))
+      })
+      assert.match(await page.locator('#inspection-status').innerText(),/ICP \d+ matches · map \d+ points/,
+        'Planar scanner should record actual ICP registrations in the replay')
+      assert.match(await page.locator('#orbit-state').innerText(),/Altitude \d+\.\d+ km · servicer \d+\.\d+ m/,
+        'Orbital positions and servicer range must be available at the selected time')
       const first=await page.locator('#metric-c').innerText()
       await page.selectOption('#module-layout','asymmetric')
       await page.waitForFunction(previous=>
@@ -74,8 +86,26 @@ try{
         first,{timeout:90000})
       assert.notEqual(await page.locator('#metric-c').innerText(),first,
         'Inertia tensor must change with the modular satellite layout')
+      const originalOrbit=await page.locator('#orbit-state').innerText()
+      await page.locator('#orbital-controls summary').click()
+      await page.locator('#orbit-a-km').fill('650')
+      await page.locator('#simulate').click()
+      await page.waitForFunction(original=>
+        document.getElementById('mission-status')?.textContent?.startsWith('PASS')
+        && document.getElementById('orbit-state')?.textContent!==original,
+        originalOrbit,{timeout:90000})
+      assert.match(await page.locator('#orbit-state').innerText(),/Altitude 64\d\.\d km/,
+        'Changing semi-major axis must reach Rumoca, not just the UI label')
+      for(const cameraMode of ['chief','servicer','formation']){
+        await page.selectOption('#orbital-camera',cameraMode)
+        await page.waitForTimeout(90)
+        assert.equal(await page.locator('#viewport canvas').count(),1,
+          'Switching orbital cameras must preserve a single render canvas')
+      }
     }
     if(kind==='mars'){
+      assert.equal(await page.locator('#inspection-panel').isVisible(),false,
+        'Do not label the Mars rover as a spacecraft inspection sensor')
       await page.selectOption('#rover-candidate','helios-solar')
       await page.waitForFunction(()=>
         document.getElementById('metric-d')?.textContent==='Helios Solar Rover'

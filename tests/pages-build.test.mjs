@@ -175,6 +175,12 @@ test('gallery includes runnable modular-space, Mars and construction examples', 
   assert.match(html,/id="module-layout"/)
   assert.match(html,/id="rover-candidate"/)
   assert.match(html,/id="timeline"/)
+  assert.match(html,/id="inspection-map"/)
+  assert.match(html,/id="orbit-state"/)
+  assert.match(html,/id="orbital-camera"/)
+  for(const key of ['orbit-a-km','orbit-e','orbit-i-deg','orbit-raan-deg',
+    'orbit-omega-deg','orbit-m0-deg'])
+    assert.match(html,new RegExp('id="'+key+'"'))
   const examples=await readFile(new URL('../src/examples.ts',import.meta.url),'utf8')
   for(const key of ['satellite','mars','construction']){
     assert.ok(examples.includes('mission.html?scene='+key))

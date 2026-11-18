@@ -1,5 +1,6 @@
 import initRumoca, { get_git_commit, get_version, simulate_model, wasm_init } from '@taskyon/rumoca'
 import { z } from 'zod'
+import {orbitalElementsSchema} from '../orbital-elements.ts'
 
 export const modelicaScenarioSchema = z.object({
   name: z.string().min(1),
@@ -12,12 +13,18 @@ export const modelicaScenarioSchema = z.object({
     'RealityLoopContacts.SupermarketShelfProbe',
     'TennantFrontSteerSlip',
     'DifferentialDriveSlip',
+    'KeplerFormation',
   ]),
-  durationSeconds: z.number().finite().positive().max(20),
+  durationSeconds: z.number().finite().positive().max(200),
   intervalSeconds: z.number().finite().min(0.005).max(0.2),
   frictionCoefficient: z.number().finite().min(0.05).max(1.5),
   motorTorqueNewtonMetres: z.number().finite().min(-600).max(600),
-}).strict().refine(s => s.durationSeconds / s.intervalSeconds <= 2000, {
+  orbitalElements:orbitalElementsSchema.optional(),
+}).strict().refine(s => s.model==='KeplerFormation'||!s.orbitalElements, {
+  message:'Orbital elements are only supported by KeplerFormation',
+}).refine(s => s.model === 'KeplerFormation' || s.durationSeconds <= 20, {
+  message: 'Non-orbital Modelica examples are limited to 20 seconds',
+}).refine(s => s.durationSeconds / s.intervalSeconds <= 2000, {
   message: 'Modelica experiment exceeds the 2000-interval observation limit',
 }).refine(s => !['RealityLoopContacts.SupermarketRobot', 'RealityLoopContacts.SupermarketBlocked'].includes(s.model) || s.motorTorqueNewtonMetres > 0, {
   message: 'Supermarket motorLimit must be positive',
@@ -54,6 +61,8 @@ const makeOverrides = (scenario: ModelicaScenario): Record<string, number> => {
     case 'DifferentialDriveSlip':
       return { mu: scenario.frictionCoefficient, torqueLeft: scenario.motorTorqueNewtonMetres,
         torqueRight: scenario.motorTorqueNewtonMetres }
+    case 'KeplerFormation':
+      return scenario.orbitalElements ? {...scenario.orbitalElements} : {}
   }
 }
 
