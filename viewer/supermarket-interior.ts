@@ -3,7 +3,12 @@ import { supermarketObstacles } from '../src/geometry.ts'
 import {createSupermarketStock} from './supermarket-products.ts'
 import {createSupermarketDecor} from './supermarket-decor.ts'
 import {createWallSeamShading} from './contact-shading.ts'
-import {ceilingShadowBudget,type GraphicsEffects} from './graphics-settings.ts'
+import {
+  ceilingShadowBudget,floorShadingProfile,type GraphicsEffects,
+} from './graphics-settings.ts'
+import {
+  supermarketCeilingLampPositions,ceilingShadowIndices,
+} from './supermarket-light-layout.ts'
 import {bakeFloorOcclusion} from './static-floor-lighting.ts'
 import {isSoftwareRenderer} from './renderer-capabilities.ts'
 import terrazzoDiffuse from '../assets/materials/terrazzo_tiles_diff_1k.jpg?url'
@@ -162,7 +167,6 @@ export type SupermarketInterior=Readonly<{
   overheadLights:number
   setCeilingVisible:(visible:boolean)=>void
   setVisualQuality:(quality:'high'|'balanced'|'performance',effects:GraphicsEffects)=>void
-  whenExtraLightingReady:()=>Promise<void>
   dispose:()=>void
 }>
 
@@ -200,14 +204,14 @@ export const createSupermarketInterior=(
   const floorHigh=new THREE.MeshPhysicalMaterial({
     map:floorMaps.diffuse,roughnessMap:floorMaps.roughness,
     normalMap:floorMaps.normal,normalScale:new THREE.Vector2(.49,.49),
-    aoMap:staticOcclusion,aoMapIntensity:1.35,
+    aoMap:staticOcclusion,aoMapIntensity:.12,
     color:0xe8e9e4,roughness:.32,metalness:.02,
     clearcoat:.76,clearcoatRoughness:.12,envMapIntensity:1.4,
   })
   const floorBalanced=new THREE.MeshStandardMaterial({
     map:floorMaps.diffuse,normalMap:floorMaps.normal,
     roughnessMap:floorMaps.roughness,
-    aoMap:staticOcclusion,aoMapIntensity:.95,
+    aoMap:staticOcclusion,aoMapIntensity:.25,
     normalScale:new THREE.Vector2(.32,.32),color:0xe8e9e4,
     roughness:.43,metalness:.015,envMapIntensity:.9,
   })
@@ -225,22 +229,22 @@ export const createSupermarketInterior=(
   floor.receiveShadow=true
   room.add(floor)
 
-  // Soft baked contact shadow: one small transparent atlas, five instances,
-  // no additional shadow-map renders or collision/SLAM geometry.
+  // Fallback shelf contact shading, not an additional source of ground
+  // darkness when High has real shadows from every luminaire.
   const shadowCanvas=document.createElement('canvas')
   shadowCanvas.width=64;shadowCanvas.height=64
   const shadowCtx=shadowCanvas.getContext('2d')
   if(!shadowCtx)throw Error('Contact shadow canvas unavailable')
   const gradient=shadowCtx.createRadialGradient(32,32,8,32,32,32)
-  gradient.addColorStop(0,'rgba(17,24,24,.80)')
-  gradient.addColorStop(.62,'rgba(17,24,24,.38)')
+  gradient.addColorStop(0,'rgba(17,24,24,.55)')
+  gradient.addColorStop(.62,'rgba(17,24,24,.20)')
   gradient.addColorStop(1,'rgba(17,24,24,0)')
   shadowCtx.fillStyle=gradient
   shadowCtx.fillRect(0,0,64,64)
   const shadowTexture=new THREE.CanvasTexture(shadowCanvas)
   const shadowMaterial=new THREE.MeshBasicMaterial({
     map:shadowTexture,transparent:true,depthWrite:false,
-    opacity:.85,polygonOffset:true,polygonOffsetFactor:-1,
+    opacity:.14,polygonOffset:true,polygonOffsetFactor:-1,
   })
   const shadows=new THREE.InstancedMesh(
     new THREE.PlaneGeometry(1,1),shadowMaterial,supermarketObstacles.length,
@@ -298,21 +302,17 @@ export const createSupermarketInterior=(
   fixture.normalMap=brushedSteel.normal
   fixture.normalScale.set(.16,.16)
   fixture.roughnessMap=brushedSteel.rough
-  // Every strip is a physically emissive material; 4 clustered point emitters
-  // approximate the shared illumination field without 35 extra shadow maps.
+  // Each emissive strip has a matching downward spotlight; the light is
+  // independent of collision geometry and the simulated sensor world.
   const led=new THREE.MeshStandardMaterial({
     color:0xfffbf1,emissive:0xfff0d2,emissiveIntensity:2.4,
     roughness:.44,side:THREE.DoubleSide,
   })
-  const xFixtures=[-3.5,-1.0,1.5,4.0,6.5,9.0,11.5]
-  const zFixtures=[-4.9,-2.1,.65,3.15,5.6]
-  let lamps=0
-  for(const x of xFixtures){
-    for(const z of zFixtures){
-      addBox(ceiling,unit,1.74,.067,.115,x,4.55,z,fixture)
-      addBox(ceiling,unit,1.65,.012,.083,x,4.508,z,led)
-      lamps++
-    }
+  const lampPositions=supermarketCeilingLampPositions()
+  const lamps=lampPositions.length
+  for(const {x,z} of lampPositions){
+    addBox(ceiling,unit,1.74,.067,.115,x,4.55,z,fixture)
+    addBox(ceiling,unit,1.65,.012,.083,x,4.508,z,led)
   }
   // Soft additive emission halos deliberately replace a full-screen bloom
   // chain on Balanced: one batched draw, independent of screen resolution.
@@ -321,8 +321,8 @@ export const createSupermarketInterior=(
   const glareCtx=glareCanvas.getContext('2d')
   if(!glareCtx)throw Error('Lamp glow canvas unavailable')
   const glow=glareCtx.createRadialGradient(64,32,3,64,32,31)
-  glow.addColorStop(0,'rgba(255,250,235,.75)')
-  glow.addColorStop(.38,'rgba(255,244,221,.26)')
+  glow.addColorStop(0,'rgba(255,250,235,.3)')
+  glow.addColorStop(.38,'rgba(255,244,221,.08)')
   glow.addColorStop(1,'rgba(255,244,221,0)')
   glareCtx.fillStyle=glow
   glareCtx.fillRect(0,0,128,64)
@@ -336,76 +336,38 @@ export const createSupermarketInterior=(
   const glare=new THREE.InstancedMesh(glareGeometry,glareMaterial,lamps)
   const glareTransform=new THREE.Object3D()
   let glareIndex=0
-  for(const x of xFixtures){
-    for(const z of zFixtures){
-      glareTransform.position.set(x,4.481,z)
-      glareTransform.rotation.set(-Math.PI/2,0,0)
-      glareTransform.scale.set(2.15,.43,1)
-      glareTransform.updateMatrix()
-      glare.setMatrixAt(glareIndex++,glareTransform.matrix)
-    }
+  for(const {x,z} of lampPositions){
+    glareTransform.position.set(x,4.481,z)
+    glareTransform.rotation.set(-Math.PI/2,0,0)
+    glareTransform.scale.set(1.85,.24,1)
+    glareTransform.updateMatrix()
+    glare.setMatrixAt(glareIndex++,glareTransform.matrix)
   }
   glare.instanceMatrix.needsUpdate=true
   glare.name='Batched luminous fixture glare'
   glare.renderOrder=2
   ceiling.add(glare)
 
-  // The old bright directional light produced sun-like shadows under an
-  // indoor ceiling and flattened every surface with excessive fill.
-  // Two overhead spots give direct/specular response and cast distinct
-  // overlapping robot/shelf shadows in Realistic. Balanced uses one shadow
-  // map; the additional static floor AO is computed only once.
-  const ambient=new THREE.HemisphereLight(0xf6ffff,0x71827f,.8)
+  // The emissive geometry is elongated, but WebGL RectAreaLight cannot
+  // cast shadows. Feathered, local downward spots give each strip its own
+  // real occlusion without area-light LTC shaders or atmospheric beams.
+  const ambient=new THREE.HemisphereLight(0xf6ffff,0x71827f,.68)
   interior.add(ambient)
-  // Rectangular softbox sources add broad specular streaks to PBR surfaces;
-  // their large LTC lookup library is only downloaded on first Realistic use.
-  // In WebGL area lights do NOT cast shadows, hence the separate spots below.
-  let disposed=false
-  let wantsSpecularPanels=false
-  let specularPanels:THREE.RectAreaLight[]=[]
-  let specularLoad:Promise<void>|undefined
-  const setSpecularPanels=(visible:boolean)=>{
-    wantsSpecularPanels=visible
-    for(const panel of specularPanels)panel.visible=visible
-    if(!visible||specularLoad)return
-    specularLoad=import('three/addons/lights/RectAreaLightUniformsLib.js')
-      .then(({RectAreaLightUniformsLib})=>{
-        if(disposed)return
-        RectAreaLightUniformsLib.init()
-        specularPanels=([
-          [2.3,-2.1],[7.15,2.0],
-        ] as const).map(([x,z])=>{
-          const panel=new THREE.RectAreaLight(0xfff4e8,5.4,3.8,.3)
-          panel.position.set(x,4.47,z)
-          panel.lookAt(x,0,z)
-          panel.visible=wantsSpecularPanels
-          interior.add(panel)
-          return panel
-        })
-      }).catch(error=>console.warn('Optional area-light highlights unavailable',error))
-  }
-  const shadowFixtures=([
-    [2.3,-.6],[7.15,1.2],
-  ] as const).map(([x,z])=>{
-    const lamp=new THREE.SpotLight(0xfff1dc,63,13,1.03,.78,2)
+  const shadowFixtures=lampPositions.map(({x,z},index)=>{
+    const lamp=new THREE.SpotLight(
+      0xfff2e3,softwareRenderer?7.5:4.6,8.2,.65,.82,2,
+    )
+    lamp.name='Ceiling strip spotlight '+(index+1)
     lamp.position.set(x,4.43,z)
     lamp.target.position.set(x,0,z)
-    lamp.shadow.mapSize.set(512,512)
-    lamp.shadow.camera.near=.35
-    lamp.shadow.camera.far=14
-    lamp.shadow.bias=-.00016
-    lamp.shadow.normalBias=.018
+    lamp.shadow.mapSize.set(256,256)
+    lamp.shadow.camera.near=.5
+    lamp.shadow.camera.far=8.2
+    lamp.shadow.bias=-.0001
+    lamp.shadow.normalBias=.012
+    lamp.shadow.radius=1.7
     interior.add(lamp,lamp.target)
     return lamp
-  })
-  const lightClusters=([
-    [-1.25,-3.5],[7,-3.5],[-1.25,3.15],[7,3.15],
-  ] as const).map(([x,z])=>{
-    const light=new THREE.PointLight(0xfff2e1,19,10,2)
-    light.position.set(x,4.25,z)
-    light.castShadow=false
-    interior.add(light)
-    return light
   })
 
   const rack=new THREE.Group()
@@ -505,7 +467,8 @@ export const createSupermarketInterior=(
   const environment=createStudioReflection()
   scene.environment=environment
   scene.background=new THREE.Color(0x9eb3b5)
-  scene.fog=new THREE.FogExp2(0x9eb3b5,.012)
+  // Clear indoor air: no atmospheric scattering or visible spotlight beams.
+  scene.fog=null
 
   const setVisualQuality=(
     quality:'high'|'balanced'|'performance',effects:GraphicsEffects,
@@ -515,9 +478,10 @@ export const createSupermarketInterior=(
     const low=quality==='performance'
     const pbr=effects.reflections||effects.surfaceDetail
     stock.setQuality(low&&pbr?'balanced':quality)
-    shadows.visible=effects.contactShadows
-    seams.setQuality(quality,effects.contactShadows)
-    shadowMaterial.opacity=quality==='high' ? .89 : .74
+    const floorShading=floorShadingProfile(quality,effects,!softwareRenderer)
+    shadows.visible=floorShading.fixtureContactOpacity>0
+    shadowMaterial.opacity=floorShading.fixtureContactOpacity
+    seams.setOpacity(floorShading.wallSeamOpacity)
     for(const {mesh,original,fast} of architecture)
       mesh.material=low&&!pbr?fast:original
     scene.environment=effects.reflections?environment:null
@@ -541,20 +505,24 @@ export const createSupermarketInterior=(
     led.emissiveIntensity=effects.lighting
       ? (quality==='high'?3.1:low?0.75:1.9) : 0
     glare.visible=effects.glare
-    glareMaterial.opacity=quality==='high' ? .62 : .32
-    ambient.intensity=quality==='high' ? .58 : low ? 1.4 : .82
-    for(const [index,light] of lightClusters.entries()){
-      light.visible=effects.lighting&&(quality==='high'||index===0||index===3)
-    }
-    setSpecularPanels(!softwareRenderer&&effects.lighting&&quality==='high')
-    const shadowBudget=ceilingShadowBudget(quality,effects.castShadows)
+    glareMaterial.opacity=quality==='high' ? .25 : .14
+    ambient.intensity=softwareRenderer
+      ? (quality==='high' ? 1.1 : low ? 1.4 : 1.2)
+      : quality==='high' ? .65 : low ? 1.4 : .85
+    // Software WebGL cannot sustain per-fixture shadow-map passes. Retain
+    // softly distributed direct lighting there, but use static AO for depth.
+    const softwareLights=softwareRenderer
+      ? ceilingShadowIndices(lamps,quality==='high'?3:2) : null
+    const shadowIndices=ceilingShadowIndices(lamps,
+      ceilingShadowBudget(quality,effects.castShadows,lamps,softwareRenderer))
     for(const [index,lamp] of shadowFixtures.entries()){
-      lamp.visible=effects.lighting&&(quality==='high'||index===0)
-      lamp.castShadow=index<shadowBudget
-      lamp.shadow.mapSize.set(quality==='high'?512:768,quality==='high'?512:768)
+      lamp.visible=effects.lighting&&(!softwareLights||softwareLights.has(index))
+      lamp.castShadow=lamp.visible&&shadowIndices.has(index)
+      const resolution=quality==='performance'?128:256
+      lamp.shadow.mapSize.set(resolution,resolution)
     }
-    floorHigh.aoMapIntensity=effects.contactShadows?1.35:0
-    floorBalanced.aoMapIntensity=effects.contactShadows ? .95 : 0
+    floorHigh.aoMapIntensity=floorShading.bakedAO
+    floorBalanced.aoMapIntensity=floorShading.bakedAO
     // Even at low render resolution, a manually enabled dynamic shadow needs
     // a lit receiving floor; MeshBasicMaterial cannot display shadow maps.
     floor.material=low&&!pbr&&!effects.castShadows?floorPerformance:
@@ -563,12 +531,11 @@ export const createSupermarketInterior=(
   return {
     decorativeProductCount,overheadLights:lamps,
     setVisualQuality,
-    whenExtraLightingReady:()=>specularLoad??Promise.resolve(),
     setCeilingVisible:visible=>{ceiling.visible=visible},
     dispose:()=>{
-      disposed=true
       stock.dispose()
       decor.dispose()
+      for(const lamp of shadowFixtures)lamp.shadow.dispose()
       floorMaps.dispose()
       brushedSteel.dispose()
       staticOcclusion.dispose()

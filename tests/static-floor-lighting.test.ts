@@ -12,7 +12,10 @@ test('static floor occlusion is stronger at shelf footprints and wall seams',()=
   assert(shelf<adjacent, 'under-shelf occlusion should dominate')
   assert(adjacent<open, 'adjacent shelf floor should have darker indirect light')
   assert(wall<open, 'floor-wall corner should have more AO than the aisle')
-  for(const v of [open,shelf,adjacent,wall])assert(v>=.30&&v<=1)
+  for(const v of [open,shelf,adjacent,wall])assert(v>=.5&&v<=1)
+  const beyondShelf=bakedFloorOcclusion(2.1,-2.1,supermarketObstacles)
+  assert(beyondShelf>.97,
+    'Baked shelf occlusion must not create dark halos across the open aisle')
 })
 
 test('baked occlusion uses static obstacle geometry without mutating it',()=>{

@@ -31,7 +31,7 @@ export const createRobotContactShadow=()=>{
     mesh,
     setQuality:(quality:'high'|'balanced'|'performance',enabled=true)=>{
       mesh.visible=enabled
-      material.opacity=quality==='high' ? .92 : .7
+      material.opacity=quality==='high' ? .62 : .55
     },
     dispose:()=>{
       mesh.geometry.dispose()
@@ -41,8 +41,8 @@ export const createRobotContactShadow=()=>{
   }
 }
 
-/** One narrow precomputed gradient along each room boundary. No screen-space
- * passes or extra lights, so seams remain visibly grounded on modest GPUs. */
+/** Subtle wall seam gradient. Its opacity is coordinated with the baked floor
+ * AO and dynamic lamp shadows so the seams never become broad dark bands. */
 export const createWallSeamShading=()=>{
   const canvas=document.createElement('canvas')
   canvas.width=16
@@ -51,8 +51,8 @@ export const createWallSeamShading=()=>{
   if(!ctx)throw Error('Wall shading canvas unavailable')
   const gradient=ctx.createLinearGradient(0,0,0,64)
   gradient.addColorStop(0,'rgba(10,16,20,.0)')
-  gradient.addColorStop(.42,'rgba(10,16,20,.17)')
-  gradient.addColorStop(1,'rgba(10,16,20,.39)')
+  gradient.addColorStop(.42,'rgba(10,16,20,.11)')
+  gradient.addColorStop(1,'rgba(10,16,20,.27)')
   ctx.fillStyle=gradient
   ctx.fillRect(0,0,16,64)
   const texture=new THREE.CanvasTexture(canvas)
@@ -62,10 +62,10 @@ export const createWallSeamShading=()=>{
   const root=new THREE.Group()
   root.name='Floor and wall seam shading (visual-only)'
   const positions=[
-    {width:20,depth:.7,x:4.2,z:-7.1,rotation:0},
-    {width:20,depth:.7,x:4.2,z:7.1,rotation:Math.PI},
-    {width:15,depth:.7,x:-5.45,z:0,rotation:-Math.PI/2},
-    {width:15,depth:.7,x:13.85,z:0,rotation:Math.PI/2},
+    {width:20,depth:.5,x:4.2,z:-7.2,rotation:0},
+    {width:20,depth:.5,x:4.2,z:7.2,rotation:Math.PI},
+    {width:15,depth:.5,x:-5.55,z:0,rotation:-Math.PI/2},
+    {width:15,depth:.5,x:13.95,z:0,rotation:Math.PI/2},
   ]
   const plane=new THREE.PlaneGeometry(1,1)
   const geometry=new THREE.InstancedMesh(plane,material,positions.length)
@@ -82,9 +82,9 @@ export const createWallSeamShading=()=>{
   root.add(geometry)
   return {
     root,
-    setQuality:(quality:'high'|'balanced'|'performance',enabled=true)=>{
-      root.visible=enabled
-      material.opacity=quality==='high'?1:.7
+    setOpacity:(opacity:number)=>{
+      root.visible=opacity>0
+      material.opacity=opacity
     },
     dispose:()=>{
       plane.dispose()

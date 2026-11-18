@@ -5,6 +5,7 @@ import { beamEnd, lidars, sensorOrigin, SlamTracker, type Pose2D, type SlamEstim
 import { PclIcpSlamTracker } from '../src/icp-slam.ts'
 import { assertPclRuntime } from '../src/pcl-icp.ts'
 import { sampleRobotSensors, scanLidar3D } from '../src/sensors.ts'
+import {slamMapCellOffset,slamMapPose} from './slam-map-projection.ts'
 
 type Tracker = SlamTracker | PclIcpSlamTracker
 
@@ -189,7 +190,7 @@ export class SlamView {
     const img = raw.createImageData(grid.width, grid.height)
     for (let z = 0; z < grid.height; z++) for (let x = 0; x < grid.width; x++) {
       const weight = grid.logOdds[z * grid.width + x]
-      const offset = ((grid.height - 1 - z) * grid.width + x) * 4
+      const offset = slamMapCellOffset(x,z,grid.width)
       const rgb = weight > 5 ? [247,143,59] : weight < -3
         ? [42,53,72] : [13,17,23]
       img.data.set([...rgb,255],offset)
@@ -200,14 +201,13 @@ export class SlamView {
     ctx.clearRect(0,0,this.mapCanvas.width,this.mapCanvas.height)
     ctx.drawImage(this.pixelCanvas,0,0,this.mapCanvas.width,this.mapCanvas.height)
     if (!this.latest) return
-    const pose = this.latest.pose
-    const scaleX = this.mapCanvas.width/(grid.width*grid.resolution)
-    const scaleZ = this.mapCanvas.height/(grid.height*grid.resolution)
-    const px = (pose.x-grid.minX)*scaleX
-    const pz = this.mapCanvas.height-(pose.z-grid.minZ)*scaleZ
+    // The cell image and robot arrow share the same above-the-floor view.
+    // The arrow is heading (local +X), not a separately measured velocity.
+    const marker=slamMapPose(this.latest.pose,grid,
+      this.mapCanvas.width,this.mapCanvas.height)
     ctx.save()
-    ctx.translate(px,pz)
-    ctx.rotate(-pose.yaw)
+    ctx.translate(marker.x,marker.y)
+    ctx.rotate(marker.rotation)
     ctx.fillStyle='#f78f3b'
     ctx.strokeStyle='#f3f5f8'
     ctx.lineWidth=1.5

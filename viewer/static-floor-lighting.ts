@@ -8,18 +8,18 @@ export const bakedFloorOcclusion=(
 ):number=>{
   // Falloff at room edges approximates indirect bounce loss in wall/floor seams.
   const edge=Math.max(0,Math.min(x+5.8,14.2-x,z+7.45,7.45-z))
-  const wall=.21*Math.exp(-edge/.35)
+  const wall=.11*Math.exp(-edge/.28)
   let shelf=0
   for(const obstacle of obstacles){
     const dx=Math.max(0,Math.abs(x-obstacle.x)-obstacle.halfX)
     const dz=Math.max(0,Math.abs(z-obstacle.z)-obstacle.halfZ)
     const distance=Math.hypot(dx,dz)
-    const occlusion=obstacle.kind==='shelf' ? .51 : .38
+    const occlusion=obstacle.kind==='shelf' ? .32 : .25
     // Indirect-light occlusion is strongest beneath the fixed shelves and
     // decays rapidly into the open aisle; no hard, view-dependent shadow line.
-    shelf=Math.max(shelf,occlusion*Math.exp(-((distance/.42)**2)))
+    shelf=Math.max(shelf,occlusion*Math.exp(-((distance/.28)**2)))
   }
-  return Math.max(.30,1-wall-shelf)
+  return Math.max(.5,1-wall-shelf)
 }
 
 /** Returned canvas can become a single 2nd-UV aoMap (no runtime AO pass).

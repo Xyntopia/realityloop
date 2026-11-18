@@ -77,9 +77,7 @@ const gpu={
  * separately measure JS submission, not GPU rasterization or presentation. */
 const measure=async(options:Configuration,durationMs=4000)=>{
   interior.setVisualQuality(options.quality,presetGraphicsEffects(options.quality))
-  // Realistic's rectangular-light LTC tables load lazily: measure after
-  // they are actually in the scene, not just the loading frame.
-  await interior.whenExtraLightingReady()
+  // Fixture spotlights are available immediately when the scene is created.
   renderer.toneMappingExposure=options.quality==='high' ? .94 :
     options.quality==='balanced' ? .99 : 1.08
   renderer.setPixelRatio(options.pixelRatio)
