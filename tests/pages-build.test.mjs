@@ -60,6 +60,30 @@ test('each gallery card has a unique stable public homepage fragment',async()=>{
   assert.match(script,/addEventListener\('hashchange',scrollToHashTarget\)/)
 })
 
+test('external Rumoca ecosystem examples have distinct links and no RealityLoop replay claim', async () => {
+  const html=await readFile(new URL('index.html',site),'utf8')
+  assert.match(html,/id="rumoca-examples"/)
+  assert.match(html,/Different execution and verification scope:/)
+  assert.match(html,/not run through RealityLoop's Taskyon Design Graph/)
+  assert.match(html,/Some provide their own source, saved projects, benchmark methods or reproducibility tooling/)
+  for(const url of [
+    'https://cognipilot.github.io/slam_web/',
+    'https://cognipilot.github.io/rumoca_fixed_wing/',
+    'https://cognipilot.github.io/mocap_sysid/',
+    'https://cognipilot.github.io/rumoca/user-guide/simulation/reusable-booster-landing.html',
+    'https://cognipilot.github.io/rumoca/',
+  ]) assert.ok(html.includes('href="'+url+'"'),url+' missing')
+  assert.match(html,/web viewer displays exported results rather than compiling a Modelica simulation/)
+  const section=html.split('id="rumoca-examples"')[1]?.split('id="how-it-works"')[0]
+  assert(section,'Rumoca external section must precede RealityLoop architecture')
+  assert.equal((section.match(/<article class="rumoca-app">/g)??[]).length,4)
+  assert.equal((section.match(/<li><a href="https:\/\/rumoca\.cognipilot\.org\/tutorials\//g)??[]).length,13)
+  for(const anchor of section.matchAll(/<a\s+[^>]+>/g)){
+    assert.match(anchor[0],/target="_blank"/)
+    assert.match(anchor[0],/rel="noopener noreferrer"/)
+  }
+})
+
 test('home hero presents ownership and physical fidelity as goals, not proven results', async () => {
   const html = await readFile(new URL('index.html', site), 'utf8')
   assert.match(html, /Build simulations faster/)

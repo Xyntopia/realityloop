@@ -59,6 +59,72 @@
 <section class="catalog other-catalog" id="other-experiments">
  <div class="section-title"><div><span class="overline">MODULAR ROBOTICS &amp; SPACE SYSTEMS</span><h2>Other experiments</h2></div><span class="count">Early-stage research concepts</span></div>
  <div id="other-experiments-grid" class="example-grid" aria-label="Other RealityLoop experiments"></div>
+ <section class="rumoca-examples" id="rumoca-examples" aria-labelledby="rumoca-examples-title">
+  <div class="rumoca-examples-intro">
+    <span class="overline">EXTERNAL PROJECTS · RUMOCA / COGNIPILOT</span>
+    <h3 id="rumoca-examples-title">Explore more Modelica and Rumoca examples</h3>
+    <p>Rumoca is the open-source Modelica compiler used by several RealityLoop simulations. These independent applications and official tutorials demonstrate other modeling, simulation and scientific-computing workflows.</p>
+    <p class="rumoca-boundary"><strong>Different execution and verification scope:</strong> These links open external projects, not RealityLoop experiments. They are not run through RealityLoop's Taskyon Design Graph, immutable invocation artifacts, replay verification or acceptance checks. Some provide their own source, saved projects, benchmark methods or reproducibility tooling; review each project's claims and limitations separately.</p>
+  </div>
+  <div class="rumoca-app-grid" aria-label="Standalone Rumoca ecosystem browser applications">
+    <article class="rumoca-app">
+      <span class="rumoca-app-type">COGNIPILOT · ROBOTICS RESEARCH</span>
+      <h4><a href="https://cognipilot.github.io/slam_web/" target="_blank" rel="noopener noreferrer">SLAM Lab</a></h4>
+      <p>Explore a simulated UAV environment with editable Modelica dynamics, RGB/depth sensors, optional LiDAR and inertial estimation. The native visual-SLAM path is experimental and hardware-intensive; the inertial examples are the simpler starting point.</p>
+      <a class="rumoca-source" href="https://github.com/CogniPilot/slam_web" target="_blank" rel="noopener noreferrer">Inspect source</a>
+    </article>
+    <article class="rumoca-app">
+      <span class="rumoca-app-type">COGNIPILOT · FLIGHT DYNAMICS</span>
+      <h4><a href="https://cognipilot.github.io/rumoca_fixed_wing/" target="_blank" rel="noopener noreferrer">Fixed-wing Modelica workbench</a></h4>
+      <p>Edit an aircraft model and waypoint controller, fly the plant in-browser, and compare simulated predictions with recorded aircraft data. Runs Rumoca/WASM directly, independently of RealityLoop's experiment pipeline.</p>
+      <a class="rumoca-source" href="https://github.com/CogniPilot/rumoca_fixed_wing" target="_blank" rel="noopener noreferrer">Inspect source</a>
+    </article>
+    <article class="rumoca-app">
+      <span class="rumoca-app-type">COGNIPILOT · BENCHMARK VIEWER</span>
+      <h4><a href="https://cognipilot.github.io/mocap_sysid/" target="_blank" rel="noopener noreferrer">Motion-capture system identification</a></h4>
+      <p>Inspect fixed-wing measured and synthetic trajectories, dataset splits, model comparisons and benchmark results. The web viewer displays exported results rather than compiling a Modelica simulation in your browser.</p>
+      <a class="rumoca-source" href="https://github.com/CogniPilot/mocap_sysid" target="_blank" rel="noopener noreferrer">Benchmark and source</a>
+    </article>
+    <article class="rumoca-app">
+      <span class="rumoca-app-type">RUMOCA · INTERACTIVE TEACHING</span>
+      <h4><a href="https://cognipilot.github.io/rumoca/user-guide/simulation/reusable-booster-landing.html" target="_blank" rel="noopener noreferrer">Reusable-booster landing</a></h4>
+      <p>A Modelica-based rocket landing exercise with interactive control and environmental parameters. It illustrates dynamics and control, not a validated launch-vehicle or flight-qualified simulation.</p>
+      <a class="rumoca-source" href="https://github.com/CogniPilot/rumoca" target="_blank" rel="noopener noreferrer">Rumoca source</a>
+    </article>
+  </div>
+  <details class="rumoca-tutorials">
+    <summary>All 13 official Rumoca tutorials <span>Modelica basics · 3D scenes · code generation</span></summary>
+    <div class="rumoca-tutorial-groups">
+      <div>
+        <h4>Getting started</h4>
+        <ul>
+          <li><a href="https://rumoca.cognipilot.org/tutorials/getting-started/first-model/" target="_blank" rel="noopener noreferrer">Your first model</a> — constant acceleration</li>
+          <li><a href="https://rumoca.cognipilot.org/tutorials/getting-started/mass-spring-damper/" target="_blank" rel="noopener noreferrer">Mass–spring–damper</a> — parameter exploration</li>
+          <li><a href="https://rumoca.cognipilot.org/tutorials/getting-started/bouncing-ball/" target="_blank" rel="noopener noreferrer">Bouncing ball</a> — discrete contact events</li>
+          <li><a href="https://rumoca.cognipilot.org/tutorials/getting-started/van-der-pol/" target="_blank" rel="noopener noreferrer">Van der Pol oscillator</a> — nonlinear dynamics</li>
+          <li><a href="https://rumoca.cognipilot.org/tutorials/getting-started/series-rlc/" target="_blank" rel="noopener noreferrer">Series RLC circuit</a> — electrical transients</li>
+          <li><a href="https://rumoca.cognipilot.org/tutorials/getting-started/circuit-components/" target="_blank" rel="noopener noreferrer">Circuit components</a> — connectors and inheritance</li>
+        </ul>
+      </div>
+      <div>
+        <h4>3D simulation</h4>
+        <ul>
+          <li><a href="https://rumoca.cognipilot.org/tutorials/visualization/bouncing-ball-3d/" target="_blank" rel="noopener noreferrer">Bouncing ball 3D</a> — Three.js viewer</li>
+          <li><a href="https://rumoca.cognipilot.org/tutorials/visualization/two-body-orbit/" target="_blank" rel="noopener noreferrer">Two-body orbit</a> — orbital trail</li>
+          <li><a href="https://rumoca.cognipilot.org/tutorials/visualization/pendulum/" target="_blank" rel="noopener noreferrer">Pendulum</a> — nonlinear motion</li>
+        </ul>
+        <h4>Code generation and estimation</h4>
+        <ul>
+          <li><a href="https://rumoca.cognipilot.org/tutorials/workflows/jax-paramid/" target="_blank" rel="noopener noreferrer">Parameter identification with JAX</a></li>
+          <li><a href="https://rumoca.cognipilot.org/tutorials/workflows/sympy-linearize/" target="_blank" rel="noopener noreferrer">Symbolic linearization with SymPy</a></li>
+          <li><a href="https://rumoca.cognipilot.org/tutorials/workflows/casadi-perch/" target="_blank" rel="noopener noreferrer">Nonlinear MPC with CasADi</a></li>
+          <li><a href="https://rumoca.cognipilot.org/tutorials/workflows/symforce-ekf/" target="_blank" rel="noopener noreferrer">On-manifold EKF with SymForce</a></li>
+        </ul>
+      </div>
+    </div>
+  </details>
+  <p class="rumoca-more">Want to experiment directly? <a href="https://cognipilot.github.io/rumoca/" target="_blank" rel="noopener noreferrer">Open Rumoca's browser playground</a> or <a href="https://rumoca.cognipilot.org/tutorials/" target="_blank" rel="noopener noreferrer">browse the official tutorial index</a>.</p>
+</section>
 </section>
 <section class="architecture" id="how-it-works" aria-labelledby="architecture-title">
  <span class="overline">OWNERSHIP · VERIFICATION · OPTIONAL INTEGRATION</span>

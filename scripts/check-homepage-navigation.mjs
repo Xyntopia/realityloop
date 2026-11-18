@@ -95,6 +95,31 @@ try {
       anchors.map(a=>({href:a.href,text:a.textContent?.trim()})))
     assert.equal(docs.length,4)
     assert(docs.every(d=>d.href.startsWith('https://taskyon.space/docs/taskyon/')))
+    const external=page.locator('#rumoca-examples')
+    assert.equal(await external.locator('.rumoca-app').count(),4)
+    assert.match(await external.locator('.rumoca-boundary').innerText(),
+      /not run through RealityLoop's Taskyon Design Graph/)
+    const externalLinks=await external.locator('a').evaluateAll(elements=>
+      elements.map(a=>({href:a.href,blank:a.target==='_blank',
+        safe:a.rel.includes('noopener')&&a.rel.includes('noreferrer')})))
+    assert.equal(await external.locator('.rumoca-tutorial-groups li a').count(),13)
+    assert(externalLinks.every(link=>
+      /^https:\/\/(?:rumoca\.cognipilot\.org|cognipilot\.github\.io|github\.com\/CogniPilot)\//.test(link.href)
+      &&link.blank&&link.safe),'External examples must link to upstream sites safely')
+    const tutorials=external.locator('details.rumoca-tutorials')
+    assert.equal(await tutorials.evaluate(e=>e.open),false)
+    await tutorials.locator('summary').click()
+    assert.equal(await tutorials.evaluate(e=>e.open),true)
+    assert.equal(await tutorials.locator('li a').first().isVisible(),true)
+    await page.goto(new URL('/#rumoca-examples',origin).href,
+      {waitUntil:'domcontentloaded'})
+    await page.waitForFunction(()=>location.hash==='#rumoca-examples')
+    const rumocaPosition=await targetPosition('rumoca-examples')
+    assert(rumocaPosition.top>=rumocaPosition.headerHeight-6,
+      'External Rumoca section is hidden by sticky header: '+JSON.stringify(rumocaPosition))
+    assert(rumocaPosition.top<height*.70,
+      'External Rumoca section should be deep-linkable: '+JSON.stringify(rumocaPosition))
+    assert(rumocaPosition.scrollWidth<=width+1,'Rumoca section overflows viewport')
     const partnerLinks=await page.locator('.site-links .partner-link').count()
     assert.equal(partnerLinks,3)
     assert.equal(await page.locator('.site-links .partner-logo').count(),3)
@@ -103,7 +128,7 @@ try {
     assert.deepEqual(errors,[])
     console.log(JSON.stringify({width,status:'PASS',cards:cards?6:0,
       directLink:'#supermarket',navigation:'#intro -> #how-it-works -> #mars -> back',
-      docs:docs.length,errors}))
+      docs:docs.length,rumocaLinks:externalLinks.length,errors}))
     await page.close()
   }
 }finally{
