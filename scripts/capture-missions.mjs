@@ -50,6 +50,8 @@ try{
     })
     await page.waitForTimeout(400)
     assert.deepEqual(errors,[],kind+' browser errors')
+    const status=await page.locator('#mission-status').textContent()
+    const metric=await page.locator('#metric-a').textContent()
     // The gallery is about the scene, not a miniature controls sidebar.
     // Remove only presentation chrome after the model/timeline is ready.
     // The live WebGL viewport fills a reproducible 16:9 capture surface.
@@ -67,9 +69,7 @@ try{
       path:destination,type:'jpeg',quality:87,
       animations:'disabled',timeout:60000,
     })
-    const status=await page.locator('#mission-status').innerText()
-    const metric=await page.locator('#metric-a').innerText()
-    console.log(kind,{status,metric,destination})
+    console.log(kind,{status:status?.trim(),metric:metric?.trim(),destination})
     await page.close()
   }
 }finally{
