@@ -31,6 +31,28 @@ try {
     const links=await page.locator('.card-permalink').evaluateAll(elements=>
       elements.map(anchor=>anchor.getAttribute('href')))
     assert.deepEqual(links,fragments.map(id=>'#'+id))
+    const sources=await cards.evaluateAll(elements=>elements.map(card=>{
+      const heading=card.querySelector('.model-details h3')?.textContent
+      const notes=card.querySelector('.model-fidelity')?.textContent
+      const anchors=[...card.querySelectorAll('.model-source-links a')]
+      return {heading,notes,links:anchors.map(a=>({
+        url:a.href,blank:a.target==='_blank',
+        safe:a.rel.includes('noopener')&&a.rel.includes('noreferrer'),
+      })) }
+    }))
+    assert.deepEqual(sources.map(source=>source.heading),[
+      'Modelica model source','Modelica model source',
+      'TypeScript model source','TypeScript model source',
+      'TypeScript model source','Modelica model source',
+    ])
+    for(const [i,source] of sources.entries()){
+      assert(source.notes?.length>35,'Missing fidelity caveat on '+fragments[i])
+      assert(source.links.length>=2,'Missing model or input source on '+fragments[i])
+      assert(source.links.every(link=>
+        link.url.startsWith('https://github.com/Xyntopia/realityloop/blob/main/') &&
+        link.blank && link.safe),'Invalid or unsafe source link on '+fragments[i])
+    }
+    assert.equal(await page.locator('.scenario-source-link').count(),6)
     const targetPosition=async(id)=>{
       return page.locator('#'+id).evaluate(element=>({
         top:element.getBoundingClientRect().top,

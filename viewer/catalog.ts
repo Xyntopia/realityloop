@@ -8,6 +8,9 @@ import solarPreview from '../docs/realityloop-gallery-solar.jpg?url'
 import './theme.css'
 import './catalog.css'
 
+const githubSourceRoot='https://github.com/Xyntopia/realityloop/blob/main/'
+const sourceUrl=(path:string)=>githubSourceRoot+path
+
 const previews: Readonly<Record<string, string>> = {
   '/docs/realityloop-gallery-supermarket.jpg': supermarketPreview,
   '/docs/realityloop-gallery-traction.jpg': tractionPreview,
@@ -54,6 +57,33 @@ for (const example of realityLoopExamples) {
     label.textContent = tag
     tags.append(label)
   }
+  const modelDetails=document.createElement('section')
+  modelDetails.className='model-details'
+  modelDetails.setAttribute('aria-label','Underlying model and accuracy of '+example.title)
+  const modelHeading=document.createElement('h3')
+  modelHeading.textContent=example.sourceKind+' model source'
+  const sourceLinks=document.createElement('div')
+  sourceLinks.className='model-source-links'
+  for(const source of example.modelSources){
+    const anchor=document.createElement('a')
+    anchor.href=sourceUrl(source.path)
+    anchor.textContent=source.label
+    anchor.target='_blank'
+    anchor.rel='noopener noreferrer'
+    sourceLinks.append(anchor)
+  }
+  const scenario=document.createElement('a')
+  scenario.className='scenario-source-link'
+  scenario.href=sourceUrl(example.headlessScenarios[0]!)
+  scenario.target='_blank'
+  scenario.rel='noopener noreferrer'
+  scenario.textContent='Example input scenario'
+  sourceLinks.append(scenario)
+  const fidelity=document.createElement('p')
+  fidelity.className='model-fidelity'
+  fidelity.textContent=example.fidelityNote
+  modelDetails.append(modelHeading,sourceLinks,fidelity)
+
   const link = document.createElement('a')
   link.className = 'open-example'
   link.href = media.href
@@ -66,7 +96,7 @@ for (const example of realityLoopExamples) {
   const actions = document.createElement('div')
   actions.className = 'card-actions'
   actions.append(link, permalink)
-  body.append(category, title, description, tags, actions)
+  body.append(category, title, description, tags, modelDetails, actions)
   card.append(media, body)
   grids[example.group]!.append(card)
 }

@@ -129,6 +129,29 @@ main { max-width: 1250px; margin: auto; padding: 30px 38px 80px; }
 .example-body p { font-size: 13px; line-height: 1.7; color: var(--rl-muted); margin: 0; }
 .tags { margin-top: 18px; }
 .tags span { padding: 5px 9px; font-size: 10px; }
+.model-details {
+  margin-top: 21px; padding: 15px 0 0;
+  border-top: 1px solid var(--rl-border-soft);
+}
+.model-details h3 {
+  margin: 0 0 9px; font-size: 12px; letter-spacing: .01em;
+  color: var(--rl-ink-soft);
+}
+.model-source-links {
+  display: flex; flex-wrap: wrap; align-items: baseline;
+  gap: 7px 17px;
+}
+.model-source-links a {
+  font-size: 12px; line-height: 1.5; color: var(--rl-orange-light);
+  text-decoration: underline; text-underline-offset: 3px;
+  overflow-wrap: anywhere;
+}
+.model-source-links a:hover { color: var(--rl-ink); }
+.model-source-links .scenario-source-link { color: var(--rl-ink-soft); }
+.example-body .model-fidelity {
+  margin: 10px 0 0; font-size: 11px; line-height: 1.55;
+  color: var(--rl-muted);
+}
 .card-actions {
   display: flex; align-items: baseline; justify-content: space-between;
   flex-wrap: wrap; column-gap: 20px; row-gap: 10px;
