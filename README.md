@@ -37,7 +37,10 @@ to regenerate the deterministic, self-contained
 `src/generated/supermarket-obstacles.ts`; the latter is extracted from
 the **compiled GLB**, not an independently authored obstacle list. The GLB
 SHA-256 is exported by `src/geometry.ts`; `npm run check:collision-assets`
-checks both outputs before CI accepts a build.
+checks both outputs before CI accepts a build. The viewer has a **Show GLB
+colliders** toggle that actually loads this GLB using Three.js `GLTFLoader`.
+The PBR shelves remain high-detail, procedurally rendered decorations aligned
+with the imported physical boxes, not collision triangle meshes.
 
 `src/collision/mesh-import.ts` reads embedded glTF 2.0 GLB nodes with
 `extras.realityloopCollider` (`id`, `kind`, `type`), local transforms,
@@ -60,6 +63,20 @@ The resulting `.mo` and `.mo.json` record executable geometry and source/output
 hashes, respectively. Connecting an imported Modelica package to a new vehicle
 still requires an explicit physical model; loading a visual mesh alone must
 not silently assign it physical collision or contact behavior.
+
+The supermarket now provides two Rumoca physics choices: the fast analytic
+circle/AABB model (default), and a **compiled 3D GLB mesh contact** model
+selected under *Physics engine*. The latter redeclares a Modelica
+`replaceable function` and calls
+[`RealityLoopCollision.sphereClosedMeshRegion`](modelica/RealityLoopCollision.mo)
+against the exact imported fixture triangles. Both options retain the same
+Modelica-controlled vehicle dynamics and friction/contact-force laws.
+The collision library also contains nearest-point sphere/triangle,
+watertight-solid penetration, and BVH-accelerated queries. The BVH agrees
+numerically with the exhaustive query, but does not improve the tiny
+12-triangle shelf case. Neither model is a high-fidelity vehicle body/CAD
+collision simulation; the robot's shape remains a conservative sphere
+projection at obstacle mid-height.
 
 ## Renewable power plant: realistic visualization, reproducible reduced-order physics
 

@@ -1,6 +1,10 @@
 import modelicaSource from '../modelica/RealityLoopContacts.mo?raw'
+import collisionLibrary from '../modelica/RealityLoopCollision.mo?raw'
+import importedMesh from '../modelica/RealityLoopImportedCollision.mo?raw'
+import meshBackend from '../modelica/RealityLoopMeshCollision.mo?raw'
 import rumocaWasmUrl from '../node_modules/@taskyon/rumoca/rumoca_bind_wasm_bg.wasm?url'
-import {supermarketModelicaScenario,toSupermarketReplay,type SupermarketRoute} from '../src/modelica/supermarket.ts'
+import {supermarketModelicaScenario,toSupermarketReplay,type SupermarketRoute,
+  type SupermarketCollisionGeometry} from '../src/modelica/supermarket.ts'
 import {withModelicaScene} from '../src/modelica/scene.ts'
 import {runBrowserDag,hashBrowserBinary} from '../src/dag-browser.ts'
 import {canonicalHash} from '../src/vendor/taskyon-comp-dag.mjs'
@@ -23,9 +27,13 @@ const getRunner=():Promise<LoadedRunner>=>{
 
 /** Modelica physics executed as a canonical Taskyon DAG node, browser-local.
  * Taskyon UI and P2P are not used by the simulation or its dependencies. */
-export const runModelicaSupermarket=async(route:SupermarketRoute)=>{
-  const scenario=supermarketModelicaScenario(route)
-  const source=withModelicaScene(modelicaSource)
+export const runModelicaSupermarket=async(
+  route:SupermarketRoute,geometry:SupermarketCollisionGeometry='analytic',
+)=>{
+  const scenario=supermarketModelicaScenario(route,.72,geometry)
+  const source=collisionLibrary+'\n'+
+    (geometry==='mesh'?importedMesh+'\n'+meshBackend+'\n':'')+
+    withModelicaScene(modelicaSource)
   const {runner,compilerHash}=await getRunner()
   const executed=await runBrowserDag(
     scenario,

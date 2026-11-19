@@ -4,16 +4,21 @@ import { checkSweptClearance } from '../clearance.ts'
 import { supermarketObstacles, type Obstacle } from '../geometry.ts'
 
 export type SupermarketRoute = 'blocked' | 'detour'
+export type SupermarketCollisionGeometry = 'analytic' | 'mesh'
 
 export const supermarketModelicaScenario = (
   route: SupermarketRoute,
   muStatic = 0.72,
+  geometry: SupermarketCollisionGeometry = 'analytic',
 ): ModelicaScenario => parseModelicaScenario({
   kind: 'modelica',
-  name: 'realityloop-supermarket-modelica-' + route,
-  model: route === 'detour'
-    ? 'RealityLoopContacts.SupermarketRobot'
-    : 'RealityLoopContacts.SupermarketBlocked',
+  name: 'realityloop-supermarket-modelica-' +
+    (geometry==='mesh'?'mesh-':'') + route,
+  model: geometry==='mesh'
+    ?route==='detour'?'RealityLoopContacts.SupermarketMeshRobot'
+      :'RealityLoopContacts.SupermarketMeshBlocked'
+    :route==='detour'?'RealityLoopContacts.SupermarketRobot'
+      :'RealityLoopContacts.SupermarketBlocked',
   durationSeconds: 20,
   intervalSeconds: 0.05,
   frictionCoefficient: muStatic,
@@ -65,12 +70,15 @@ export const toSupermarketReplay = (
   model: ModelicaResult,
   obstacles: readonly Obstacle[] = supermarketObstacles,
 ): SupermarketReplay => {
-  if (!['RealityLoopContacts.SupermarketRobot', 'RealityLoopContacts.SupermarketBlocked'].includes(
-    model.scenario.model,
-  )) throw Error('Not a RealityLoop Modelica supermarket scenario')
+  if (![
+    'RealityLoopContacts.SupermarketRobot','RealityLoopContacts.SupermarketBlocked',
+    'RealityLoopContacts.SupermarketMeshRobot','RealityLoopContacts.SupermarketMeshBlocked',
+    'RealityLoopContacts.SupermarketExternalRobot','RealityLoopContacts.SupermarketExternalBlocked',
+  ].includes(model.scenario.model))
+    throw Error('Not a RealityLoop Modelica supermarket scenario')
 
   const route: SupermarketRoute =
-    model.scenario.model === 'RealityLoopContacts.SupermarketRobot' ? 'detour' : 'blocked'
+    model.scenario.model.endsWith('Blocked') ? 'blocked' : 'detour'
   const cells = new Set<string>()
   const resolution = 0.16
   let goalReached = false

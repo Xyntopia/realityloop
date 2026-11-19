@@ -44,8 +44,25 @@ controls.enableDamping=true
 controls.maxPolarAngle=Math.PI*0.46
 controls.update()
 
-// The visual scene is intentionally not part of Modelica's obstacle/physics DAG.
+ // The high-detail visual scene is decoration; its physical envelopes now
+ // originate from the same compiled GLB asset as the Modelica scene arrays.
 const interior = createSupermarketInterior(scene,renderer)
+const colliderButton=elem('collision-mesh') as HTMLButtonElement
+let collisionOverlay:THREE.Group|undefined
+colliderButton.addEventListener('click',async()=>{
+  colliderButton.disabled=true
+  try{
+    if(!collisionOverlay){
+      const {loadSupermarketCollisionOverlay}=await import('./collision-preview.ts')
+      collisionOverlay=await loadSupermarketCollisionOverlay(scene)
+    }
+    collisionOverlay.visible=!collisionOverlay.visible
+    colliderButton.textContent=collisionOverlay.visible
+      ?'Hide GLB colliders':'Show GLB colliders'
+  }catch(error){
+    elem('status').textContent='Collision asset: '+String(error)
+  }finally{colliderButton.disabled=false}
+})
 const graphicsSelect=elem('visual-quality') as HTMLSelectElement
 const graphicsDetailSelect=elem('graphics-detail') as HTMLSelectElement
 const aoMethodSelect=elem('ao-method') as HTMLSelectElement
@@ -144,10 +161,13 @@ const run=async(route:'blocked'|'detour')=>{
   const engine=(elem('engine') as HTMLSelectElement).value
   result=null
   resetVisual()
-  setStatus(engine==='modelica'?'Compiling & integrating Modelica physics…':'Computing legacy Rapier physics…')
+  setStatus(engine==='rapier'?'Computing legacy Rapier physics…':
+    engine==='modelica-mesh'?'Compiling imported GLB collision physics in Modelica…':
+      'Compiling & integrating Modelica physics…')
   try{
-    const next=engine==='modelica'
-      ? await import('./modelica-supermarket.ts').then(m=>m.runModelicaSupermarket(route))
+    const next=engine==='modelica'||engine==='modelica-mesh'
+      ? await import('./modelica-supermarket.ts').then(m=>
+        m.runModelicaSupermarket(route,engine==='modelica-mesh'?'mesh':'analytic'))
       : await Promise.all([
           import('../src/tennant.ts'),import('../src/dag-browser.ts'),
         ]).then(async ([m,dag])=>{
@@ -162,9 +182,11 @@ const run=async(route:'blocked'|'detour')=>{
     replayTrail.setObservations(next.observations)
     playing=true;elem('play').textContent='Pause'
     elem('engine-label').textContent=engine==='modelica'
-      ? 'RUMOCA MODELICA · COMPILER-DRIVEN REPLAY'
-      : 'RAPIER WASM · LEGACY COMPARISON REPLAY'
-    elem('secondary-label').textContent=engine==='modelica'?'Contact mode':'Lateral slip'
+      ? 'RUMOCA MODELICA · ANALYTIC CONTACT'
+      :engine==='modelica-mesh'
+        ? 'RUMOCA MODELICA · IMPORTED GLB MESH CONTACT'
+        : 'RAPIER WASM · LEGACY COMPARISON REPLAY'
+    elem('secondary-label').textContent=engine==='rapier'?'Lateral slip':'Contact mode'
     setStatus('SIMULATING · '+(route==='detour'?'DETOUR':'BLOCKED ROUTE'))
   }catch(e){setStatus('Error: '+String(e))}
 }

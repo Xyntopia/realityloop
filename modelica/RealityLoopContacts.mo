@@ -149,6 +149,8 @@ package RealityLoopContacts
   end WheelBench;
 
   model SupermarketRobot
+    replaceable function collisionGeometry =
+      RealityLoopCollision.analyticBoxContact;
     // Five static supermarket obstacles (four shelves + aisle blocker).
     // Rumoca integrates physics; geometry is a replaceable analytic query model.
     // Modelica coordinates: x = aisle travel, z = across aisle.
@@ -214,9 +216,7 @@ package RealityLoopContacts
     Real frontNormal;
     Real bodyDrag;
     Real yawDrag;
-    Real outX[nObstacles];
-    Real outZ[nObstacles];
-    Real outerDistance[nObstacles];
+    Real collisionQuery[3,nObstacles];
     Real normalX[nObstacles];
     Real normalZ[nObstacles];
     Real contactDepth[nObstacles];
@@ -263,16 +263,12 @@ package RealityLoopContacts
     // Circle-versus-AABB contact for each fixed shelf/obstruction.
     // This is a solver-owned contact-force law, not a second integrator.
     for i in 1:nObstacles loop
-      outX[i] = max(abs(x-obstacleX[i])-obstacleHalfX[i], 0);
-      outZ[i] = max(abs(z-obstacleZ[i])-obstacleHalfZ[i], 0);
-      outerDistance[i] = sqrt(outX[i]^2+outZ[i]^2);
-      normalX[i] = if outerDistance[i]>1e-9 then
-        (if x>obstacleX[i] then outX[i] else -outX[i])/outerDistance[i]
-        else if x<obstacleX[i] then -1 else 1;
-      normalZ[i] = if outerDistance[i]>1e-9 then
-        (if z>obstacleZ[i] then outZ[i] else -outZ[i])/outerDistance[i]
-        else 0;
-      contactDepth[i] = max(0, contactRadius-outerDistance[i]);
+      collisionQuery[:,i] = collisionGeometry(
+        i,x,z,obstacleX[i],obstacleZ[i],
+        obstacleHalfX[i],obstacleHalfZ[i],contactRadius);
+      contactDepth[i] = collisionQuery[1,i];
+      normalX[i] = collisionQuery[2,i];
+      normalZ[i] = collisionQuery[3,i];
       approachSpeed[i] = v*(cos(yaw)*normalX[i]-sin(yaw)*normalZ[i]);
       contactForce[i] = if contactDepth[i]>0 then
         collisionStiffness*contactDepth[i]+
@@ -329,6 +325,30 @@ package RealityLoopContacts
   model SupermarketBlocked
     extends SupermarketRobot(detourRoute=0);
   end SupermarketBlocked;
+
+  model SupermarketMeshRobot
+    // Geometry is imported as 3D triangles from the supermarket GLB.
+    // Replaceable Modelica function: dynamics and contact laws are unchanged.
+    extends SupermarketRobot(
+      redeclare function collisionGeometry =
+        RealityLoopMeshCollision.importedBoxContact);
+  end SupermarketMeshRobot;
+
+  model SupermarketMeshBlocked
+    extends SupermarketMeshRobot(detourRoute=0);
+  end SupermarketMeshBlocked;
+
+  model SupermarketExternalRobot
+    // Optional patched Rumoca host uses a collision-only Rapier/MuJoCo depth
+    // query. Normal and contact response remain in Modelica.
+    extends SupermarketRobot(
+      redeclare function collisionGeometry =
+        RealityLoopExternalCollision.importedWithExternalDepth);
+  end SupermarketExternalRobot;
+
+  model SupermarketExternalBlocked
+    extends SupermarketExternalRobot(detourRoute=0);
+  end SupermarketExternalBlocked;
 
   model SupermarketShelfProbe
     // Regression fixture deliberately approaches the southern shelf.

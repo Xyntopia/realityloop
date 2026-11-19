@@ -40,11 +40,21 @@ jobs:
         env:
           REALITYLOOP_CAPTURE_NO_SANDBOX: '1'
         run: npm run check:browser:homepage
+      - name: Verify compiled GLB and collision overlay in Chromium
+        env:
+          REALITYLOOP_CAPTURE_NO_SANDBOX: '1'
+          REALITYLOOP_CAPTURE_SWIFTSHADER: '1'
+        run: npm run check:browser:collision
       - name: Verify minified supermarket replay and PCL ICP
         env:
           REALITYLOOP_CAPTURE_NO_SANDBOX: '1'
           REALITYLOOP_CAPTURE_SWIFTSHADER: '1'
         run: npm run check:browser:prod
+      - name: Verify imported-GLB Modelica collision solver in Chromium
+        env:
+          REALITYLOOP_CAPTURE_NO_SANDBOX: '1'
+          REALITYLOOP_CAPTURE_SWIFTSHADER: '1'
+        run: npm run check:browser:mesh
       - name: Verify modular satellite, Mars and construction examples
         env:
           REALITYLOOP_CAPTURE_NO_SANDBOX: '1'

@@ -7,7 +7,7 @@
 <aside class="panel controls">
   <div class="panel-label">EXAMPLE / SCENARIO</div><h1>Cleaning a supermarket</h1>
   <p>Modelica-first, reproducible robot motion with illustrative Tennant geometry, laser mapping and an aisle obstruction.</p>
-  <label for="engine">Physics engine</label><select id="engine"><option value="modelica" selected>Rumoca · Modelica only</option><option value="rapier">Rapier · legacy comparison</option></select>
+  <label for="engine">Physics engine</label><select id="engine"><option value="modelica" selected>Rumoca · Analytic contact (Modelica)</option><option value="modelica-mesh">Rumoca · GLB mesh contact (Modelica)</option><option value="rapier">Rapier · legacy comparison</option></select>
   <label for="route">Route strategy</label><select id="route"><option value="detour">Detour · reach destination</option><option value="blocked">Blocked · regression</option></select>
   <div class="button-row"><button id="play">Pause</button><button id="replay" class="secondary">Replay</button></div>
   <div class="control-row"><label for="speed">Playback speed</label><select id="speed"><option value="1">1×</option><option value="2">2×</option><option value="4" selected>4×</option><option value="8">8×</option></select></div>
@@ -28,6 +28,7 @@
     </div>
   </details>
   <div class="control-row camera-controls"><span>Camera</span><button id="camera" class="mini">Top view</button><button id="aisle-camera" class="mini">Aisle view</button></div>
+  <div class="control-row"><span>Collision geometry</span><button id="collision-mesh" class="mini" type="button">Show GLB colliders</button></div>
   <div class="legend"><div><span class="swatch trail"></span>Cleaning footprint proxy</div><div><span class="swatch path"></span>Recorded robot path</div><div><span class="swatch blocked"></span>Blocking fixture</div></div>
 </aside>
 <aside class="panel telemetry"><div class="panel-label">LIVE TELEMETRY</div><div class="status" id="status">Preparing scenario…</div>

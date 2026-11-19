@@ -36,6 +36,8 @@
     "capture:solar": "node scripts/capture-solar.mjs",
     "check:visual": "node scripts/check-browser-lighting.mjs",
     "check:browser:prod": "node scripts/check-production-supermarket.mjs",
+    "check:browser:collision": "node scripts/check-collision-overlay.mjs",
+    "check:browser:mesh": "node scripts/check-production-mesh-supermarket.mjs",
     "check:browser:missions": "node scripts/check-production-missions.mjs",
     "check:browser:solar": "node scripts/check-production-solar.mjs",
     "check:browser:homepage": "node scripts/check-homepage-navigation.mjs",

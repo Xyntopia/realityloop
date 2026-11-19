@@ -11,6 +11,16 @@ export const modelicaScenarioSchema = z.object({
     'RealityLoopContacts.SupermarketRobot',
     'RealityLoopContacts.SupermarketBlocked',
     'RealityLoopContacts.SupermarketShelfProbe',
+    'RealityLoopContacts.SupermarketMeshRobot',
+    'RealityLoopContacts.SupermarketMeshBlocked',
+    'RealityLoopContacts.SupermarketExternalRobot',
+    'RealityLoopContacts.SupermarketExternalBlocked',
+    'RealityLoopMeshContacts.MeshContactProbe',
+    'RealityLoopMeshContacts.ImportedSolidProbe',
+    'RealityLoopMeshContacts.ImportedContactDynamics',
+    'RealityLoopMeshContacts.ImportedBvhParityProbe',
+    'RealityLoopProviders.DefaultProbe',
+    'RealityLoopProviders.AlternateProbe',
     'TennantFrontSteerSlip',
     'DifferentialDriveSlip',
     'KeplerFormation',
@@ -20,13 +30,22 @@ export const modelicaScenarioSchema = z.object({
   frictionCoefficient: z.number().finite().min(0.05).max(1.5),
   motorTorqueNewtonMetres: z.number().finite().min(-600).max(600),
   orbitalElements:orbitalElementsSchema.optional(),
-}).strict().refine(s => s.model==='KeplerFormation'||!s.orbitalElements, {
+  collisionBackend:z.enum(['rapier','mujoco']).optional(),
+}).strict().refine(s=>
+  s.model.startsWith('RealityLoopContacts.SupermarketExternal')
+    ?s.collisionBackend!==undefined:s.collisionBackend===undefined, {
+  message:'Collision backend is required only for the external Modelica supermarket',
+}).refine(s => s.model==='KeplerFormation'||!s.orbitalElements, {
   message:'Orbital elements are only supported by KeplerFormation',
 }).refine(s => s.model === 'KeplerFormation' || s.durationSeconds <= 20, {
   message: 'Non-orbital Modelica examples are limited to 20 seconds',
 }).refine(s => s.durationSeconds / s.intervalSeconds <= 2000, {
   message: 'Modelica experiment exceeds the 2000-interval observation limit',
-}).refine(s => !['RealityLoopContacts.SupermarketRobot', 'RealityLoopContacts.SupermarketBlocked'].includes(s.model) || s.motorTorqueNewtonMetres > 0, {
+}).refine(s => ![
+  'RealityLoopContacts.SupermarketRobot','RealityLoopContacts.SupermarketBlocked',
+  'RealityLoopContacts.SupermarketMeshRobot','RealityLoopContacts.SupermarketMeshBlocked',
+  'RealityLoopContacts.SupermarketExternalRobot','RealityLoopContacts.SupermarketExternalBlocked',
+].includes(s.model) || s.motorTorqueNewtonMetres > 0, {
   message: 'Supermarket motorLimit must be positive',
 })
 export type ModelicaScenario = z.infer<typeof modelicaScenarioSchema>
@@ -44,13 +63,20 @@ export type ModelicaResult = {
 
 /** A stable source-file name for a strict allowlist of published local model examples. */
 export const modelicaSourceFile = (model: ModelicaScenario['model']): string =>
-  model.startsWith('RealityLoopContacts.') ? 'RealityLoopContacts.mo' : model + '.mo'
+  model.startsWith('RealityLoopContacts.') ? 'RealityLoopContacts.mo'
+    : model.startsWith('RealityLoopMeshContacts.') ? 'RealityLoopMeshContacts.mo'
+      : model.startsWith('RealityLoopProviders.') ? 'RealityLoopProviders.mo'
+        : model + '.mo'
 
 const makeOverrides = (scenario: ModelicaScenario): Record<string, number> => {
   switch (scenario.model) {
     case 'RealityLoopContacts.SupermarketRobot':
     case 'RealityLoopContacts.SupermarketBlocked':
     case 'RealityLoopContacts.SupermarketShelfProbe':
+    case 'RealityLoopContacts.SupermarketMeshRobot':
+    case 'RealityLoopContacts.SupermarketMeshBlocked':
+    case 'RealityLoopContacts.SupermarketExternalRobot':
+    case 'RealityLoopContacts.SupermarketExternalBlocked':
       return { muStatic: scenario.frictionCoefficient, motorLimit: scenario.motorTorqueNewtonMetres }
     case 'RealityLoopContacts.TennantStickSlip':
       return { muStatic: scenario.frictionCoefficient, motorTorque: scenario.motorTorqueNewtonMetres }
@@ -63,6 +89,13 @@ const makeOverrides = (scenario: ModelicaScenario): Record<string, number> => {
         torqueRight: scenario.motorTorqueNewtonMetres }
     case 'KeplerFormation':
       return scenario.orbitalElements ? {...scenario.orbitalElements} : {}
+    case 'RealityLoopMeshContacts.MeshContactProbe':
+    case 'RealityLoopMeshContacts.ImportedSolidProbe':
+    case 'RealityLoopMeshContacts.ImportedContactDynamics':
+    case 'RealityLoopMeshContacts.ImportedBvhParityProbe':
+    case 'RealityLoopProviders.DefaultProbe':
+    case 'RealityLoopProviders.AlternateProbe':
+      return {}
   }
 }
 
@@ -71,7 +104,7 @@ type RumocaPayload = {
   error?: unknown
 }
 
-const decodeTrajectory = (raw: string, scenario: ModelicaScenario): {
+export const decodeTrajectory = (raw: string, scenario: ModelicaScenario): {
   channelNames: string[]
   observations: ModelicaSample[]
 } => {

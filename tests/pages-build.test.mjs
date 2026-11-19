@@ -152,6 +152,17 @@ test('production pcl.js retains PointXYZ class identity required by WASM', async
     'Production minifier stripped pcl.js PointXYZ constructor name')
 })
 
+test('supermarket publishes its compiled collision GLB and runtime overlay',async()=>{
+  const html=await readFile(new URL('examples/supermarket.html',site),'utf8')
+  assert.match(html,/id="collision-mesh"/)
+  const files=await readdir(new URL('assets/',site))
+  const glb=files.find(f=>/^supermarket-layout-.*\.glb$/.test(f))
+  assert(glb,'Compiled supermarket GLB must be bundled on GitHub Pages')
+  const bytes=await readFile(new URL('assets/'+glb,site))
+  assert.equal(bytes.readUInt32LE(0),0x46546c67)
+  assert.equal(bytes.readUInt32LE(4),2)
+})
+
 test('dynamic AO algorithms are independently selectable and GTAO is code-split', async () => {
   const html = await readFile(new URL('examples/supermarket.html', site), 'utf8')
   assert.match(html, /id="ao-method"/)
