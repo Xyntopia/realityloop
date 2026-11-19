@@ -36,6 +36,34 @@ parameter layout for independent compilation. To import arbitrary OBJ/STL/GLB
 meshes, use `npm run compile:collision-mesh --` as documented in the root
 README.
 
+## Optional external collision providers
+
+`RealityLoopExternalCollision.mo` gives the full vehicle Modelica model a
+redeclared collision function whose **depth** comes from a patched Rumoca
+`external "C"` real3 callback. The callback selects one imported body and
+runs either Rapier's collision-only query or MuJoCo's
+`mj_kinematics + mj_collision`. The contact normals and spring/damper forces
+are still calculated by Modelica; neither external library advances its own
+physics timestep. The default published Rumoca browser runtime **does not
+support this callback** and must fail closed.
+
+The same callback has a standalone smoke model in
+`RealityLoopCollisionHost.mo`. Run real full-vehicle tests with a locally
+built, compatible patched Rumoca host:
+
+```sh
+RUMOCA_EXTERNAL_C_WASM_DIR=build/rumoca-host \
+  node --experimental-strip-types --test \
+  tests/modelica-supermarket-external.test.ts tests/external-collision-host.test.ts
+```
+
+`RealityLoopMuJoCo.mo` declares an aspirational standards-based
+`ExternalObject` C interface; it remains **uncompiled/unlinked**. A generic
+native/WASM array-record ABI, complete contact manifolds, full rigid
+mesh-to-mesh physics and real articulated vehicle geometry still require
+additional work. The optional mode is a working research integration, not a
+production-grade general collision backend.
+
 ## Reproduce
 
 ```sh

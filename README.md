@@ -78,6 +78,29 @@ numerically with the exhaustive query, but does not improve the tiny
 collision simulation; the robot's shape remains a conservative sphere
 projection at obstacle mid-height.
 
+The [external collision probe](modelica/RealityLoopCollisionHost.mo)
+can **optionally** call either Rapier or MuJoCo through the checked, scalar
+`external "C"` real3 callback in a separately built patched Rumoca WASM
+runtime. Neither optional adapter integrates rigid-body dynamics; they only
+answer geometric contact queries, with Modelica retaining the state. The
+normal published Rumoca WASM does not expose that host callback—there is no
+silent fallback. On a developer machine with the matching patched runtime:
+
+```sh
+RUMOCA_EXTERNAL_C_WASM_DIR=build/rumoca-host \
+  node --experimental-strip-types --test tests/external-collision-host.test.ts
+```
+
+The Modelica `replaceable` mechanism is validated for analytic versus
+mesh-backed contact geometry. The separately patched Rumoca host also supports
+opting into Rapier/MuJoCo collision-only penetration queries on the full
+supermarket model in local tests. However, its limited scalar callback
+cannot return complete 3D manifolds or normals; the external mode continues
+to obtain normals from Modelica. A production generic C/array ABI,
+`ExternalObject` lifecycles, full rigid-mesh-to-rigid-mesh contacts, and
+convex decomposition remain open. Details:
+[Collision architecture](docs/collision-architecture.md).
+
 ## Renewable power plant: realistic visualization, reproducible reduced-order physics
 
 Open `/examples/power-plant.html` to explore a **synthetic 2.88 MWdc / 2.5 MWac PV plant** with 192 north–south-axis tracking tables, one central inverter, 1 MW / 4 MWh battery container, electrical yard, transformer equipment and substation, security perimeter and maintenance access roads. The model runs as the **same Taskyon Design Graph scenario → simulation → metrics / observations chain**, in the browser and CLI. The viewer provides a draggable 3D camera (inspection, overview, electrical yard), day/timeline controls, tracker/fixed mounting, export power cap, battery toggle, temperature, electrical metrics and a generation/SOC chart. Regenerate the gallery image from the actual running 3D scene with `npm run capture:solar`; run the deployed build regression with `npm run check:browser:solar`.
