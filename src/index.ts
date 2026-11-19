@@ -9,7 +9,14 @@ export {
   parseTennantScenario, tennantScenarioSchema, runTennantScenario, t7amr,
   type TennantScenario, type TennantResult, type TennantSample,
 } from './tennant.ts'
-export { referenceFootprint } from './geometry.ts'
+export { referenceFootprint,supermarketGeometrySha256 } from './geometry.ts'
+export {importCollisionGLB,toBoxColliders,type CollisionAsset,type ColliderMesh,
+  type BoxCollider} from './collision/mesh-import.ts'
+export {importCollisionGeometry,type MeshFormat} from './collision/mesh-formats.ts'
+export {buildCollisionBVH,queryCollisionBVH,type CollisionBVH} from './collision/bvh.ts'
+export {collisionProviders,createExternalCollisionQuery,
+  type CollisionQuery,type CollisionContact,type CollisionProvider,
+  type ExternalCollisionProvider} from './collision/contract.ts'
 export {
   solarPlantScenarioSchema,solarEquipment,plantLayout,solarPosition,
   trackerAngle,runSolarPlantExperiment,

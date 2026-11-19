@@ -28,6 +28,39 @@ Homepage cards have shareable, stable fragments: `#supermarket`, `#wheel-slip`, 
 
 The homepage's **Other experiments** section also links to external Rumoca/CogniPilot ecosystem examples under `#rumoca-examples`: SLAM Lab, the fixed-wing Modelica workbench, a motion-capture system-identification benchmark viewer, a reusable-booster teaching demo, the browser playground, and all 13 official Rumoca tutorials listed in November 2026. These open upstream projects; **none run through RealityLoop's Taskyon Design Graph execution, artifact locking or replay verification**. This is a provenance and execution-scope distinction, not a claim that upstream projects lack their own test or reproducibility tools. The motion-capture web viewer displays exported benchmark data rather than simulating Modelica in-browser, and SLAM Lab's full visual-SLAM pathway remains experimental. The external list is plain, inspectable HTML, without copied imagery or runtime dependencies. Links and distinctions are exercised in the homepage browser regression.
 
+## Mesh geometry and Modelica-first collision architecture
+
+The supermarket's five *physical* fixture envelopes now have a single source:
+`assets/meshes/supermarket-layout.json`. Run `npm run build:collision-assets`
+to regenerate the deterministic, self-contained
+`assets/meshes/supermarket-layout.glb` and
+`src/generated/supermarket-obstacles.ts`; the latter is extracted from
+the **compiled GLB**, not an independently authored obstacle list. The GLB
+SHA-256 is exported by `src/geometry.ts`; `npm run check:collision-assets`
+checks both outputs before CI accepts a build.
+
+`src/collision/mesh-import.ts` reads embedded glTF 2.0 GLB nodes with
+`extras.realityloopCollider` (`id`, `kind`, `type`), local transforms,
+vertices and indexed triangles. Untagged GLB meshes may be imported as
+collision meshes only with explicit `--all-meshes` consent.
+`src/collision/mesh-formats.ts` also accepts OBJ and ASCII/binary STL.
+Import validates size, finite coordinates and topology. Ambiguous concave
+or nonplanar OBJ polygon faces must be triangulated in the CAD tool.
+`src/collision/modelica-compile.ts` emits deterministic Modelica vertex,
+triangle, body-offset and BVH parameter arrays; its solid mode requires
+watertight, consistently wound surfaces. To import *your own* assets:
+
+```sh
+npm run compile:collision-mesh -- rover.stl RoverMesh.mo --units=mm --solid --package=RoverMesh
+npm run compile:collision-mesh -- rover.stl RoverMesh.mo --units=mm --solid --package=RoverMesh --check
+npm run compile:collision-mesh -- building.glb BuildingMesh.mo --all-meshes --package=BuildingMesh
+```
+
+The resulting `.mo` and `.mo.json` record executable geometry and source/output
+hashes, respectively. Connecting an imported Modelica package to a new vehicle
+still requires an explicit physical model; loading a visual mesh alone must
+not silently assign it physical collision or contact behavior.
+
 ## Renewable power plant: realistic visualization, reproducible reduced-order physics
 
 Open `/examples/power-plant.html` to explore a **synthetic 2.88 MWdc / 2.5 MWac PV plant** with 192 north–south-axis tracking tables, one central inverter, 1 MW / 4 MWh battery container, electrical yard, transformer equipment and substation, security perimeter and maintenance access roads. The model runs as the **same Taskyon Design Graph scenario → simulation → metrics / observations chain**, in the browser and CLI. The viewer provides a draggable 3D camera (inspection, overview, electrical yard), day/timeline controls, tracker/fixed mounting, export power cap, battery toggle, temperature, electrical metrics and a generation/SOC chart. Regenerate the gallery image from the actual running 3D scene with `npm run capture:solar`; run the deployed build regression with `npm run check:browser:solar`.

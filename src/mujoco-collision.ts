@@ -1,17 +1,8 @@
 import loadMuJoCo from '@mujoco/mujoco'
 import { supermarketObstacles, type Obstacle } from './geometry.ts'
 import type { Pose2D } from './slam.ts'
-
-export type CollisionContact = {
-  obstacleId: string
-  distanceMetres: number
-  penetrationMetres: number
-  /** From obstacle into robot, expressed in RealityLoop X/Z ground coordinates. */
-  normalX: number
-  normalZ: number
-  pointX: number
-  pointZ: number
-}
+import type { CollisionContact } from './collision/contract.ts'
+export type { CollisionContact } from './collision/contract.ts'
 
 /**
  * Collision-only MuJoCo WASM. Rumoca remains sole owner of dynamics.

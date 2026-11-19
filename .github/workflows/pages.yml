@@ -24,6 +24,8 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci
+      - name: Verify collision-asset compilation and reproducibility
+        run: npm run check:collision-assets
       - name: Verify simulation and TypeScript
         run: npm run check && npm test
       - name: Build custom-domain Pages site at the domain root

@@ -1,0 +1,11 @@
+{
+  "format": "realityloop-collision-layout/v1",
+  "description": "Simple collision bodies for the supermarket, in metres (Y up). PBR shelf details remain procedural.",
+  "objects": [
+    {"id":"blocked-aisle","kind":"obstruction","center":[4.35,0.8,0],"size":[0.9,1.6,2.54]},
+    {"id":"shelf-n1","kind":"shelf","center":[2.1,1.05,-3.2],"size":[2.5,2.1,0.92]},
+    {"id":"shelf-n2","kind":"shelf","center":[5.2,1.05,-3.2],"size":[2.5,2.1,0.92]},
+    {"id":"shelf-s1","kind":"shelf","center":[2.1,1.05,3.2],"size":[2.5,2.1,0.92]},
+    {"id":"shelf-s2","kind":"shelf","center":[5.2,1.05,3.2],"size":[2.5,2.1,0.92]}
+  ]
+}
